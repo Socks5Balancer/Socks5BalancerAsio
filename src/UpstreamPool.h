@@ -25,7 +25,10 @@
 #include <memory>
 
 struct UpstreamServer {
-
+    std::string host;
+    uint16_t port;
+    std::string name;
+    int index;
 };
 
 class UpstreamPool: public std::enable_shared_from_this<UpstreamPool> {
