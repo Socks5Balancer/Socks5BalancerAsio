@@ -31,7 +31,9 @@ add_executable(${ProjectMainName}
         src/StateMonitorServer.cpp
         src/StateMonitorServer.h
         src/ConnectTestHttps.cpp
-        src/ConnectTestHttps.h)
+        src/ConnectTestHttps.h
+        src/ConfigLoader.cpp
+        src/ConfigLoader.h)
 
 
 include_directories(${Boost_INCLUDE_DIRS})
