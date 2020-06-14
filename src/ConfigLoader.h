@@ -60,6 +60,16 @@ struct Config {
     RuleEnum upstreamSelectRule;
 
     ConfigTimeDuration serverChangeTime;
+
+    size_t retryTimes;
+
+    ConfigTimeDuration connectTimeout;
+
+    ConfigTimeDuration tcpCheckPeriod;
+    ConfigTimeDuration tcpCheckStart;
+    ConfigTimeDuration connectCheckPeriod;
+    ConfigTimeDuration connectCheckStart;
+    ConfigTimeDuration additionCheckPeriod;
 };
 
 RuleEnum string2RuleEnum(std::string s);
@@ -76,7 +86,21 @@ public:
         std::cout << "config.testRemoteHost:" << config.testRemoteHost << "\n";
         std::cout << "config.testRemotePort:" << config.testRemotePort << "\n";
         std::cout << "config.upstreamSelectRule:" << ruleEnum2string(config.upstreamSelectRule) << "\n";
+
+        std::cout << "config.retryTimes:" << config.retryTimes << "\n";
+
         std::cout << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
+
+        std::cout << "config.connectTimeout:" << config.connectTimeout.count() << "\n";
+
+        std::cout << "config.tcpCheckPeriod:" << config.tcpCheckPeriod.count() << "\n";
+        std::cout << "config.tcpCheckStart:" << config.tcpCheckStart.count() << "\n";
+
+        std::cout << "config.connectCheckPeriod:" << config.connectCheckPeriod.count() << "\n";
+        std::cout << "config.connectCheckStart:" << config.connectCheckStart.count() << "\n";
+
+        std::cout << "config.additionCheckPeriod:" << config.additionCheckPeriod.count() << "\n";
+
         for (size_t i = 0; i != config.upstream.size(); ++i) {
             const auto &it = config.upstream[i];
             std::cout << "config.upstream [" << i << "]:\n";
@@ -111,8 +135,27 @@ public:
         auto upstreamSelectRule = tree.get("upstreamSelectRule", std::string{"random"});
         c.upstreamSelectRule = string2RuleEnum(upstreamSelectRule);
 
+        auto retryTimes = tree.get("retryTimes", static_cast<size_t>(3));
+        c.retryTimes = retryTimes;
+
         auto serverChangeTime = tree.get("serverChangeTime", static_cast<long long>(60 * 1000));
         c.serverChangeTime = ConfigTimeDuration{serverChangeTime};
+
+        auto connectTimeout = tree.get("connectTimeout", static_cast<long long>(2 * 1000));
+        c.connectTimeout = ConfigTimeDuration{connectTimeout};
+
+        auto tcpCheckPeriod = tree.get("tcpCheckPeriod", static_cast<long long>(5 * 1000));
+        c.tcpCheckPeriod = ConfigTimeDuration{tcpCheckPeriod};
+        auto tcpCheckStart = tree.get("tcpCheckStart", static_cast<long long>(1 * 1000));
+        c.tcpCheckStart = ConfigTimeDuration{tcpCheckStart};
+
+        auto connectCheckPeriod = tree.get("connectCheckPeriod", static_cast<long long>(5 * 60 * 1000));
+        c.connectCheckPeriod = ConfigTimeDuration{connectCheckPeriod};
+        auto connectCheckStart = tree.get("connectCheckStart", static_cast<long long>(1 * 1000));
+        c.connectCheckStart = ConfigTimeDuration{connectCheckStart};
+
+        auto additionCheckPeriod = tree.get("additionCheckPeriod", static_cast<long long>(10 * 1000));
+        c.additionCheckPeriod = ConfigTimeDuration{additionCheckPeriod};
 
         if (tree.get_child_optional("upstream")) {
             auto upstream = tree.get_child("upstream");

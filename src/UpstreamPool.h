@@ -57,6 +57,8 @@ using UpstreamServerRef = std::shared_ptr<UpstreamServer>;
 using UpstreamServerRefRef = std::optional<std::shared_ptr<UpstreamServer>>;
 
 class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
+    boost::asio::executor ex;
+
     std::deque<UpstreamServerRef> _pool;
     size_t lastUseUpstreamIndex = 0;
 
@@ -68,7 +70,7 @@ class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
     TimePoint lastChangeUpstreamTime;
 
 public:
-    UpstreamPool(boost::asio::executor ex) {}
+    UpstreamPool(boost::asio::executor ex) : ex(ex) {}
 
     const std::deque<UpstreamServerRef> &pool() {
         return _pool;
@@ -193,6 +195,71 @@ public:
             }
         }
     }
+
+
+private:
+    using CheckerTimerType = boost::asio::steady_timer;
+    using CheckerTimerPeriodType = boost::asio::chrono::microseconds;
+    std::unique_ptr<CheckerTimerType> tcpCheckerTimer;
+    std::unique_ptr<CheckerTimerType> connectCheckerTimer;
+
+public:
+    void endCheckTimer() {
+        if (tcpCheckerTimer) {
+            tcpCheckerTimer->cancel();
+            tcpCheckerTimer.reset();
+        }
+        if (connectCheckerTimer) {
+            connectCheckerTimer->cancel();
+            connectCheckerTimer.reset();
+        }
+    }
+
+    void startCheckTimer() {
+        if (tcpCheckerTimer && connectCheckerTimer) {
+            return;
+        }
+        endCheckTimer();
+
+        tcpCheckerTimer = std::make_unique<CheckerTimerType>(ex, _configLoader->config.tcpCheckStart);
+        do_tcpCheckerTimer();
+
+        connectCheckerTimer = std::make_unique<CheckerTimerType>(ex, _configLoader->config.connectCheckStart);
+        do_connectCheckerTimer();
+
+    }
+
+private:
+    void do_tcpCheckerTimer() {
+        auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
+            if (e) {
+                return;
+            }
+            std::cout << "do_tcpCheckerTimer()" << std::endl;
+
+            // TODO
+
+            tcpCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.tcpCheckPeriod);
+            do_tcpCheckerTimer();
+        };
+        tcpCheckerTimer->async_wait(c);
+    }
+
+    void do_connectCheckerTimer() {
+        auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
+            if (e) {
+                return;
+            }
+            std::cout << "do_connectCheckerTimer()" << std::endl;
+
+            // TODO
+
+            connectCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.connectCheckPeriod);
+            do_connectCheckerTimer();
+        };
+        connectCheckerTimer->async_wait(c);
+    }
+
 };
 
 

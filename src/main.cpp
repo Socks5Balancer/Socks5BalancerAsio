@@ -48,9 +48,11 @@ int main() {
 
         tcpRelay->start();
 
+        upstreamPool->startCheckTimer();
+
         ioc.run();
 
-    } catch (const std::exception e) {
+    } catch (const std::exception& e) {
         std::cerr << "catch std::exception: " << e.what() << "\n";
     } catch (...) {
         std::cerr << "catch (...) exception: " << "\n";
