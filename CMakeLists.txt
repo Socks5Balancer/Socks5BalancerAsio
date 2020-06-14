@@ -14,6 +14,9 @@ else ()
     add_definitions(-Wall -Wextra)
 endif ()
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -23,6 +26,14 @@ message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 message(STATUS "Boost_VERSION: ${Boost_VERSION}")
+
+if (${Boost_VERSION} VERSION_LESS_EQUAL 1.72.0)
+    # https://github.com/boostorg/asio/issues/312
+    # https://github.com/microsoft/vcpkg/issues/9731
+    # https://github.com/boostorg/beast/issues/1884
+    add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
+    message(STATUS "Boost_VERSION <= 1.72")
+endif ()
 
 find_package(OpenSSL 1.1.0 REQUIRED)
 
@@ -41,6 +52,8 @@ add_executable(${ProjectMainName}
         src/TcpTest.cpp
         src/TcpTest.h)
 
+
+target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
 
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(${ProjectMainName} ${Boost_LIBRARIES})
