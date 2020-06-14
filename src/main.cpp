@@ -22,15 +22,28 @@
 #include "TcpRelayServer.h"
 #include "UpstreamPool.h"
 #include "StateMonitorServer.h"
+#include "ConfigLoader.h"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
 
     boost::asio::io_context ioc;
 
-    auto tcpRelay = std::make_shared<TcpRelayServer>(boost::asio::make_strand(ioc));
+    auto configLoader = std::make_shared<ConfigLoader>();
+    configLoader->load(R"(config.json)");
+    configLoader->print();
+
     auto upstreamPool = std::make_shared<UpstreamPool>(boost::asio::make_strand(ioc));
+    upstreamPool->setConfig(configLoader);
+    for (int i = 0; i != 100; ++i) {
+        auto s = upstreamPool->getServerBasedOnAddress();
+        std::cout << "[" << i << "] getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+    }
+
+    auto tcpRelay = std::make_shared<TcpRelayServer>(boost::asio::make_strand(ioc));
     auto stateMonitor = std::make_shared<StateMonitorServer>(boost::asio::make_strand(ioc));
+
+    upstreamPool->pool();
 
     ioc.run();
 
