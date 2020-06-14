@@ -31,8 +31,10 @@
 #include <utility>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <list>
 #include <vector>
+#include <functional>
 #include <openssl/opensslv.h>
 
 #ifdef _WIN32
@@ -95,6 +97,15 @@ public:
         req_.set(boost::beast::http::field::host, targetHost);
         req_.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
+    }
+
+    using SuccessfulInfo = boost::beast::http::response<boost::beast::http::string_body>;
+    std::function<void(SuccessfulInfo info)> successfulCallback;
+    std::function<void(std::string reason)> failedCallback;
+
+    void run(std::function<void(SuccessfulInfo info)> onOk, std::function<void(std::string reason)> onErr) {
+        successfulCallback = std::move(onOk);
+        failedCallback = std::move(onErr);
         do_resolve();
     }
 
@@ -102,12 +113,21 @@ private:
 
     void
     fail(boost::beast::error_code ec, char const *what) {
-        std::cerr << what << ": " << ec.message() << "\n";
+        std::stringstream ss;
+        ss << what << ": " << ec.message();
+
+        std::cerr << ss.str() << "\n";
+        if (failedCallback) {
+            failedCallback(ss.str());
+        }
     }
 
     void
     allOk() {
         std::cout << res_ << std::endl;
+        if (successfulCallback) {
+            successfulCallback(res_);
+        }
     }
 
     void
@@ -148,7 +168,6 @@ private:
                                 return fail(ec, "tcp_connect");
                             }
 
-                            // TODO add socks5 handshake on there
                             do_socks5_handshake_write();
                         }));
 
@@ -397,13 +416,13 @@ private:
                             // Write the message to standard out
                             // std::cout << res_ << std::endl;
 
-                            do_shutdown();
+                            do_shutdown(true);
                         }));
 
     }
 
     void
-    do_shutdown() {
+    do_shutdown(bool isOn = false) {
 
         // Set a timeout on the operation
         boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
@@ -411,7 +430,7 @@ private:
         // Gracefully close the stream
         stream_.async_shutdown(
                 boost::beast::bind_front_handler(
-                        [this, self = shared_from_this()](boost::beast::error_code ec) {
+                        [this, self = shared_from_this(), isOn](boost::beast::error_code ec) {
                             if (ec == boost::asio::error::eof) {
                                 // Rationale:
                                 // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
@@ -421,8 +440,10 @@ private:
                                 return fail(ec, "shutdown");
                             }
 
-                            // If we get here then the connection is closed gracefully
-                            allOk();
+                            if (isOn) {
+                                // If we get here then the connection is closed gracefully
+                                allOk();
+                            }
                         }));
     }
 
