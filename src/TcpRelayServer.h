@@ -46,12 +46,16 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
 
     UpstreamServerRef nowServer;
 
+    size_t retryCount = 0;
+    const size_t retryLimit;
+
 public:
-    TcpRelaySession(boost::asio::executor ex, std::shared_ptr<UpstreamPool> upstreamPool) :
+    TcpRelaySession(boost::asio::executor ex, std::shared_ptr<UpstreamPool> upstreamPool, int retryLimit) :
             downstream_socket_(ex),
             upstream_socket_(ex),
             resolver_(ex),
-            upstreamPool(std::move(upstreamPool)) {
+            upstreamPool(std::move(upstreamPool)),
+            retryLimit(retryLimit) {
         std::cout << "TcpRelaySession create" << std::endl;
     }
 
@@ -74,11 +78,20 @@ public:
 private:
 
     void try_connect_upstream() {
-        auto s = upstreamPool->getServerBasedOnAddress();
-        std::cout << "TcpRelaySession try_connect_upstream()"
-                  << " " << s->host << ":" << s->port << std::endl;
-        nowServer = s;
-        do_resolve(s->host, s->port);
+        if (retryCount <= retryLimit) {
+            ++retryCount;
+            auto s = upstreamPool->getServerBasedOnAddress();
+            if (s) {
+                std::cout << "TcpRelaySession try_connect_upstream()"
+                          << " " << s->host << ":" << s->port << std::endl;
+                nowServer = s;
+                do_resolve(s->host, s->port);
+            } else {
+                std::cerr << "try_connect_upstream error:" << "No Valid Server." << "\n";
+            }
+        } else {
+            std::cerr << "try_connect_upstream error:" << "(retryCount > retryLimit)" << "\n";
+        }
     }
 
     void
@@ -283,7 +296,7 @@ public:
 
 private:
     void async_accept() {
-        auto session = std::make_shared<TcpRelaySession>(ex, upstreamPool);
+        auto session = std::make_shared<TcpRelaySession>(ex, upstreamPool, configLoader->config.retryTimes);
         socket_acceptor.async_accept(
                 session->downstream_socket(),
                 [this, session](const boost::system::error_code error) {
