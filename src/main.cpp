@@ -29,22 +29,24 @@ int main() {
     std::cout << "Hello, World!" << std::endl;
     try {
         boost::asio::io_context ioc;
+        boost::asio::executor ex = boost::asio::make_strand(ioc);
 
         auto configLoader = std::make_shared<ConfigLoader>();
-        configLoader->load(R"(config.json)");
+        configLoader->load(R"(config-test.json)");
         configLoader->print();
 
-        auto upstreamPool = std::make_shared<UpstreamPool>(boost::asio::make_strand(ioc));
+        auto upstreamPool = std::make_shared<UpstreamPool>(ex);
         upstreamPool->setConfig(configLoader);
-        for (int i = 0; i != 100; ++i) {
-            auto s = upstreamPool->getServerBasedOnAddress();
-            std::cout << "[" << i << "] getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
-        }
+//        for (int i = 0; i != 100; ++i) {
+//            auto s = upstreamPool->getServerBasedOnAddress();
+//            std::cout << "[" << i << "] getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+//        }
+//        std::cout << std::endl;
 
-        auto tcpRelay = std::make_shared<TcpRelayServer>(boost::asio::make_strand(ioc));
+        auto tcpRelay = std::make_shared<TcpRelayServer>(ex, configLoader, upstreamPool);
         auto stateMonitor = std::make_shared<StateMonitorServer>(boost::asio::make_strand(ioc));
 
-        upstreamPool->pool();
+        tcpRelay->start();
 
         ioc.run();
 

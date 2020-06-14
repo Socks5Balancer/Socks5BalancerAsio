@@ -26,12 +26,17 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <memory>
+#include <string>
+#include <utility>
+#include "UpstreamPool.h"
 
 // code template from https://github.com/ArashPartow/proxy/blob/master/tcpproxy_server.cpp
 class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
 
     boost::asio::ip::tcp::socket downstream_socket_;
     boost::asio::ip::tcp::socket upstream_socket_;
+    boost::asio::ip::tcp::resolver resolver_;
+    std::shared_ptr<UpstreamPool> upstreamPool;
 
     enum {
         max_data_length = 8192
@@ -40,9 +45,13 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     unsigned char upstream_data_[max_data_length];
 
 public:
-    TcpRelaySession(boost::asio::executor ex) :
+    TcpRelaySession(boost::asio::executor ex, std::shared_ptr<UpstreamPool> upstreamPool) :
             downstream_socket_(ex),
-            upstream_socket_(ex) {}
+            upstream_socket_(ex),
+            resolver_(ex),
+            upstreamPool(std::move(upstreamPool)) {
+        std::cout << "TcpRelaySession create" << std::endl;
+    }
 
     boost::asio::ip::tcp::socket &downstream_socket() {
         // Client socket
@@ -55,20 +64,55 @@ public:
     }
 
 
-    void start(const std::string &upstream_host, unsigned short upstream_port) {
-        try_connect_upstream(upstream_host, upstream_port);
+    void start() {
+        std::cout << "TcpRelaySession start()" << std::endl;
+        try_connect_upstream();
     }
 
 private:
 
-    void try_connect_upstream(const std::string &upstream_host, unsigned short upstream_port) {
+    void try_connect_upstream() {
+        auto s = upstreamPool->getServerBasedOnAddress();
+        std::cout << "TcpRelaySession try_connect_upstream()"
+                  << " " << s->host << ":" << s->port << std::endl;
+        do_resolve(s->host, s->port);
+    }
+
+    void
+    do_resolve(const std::string &upstream_host, unsigned short upstream_port) {
+
+        // Look up the domain name
+        resolver_.async_resolve(
+                upstream_host,
+                std::to_string(upstream_port),
+                [this, self = shared_from_this()](
+                        const boost::system::error_code &error,
+                        boost::asio::ip::tcp::resolver::results_type results) {
+                    if (error) {
+                        std::cerr << "do_resolve error:" << error.message() << "\n";
+                        // try next
+                        try_connect_upstream();
+                    }
+
+                    std::cout << "TcpRelaySession do_resolve()"
+                              << " " << results->endpoint().address() << ":" << results->endpoint().port()
+                              << std::endl;
+
+                    do_connect_upstream(results);
+                });
+
+    }
+
+    void
+    do_connect_upstream(boost::asio::ip::tcp::resolver::results_type results) {
+
         // Attempt connection to remote server (upstream side)
         upstream_socket_.async_connect(
-                boost::asio::ip::tcp::endpoint(
-                        boost::asio::ip::address::from_string(upstream_host),
-                        upstream_port),
+                results->endpoint(),
                 [this, self = shared_from_this()](const boost::system::error_code &error) {
                     if (!error) {
+
+                        std::cout << "TcpRelaySession do_connect_upstream()" << std::endl;
 
                         // Setup async read from remote server (upstream)
                         do_upstream_read();
@@ -77,12 +121,16 @@ private:
                         do_downstream_read();
 
                     } else {
-                        // TODO retry
-                        close();
+                        std::cerr << "do_connect_upstream error:" << error.message() << "\n";
+                        // try next
+                        try_connect_upstream();
                     }
                 }
         );
+
     }
+
+
 
     /*
        Section A: Remote Server --> Proxy --> Client
@@ -180,8 +228,72 @@ private:
 };
 
 class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
+
+    boost::asio::executor ex;
+    std::shared_ptr<ConfigLoader> configLoader;
+    std::shared_ptr<UpstreamPool> upstreamPool;
+    boost::asio::ip::tcp::acceptor socket_acceptor;
+
 public:
-    TcpRelayServer(boost::asio::executor ex) {}
+    TcpRelayServer(
+            boost::asio::executor ex,
+            std::shared_ptr<ConfigLoader> configLoader,
+            std::shared_ptr<UpstreamPool> upstreamPool
+    ) : ex(ex),
+        configLoader(std::move(configLoader)),
+        upstreamPool(std::move(upstreamPool)),
+        socket_acceptor(ex) {
+    }
+
+    void start() {
+        boost::asio::ip::tcp::resolver resolver(ex);
+        boost::asio::ip::tcp::endpoint listen_endpoint =
+                *resolver.resolve(configLoader->config.listenHost,
+                                  std::to_string(configLoader->config.listenPort)).begin();
+        socket_acceptor.open(listen_endpoint.protocol());
+        socket_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+
+        socket_acceptor.bind(listen_endpoint);
+        socket_acceptor.listen();
+
+        auto local_endpoint = socket_acceptor.local_endpoint();
+        std::cout << "listening on: " << local_endpoint.address() << ":" << local_endpoint.port() << std::endl;
+
+        async_accept();
+    }
+
+    void stop() {
+        boost::system::error_code ec;
+        socket_acceptor.cancel(ec);
+    }
+
+private:
+    void async_accept() {
+        auto session = std::make_shared<TcpRelaySession>(ex, upstreamPool);
+        socket_acceptor.async_accept(
+                session->downstream_socket(),
+                [this, session](const boost::system::error_code error) {
+                    if (error == boost::asio::error::operation_aborted) {
+                        // got cancel signal, stop calling myself
+                        std::cerr << "async_accept error: operation_aborted" << "\n";
+                        return;
+                    }
+                    if (!error) {
+                        std::cout << "async_accept accept." << "\n";
+                        boost::system::error_code ec;
+                        auto endpoint = session->downstream_socket().remote_endpoint(ec);
+                        if (!ec) {
+                            std::cout << "incoming connection from : "
+                                      << endpoint.address() << ":" << endpoint.port() << "\n";
+
+                            session->start();
+                        }
+                    }
+                    std::cout << "async_accept next." << "\n";
+                    async_accept();
+                });
+    }
+
 };
 
 
