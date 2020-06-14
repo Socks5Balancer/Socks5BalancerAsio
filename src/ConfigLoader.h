@@ -81,99 +81,12 @@ class ConfigLoader : public std::enable_shared_from_this<ConfigLoader> {
 public:
     Config config;
 
-    void print() {
-        std::cout << "config.listenHost:" << config.listenHost << "\n";
-        std::cout << "config.listenPort:" << config.listenPort << "\n";
-        std::cout << "config.testRemoteHost:" << config.testRemoteHost << "\n";
-        std::cout << "config.testRemotePort:" << config.testRemotePort << "\n";
-        std::cout << "config.upstreamSelectRule:" << ruleEnum2string(config.upstreamSelectRule) << "\n";
-
-        std::cout << "config.retryTimes:" << config.retryTimes << "\n";
-
-        std::cout << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
-
-        std::cout << "config.connectTimeout:" << config.connectTimeout.count() << "\n";
-
-        std::cout << "config.tcpCheckPeriod:" << config.tcpCheckPeriod.count() << "\n";
-        std::cout << "config.tcpCheckStart:" << config.tcpCheckStart.count() << "\n";
-
-        std::cout << "config.connectCheckPeriod:" << config.connectCheckPeriod.count() << "\n";
-        std::cout << "config.connectCheckStart:" << config.connectCheckStart.count() << "\n";
-
-        std::cout << "config.additionCheckPeriod:" << config.additionCheckPeriod.count() << "\n";
-
-        for (size_t i = 0; i != config.upstream.size(); ++i) {
-            const auto &it = config.upstream[i];
-            std::cout << "config.upstream [" << i << "]:\n";
-            std::cout << "\t" << "upstream.name:" << it.name << "\n";
-            std::cout << "\t" << "upstream.host:" << it.host << "\n";
-            std::cout << "\t" << "upstream.port:" << it.port << "\n";
-            std::cout << "\t" << "upstream.disable:" << it.disable << "\n";
-        }
-    }
+    void print();
 
     void
-    load(const std::string &filename) {
-        boost::property_tree::ptree tree;
-        boost::property_tree::read_json(filename, tree);
-        parse_json(tree);
-    }
+    load(const std::string &filename);
 
-    void parse_json(const boost::property_tree::ptree &tree) {
-        Config c{};
-
-        auto listenHost = tree.get("listenHost", std::string{"127.0.0.1"});
-        auto listenPort = tree.get<uint16_t>("listenPort", static_cast<uint16_t>(5000));
-
-        c.listenHost = listenHost;
-        c.listenPort = listenPort;
-
-        auto testRemoteHost = tree.get("testRemoteHost", std::string{"www.google.com"});
-        auto testRemotePort = tree.get<uint16_t>("testRemotePort", static_cast<uint16_t>(443));
-
-        c.testRemoteHost = testRemoteHost;
-        c.testRemotePort = testRemotePort;
-
-        auto upstreamSelectRule = tree.get("upstreamSelectRule", std::string{"random"});
-        c.upstreamSelectRule = string2RuleEnum(upstreamSelectRule);
-
-        auto retryTimes = tree.get("retryTimes", static_cast<size_t>(3));
-        c.retryTimes = retryTimes;
-
-        auto serverChangeTime = tree.get("serverChangeTime", static_cast<long long>(60 * 1000));
-        c.serverChangeTime = ConfigTimeDuration{serverChangeTime};
-
-        auto connectTimeout = tree.get("connectTimeout", static_cast<long long>(2 * 1000));
-        c.connectTimeout = ConfigTimeDuration{connectTimeout};
-
-        auto tcpCheckPeriod = tree.get("tcpCheckPeriod", static_cast<long long>(5 * 1000));
-        c.tcpCheckPeriod = ConfigTimeDuration{tcpCheckPeriod};
-        auto tcpCheckStart = tree.get("tcpCheckStart", static_cast<long long>(1 * 1000));
-        c.tcpCheckStart = ConfigTimeDuration{tcpCheckStart};
-
-        auto connectCheckPeriod = tree.get("connectCheckPeriod", static_cast<long long>(5 * 60 * 1000));
-        c.connectCheckPeriod = ConfigTimeDuration{connectCheckPeriod};
-        auto connectCheckStart = tree.get("connectCheckStart", static_cast<long long>(1 * 1000));
-        c.connectCheckStart = ConfigTimeDuration{connectCheckStart};
-
-        auto additionCheckPeriod = tree.get("additionCheckPeriod", static_cast<long long>(10 * 1000));
-        c.additionCheckPeriod = ConfigTimeDuration{additionCheckPeriod};
-
-        if (tree.get_child_optional("upstream")) {
-            auto upstream = tree.get_child("upstream");
-            for (auto &item: upstream) {
-                auto &pts = item.second;
-                Upstream u;
-                u.host = pts.get("host", std::string{"127.0.0.1"});
-                u.port = pts.get("port", uint16_t{});
-                u.name = pts.get("name", std::string{});
-                u.disable = pts.get("disable", false);
-                c.upstream.push_back(u);
-            }
-        }
-
-        config = c;
-    }
+    void parse_json(const boost::property_tree::ptree &tree);
 };
 
 
