@@ -34,6 +34,8 @@
 #include <random>
 #include <chrono>
 #include "ConfigLoader.h"
+#include "TcpTest.h"
+#include "ConnectTestHttps.h"
 
 struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     std::string host;
@@ -69,8 +71,16 @@ class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
     using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
     TimePoint lastChangeUpstreamTime;
 
+    std::shared_ptr<TcpTest> tcpTest;
+    std::shared_ptr<ConnectTestHttps> connectTestHttps;
+
 public:
-    UpstreamPool(boost::asio::executor ex) : ex(ex) {}
+    UpstreamPool(boost::asio::executor ex,
+                 std::shared_ptr<TcpTest> tcpTest,
+                 std::shared_ptr<ConnectTestHttps> connectTestHttps)
+            : ex(ex),
+              tcpTest(std::move(tcpTest)),
+              connectTestHttps(std::move(connectTestHttps)) {}
 
     const std::deque<UpstreamServerRef> &pool() {
         return _pool;
@@ -237,7 +247,15 @@ private:
             }
             std::cout << "do_tcpCheckerTimer()" << std::endl;
 
-            // TODO
+            for (const auto &a: _pool) {
+                auto t = tcpTest->createTest(a->host, std::to_string(a->port));
+                t->run([t]() {
+                           // on ok
+                       },
+                       [t](std::string reason) {
+                           // ok error
+                       });
+            }
 
             tcpCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.tcpCheckPeriod);
             do_tcpCheckerTimer();
@@ -252,7 +270,22 @@ private:
             }
             std::cout << "do_connectCheckerTimer()" << std::endl;
 
-            // TODO
+            for (const auto &a: _pool) {
+                auto t = connectTestHttps->createTest(
+                        a->host,
+                        std::to_string(a->port),
+                        _configLoader->config.testRemoteHost,
+                        _configLoader->config.testRemotePort,
+                        R"(\)"
+                );
+                t->run([t](ConnectTestHttpsSession::SuccessfulInfo info) {
+                           // on ok
+//                           std::cout << "SuccessfulInfo:" << info << std::endl;
+                       },
+                       [t](std::string reason) {
+                           // ok error
+                       });
+            }
 
             connectCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.connectCheckPeriod);
             do_connectCheckerTimer();

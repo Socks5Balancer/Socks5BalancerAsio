@@ -148,7 +148,7 @@ private:
                         // write it to server
                         do_downstream_write(bytes_transferred);
                     } else {
-                        close();
+                        close(error);
                     }
                 });
     }
@@ -166,7 +166,7 @@ private:
                         // read more again
                         do_upstream_read();
                     } else {
-                        close();
+                        close(error);
                     }
                 });
     }
@@ -189,7 +189,7 @@ private:
                         // write it to server
                         do_upstream_write(bytes_transferred);
                     } else {
-                        close();
+                        close(error);
                     }
                 });
     }
@@ -207,14 +207,18 @@ private:
                         // read more again
                         do_downstream_read();
                     } else {
-                        close();
+                        close(error);
                     }
                 });
     }
     // *** End Of Section B ***
 
-    void close() {
-        // boost::mutex::scoped_lock lock(mutex_);
+    void close(boost::system::error_code error = {}) {
+        if (error == boost::asio::error::eof) {
+            // Rationale:
+            // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+            error = {};
+        }
 
         if (downstream_socket_.is_open()) {
             downstream_socket_.close();

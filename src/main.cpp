@@ -24,6 +24,8 @@
 #include "UpstreamPool.h"
 #include "StateMonitorServer.h"
 #include "ConfigLoader.h"
+#include "TcpTest.h"
+#include "ConnectTestHttps.h"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
@@ -35,13 +37,11 @@ int main() {
         configLoader->load(R"(config-test.json)");
         configLoader->print();
 
-        auto upstreamPool = std::make_shared<UpstreamPool>(ex);
+        auto tcpTest = std::make_shared<TcpTest>(ex);
+        auto connectTestHttps = std::make_shared<ConnectTestHttps>(ex);
+
+        auto upstreamPool = std::make_shared<UpstreamPool>(ex, tcpTest, connectTestHttps);
         upstreamPool->setConfig(configLoader);
-//        for (int i = 0; i != 100; ++i) {
-//            auto s = upstreamPool->getServerBasedOnAddress();
-//            std::cout << "[" << i << "] getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
-//        }
-//        std::cout << std::endl;
 
         auto tcpRelay = std::make_shared<TcpRelayServer>(ex, configLoader, upstreamPool);
         auto stateMonitor = std::make_shared<StateMonitorServer>(boost::asio::make_strand(ioc));
@@ -52,10 +52,13 @@ int main() {
 
         ioc.run();
 
-    } catch (const std::exception& e) {
+    } catch (int) {
+        std::cerr << "catch (int) exception" << "\n";
+    }
+    catch (const std::exception &e) {
         std::cerr << "catch std::exception: " << e.what() << "\n";
     } catch (...) {
-        std::cerr << "catch (...) exception: " << "\n";
+        std::cerr << "catch (...) exception" << "\n";
     }
 
     return 0;

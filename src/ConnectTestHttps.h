@@ -56,12 +56,14 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
     uint16_t targetPort;
     const std::string targetPath;
     int httpVersion;
-    const std::string &socks5Host;
-    const std::string &socks5Port;
+    const std::string socks5Host;
+    const std::string socks5Port;
 
     enum {
         MAX_LENGTH = 8192
     };
+
+    bool _isComplete = false;
 
 public:
     ConnectTestHttpsSession(
@@ -82,6 +84,7 @@ public:
             httpVersion(httpVersion),
             socks5Host(socks5Host),
             socks5Port(socks5Port) {
+//        std::cout << "ConnectTestHttpsSession :" << socks5Host << ":" << socks5Port << std::endl;
 
         // Set SNI Hostname (many hosts need this to handshake successfully)
         if (!SSL_set_tlsext_host_name(stream_.native_handle(), targetHost.c_str())) {
@@ -99,39 +102,70 @@ public:
 
     }
 
+    ~ConnectTestHttpsSession() {
+//        std::cout << "~ConnectTestHttpsSession()" << std::endl;
+    }
+
+    bool isComplete() {
+        return _isComplete;
+    }
+
     using SuccessfulInfo = boost::beast::http::response<boost::beast::http::string_body>;
-    std::function<void(SuccessfulInfo info)> successfulCallback;
-    std::function<void(std::string reason)> failedCallback;
+
+    struct CallbackContainer {
+        std::function<void(SuccessfulInfo info)> successfulCallback;
+        std::function<void(std::string reason)> failedCallback;
+    };
+    std::unique_ptr<CallbackContainer> callback;
 
     void run(std::function<void(SuccessfulInfo info)> onOk, std::function<void(std::string reason)> onErr) {
-        successfulCallback = std::move(onOk);
-        failedCallback = std::move(onErr);
+        callback = std::make_unique<CallbackContainer>();
+        callback->successfulCallback = std::move(onOk);
+        callback->failedCallback = std::move(onErr);
         do_resolve();
+    }
+
+    // to avoid circle ref
+    void release() {
+        callback.reset();
+        _isComplete = true;
     }
 
 private:
 
     void
-    fail(boost::beast::error_code ec, char const *what) {
-        std::stringstream ss;
-        ss << what << ": " << ec.message();
-
-        std::cerr << ss.str() << "\n";
-        if (failedCallback) {
-            failedCallback(ss.str());
+    fail(boost::system::error_code ec, const std::string &what) {
+        std::string r;
+        {
+            std::stringstream ss;
+            ss << what << ": [" << ec.message() << "] . on "
+               << "targetHost:" << targetHost << " "
+               << "targetPort:" << targetPort << " "
+               << "targetPath:" << targetPath << " "
+               << "httpVersion:" << httpVersion << " "
+               << "socks5Host:" << socks5Host << " "
+               << "socks5Port:" << socks5Port << " ";
+            r = ss.str();
         }
+        std::cerr << r << "\n";
+        if (callback && callback->failedCallback) {
+            callback->failedCallback(r);
+        }
+        release();
     }
 
     void
     allOk() {
         std::cout << res_ << std::endl;
-        if (successfulCallback) {
-            successfulCallback(res_);
+        if (callback && callback->successfulCallback) {
+            callback->successfulCallback(res_);
         }
+        release();
     }
 
     void
     do_resolve() {
+//        std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port << std::endl;
 
         // Look up the domain name
         resolver_.async_resolve(
@@ -145,6 +179,10 @@ private:
                                 return fail(ec, "resolve");
                             }
 
+//                            std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port
+//                                      << " get results: "
+//                                      << results->endpoint().address() << ":" << results->endpoint().port()
+//                                      << std::endl;
                             do_tcp_connect(results);
                         }));
 
@@ -161,11 +199,14 @@ private:
         boost::beast::get_lowest_layer(stream_).async_connect(
                 results,
                 boost::beast::bind_front_handler(
-                        [this, self = shared_from_this()](
+                        [this, self = shared_from_this(), results](
                                 boost::beast::error_code ec,
                                 const boost::asio::ip::tcp::resolver::results_type::endpoint_type &) {
                             if (ec) {
-                                return fail(ec, "tcp_connect");
+                                std::stringstream ss;
+                                ss << "do_tcp_connect on :"
+                                   << results->endpoint().address() << ":" << results->endpoint().port();
+                                return fail(ec, ss.str().c_str());
                             }
 
                             do_socks5_handshake_write();
@@ -196,8 +237,14 @@ private:
                         [this, self = shared_from_this(), data_send](
                                 const boost::system::error_code &ec,
                                 std::size_t bytes_transferred_) {
-                            if (!ec || bytes_transferred_ != data_send->size()) {
+                            if (ec) {
                                 return fail(ec, "socks5_handshake_write");
+                            }
+                            if (bytes_transferred_ != data_send->size()) {
+                                std::stringstream ss;
+                                ss << "socks5_handshake_write with bytes_transferred_:"
+                                   << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                                return fail(ec, ss.str());
                             }
 
                             do_socks5_handshake_read();
@@ -256,7 +303,7 @@ private:
         // +----+-----+-------+------+----------+----------+
         // | 1  |  1  | X'00' |  1   | Variable |    2     |
         // +----+-----+-------+------+----------+----------+
-        std::shared_ptr<std::vector<uint8_t>> data_send;
+        auto data_send = std::make_shared<std::vector<uint8_t>>();
         data_send->insert(data_send->end(), {0x05, 0x01, 0x00});
         if (ec) {
             // is a domain name
@@ -290,8 +337,14 @@ private:
                         [this, self = shared_from_this(), data_send](
                                 const boost::system::error_code &ec,
                                 std::size_t bytes_transferred_) {
-                            if (!ec || bytes_transferred_ != data_send->size()) {
+                            if (ec) {
                                 return fail(ec, "socks5_connect_write");
+                            }
+                            if (bytes_transferred_ != data_send->size()) {
+                                std::stringstream ss;
+                                ss << "socks5_connect_write with bytes_transferred_:"
+                                   << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                                return fail(ec, ss.str());
                             }
 
                             do_socks5_connect_read();
@@ -437,7 +490,10 @@ private:
                                 ec = {};
                             }
                             if (ec) {
-                                return fail(ec, "shutdown");
+                                // https://github.com/boostorg/beast/issues/915
+                                if (ec.message() != "stream truncated") {
+                                    return fail(ec, "shutdown");
+                                }
                             }
 
                             if (isOn) {
@@ -453,10 +509,13 @@ class ConnectTestHttps : public std::enable_shared_from_this<ConnectTestHttps> {
     boost::asio::executor executor;
     std::shared_ptr<boost::asio::ssl::context> ssl_context;
     bool need_verify_ssl = true;
-    std::list<std::weak_ptr<ConnectTestHttpsSession>> sessions;
+    std::list<std::shared_ptr<ConnectTestHttpsSession>> sessions;
+
+    boost::asio::steady_timer cleanTimer;
 public:
     ConnectTestHttps(boost::asio::executor ex) :
-            executor(std::move(ex)),
+            executor(ex),
+            cleanTimer(ex, std::chrono::seconds{5}),
             ssl_context(std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23)) {
 
         if (need_verify_ssl) {
@@ -502,9 +561,32 @@ public:
                 socks5Host,
                 socks5Port
         );
-        sessions.push_back(s->weak_from_this());
+        sessions.push_back(s->shared_from_this());
         // sessions.front().lock();
         return std::move(s);
+    }
+
+private:
+    void do_cleanTimer() {
+        auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
+            if (e) {
+                return;
+            }
+            std::cout << "do_cleanTimer()" << std::endl;
+
+            auto it = sessions.begin();
+            while (it != sessions.end()) {
+                if (!(*it) || (*it)->isComplete()) {
+                    it = sessions.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+
+            cleanTimer.expires_at(cleanTimer.expiry() + std::chrono::seconds{5});
+            do_cleanTimer();
+        };
+        cleanTimer.async_wait(c);
     }
 };
 

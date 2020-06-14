@@ -9,6 +9,7 @@ if (MSVC)
 
     add_definitions(-DMSVC)
     add_definitions(-D_WIN32_WINNT=0x0A00)
+    add_compile_options(/bigobj)
 else ()
     add_definitions(-Wall -Wextra)
 endif ()
@@ -36,7 +37,9 @@ add_executable(${ProjectMainName}
         src/ConnectTestHttps.cpp
         src/ConnectTestHttps.h
         src/ConfigLoader.cpp
-        src/ConfigLoader.h)
+        src/ConfigLoader.h
+        src/TcpTest.cpp
+        src/TcpTest.h)
 
 
 include_directories(${Boost_INCLUDE_DIRS})
