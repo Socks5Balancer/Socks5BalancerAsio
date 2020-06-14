@@ -19,6 +19,10 @@
 #ifndef SOCKS5BALANCERASIO_CONNECTTESTHTTPS_H
 #define SOCKS5BALANCERASIO_CONNECTTESTHTTPS_H
 
+#ifdef MSVC
+#pragma once
+#endif
+
 #include <boost/beast.hpp>
 #include <boost/beast/ssl.hpp>
 #include <boost/asio.hpp>

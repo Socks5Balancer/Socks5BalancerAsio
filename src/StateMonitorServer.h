@@ -19,6 +19,10 @@
 #ifndef SOCKS5BALANCERASIO_STATEMONITORSERVER_H
 #define SOCKS5BALANCERASIO_STATEMONITORSERVER_H
 
+#ifdef MSVC
+#pragma once
+#endif
+
 #include <boost/beast.hpp>
 #include <memory>
 

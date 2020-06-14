@@ -19,6 +19,10 @@
 #ifndef SOCKS5BALANCERASIO_TCPRELAYSERVER_H
 #define SOCKS5BALANCERASIO_TCPRELAYSERVER_H
 
+#ifdef MSVC
+#pragma once
+#endif
+
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <memory>

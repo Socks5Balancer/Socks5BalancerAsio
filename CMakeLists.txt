@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 if (MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     add_definitions(-DBOOST_ALL_NO_LIB)
+
+    add_definitions(-DMSVC)
 else ()
     add_definitions(-Wall -Wextra)
 endif ()
