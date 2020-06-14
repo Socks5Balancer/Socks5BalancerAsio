@@ -33,6 +33,7 @@
 #include <utility>
 #include <random>
 #include <chrono>
+#include <atomic>
 #include "ConfigLoader.h"
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
@@ -52,9 +53,9 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     std::optional<UpstreamTimePoint> lastOnlineTime;
     std::optional<UpstreamTimePoint> lastConnectTime;
     bool lastConnectFailed = true;
-//    std::string lastConnectCheckResult;
+    std::string lastConnectCheckResult;
     bool isOffline = true;
-    size_t connectCount = 0;
+    std::atomic_size_t connectCount{0};
     bool isManualDisable = false;
     bool disable = false;
 
@@ -80,6 +81,11 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
            << "port:" << port << ", "
            << "]";
         return ss.str();
+    }
+
+    void updateOnlineTime() {
+        isOffline = false;
+        lastOnlineTime = UpstreamTimePointNow();
     }
 };
 
@@ -283,6 +289,10 @@ public:
                << "\t" << "lastConnectTime :" << (
                        r->lastConnectTime.has_value() ?
                        printUpstreamTimePoint(r->lastConnectTime.value()) : "empty") << "\n"
+               << "\t" << "lastConnectCheckResult :" << r->lastConnectCheckResult << "\n"
+               << "\t" << "disable :" << r->disable << "\n"
+               << "\t" << "isManualDisable :" << r->isManualDisable << "\n"
+               << "\t" << "connectCount :" << r->connectCount << "\n"
                << "]" << "\n";
         }
         return ss.str();
@@ -339,6 +349,10 @@ private:
                            // std::cout << "SuccessfulInfo:" << info << std::endl;
                            a->lastConnectTime = UpstreamTimePointNow();
                            a->lastConnectFailed = false;
+
+                           std::stringstream ss;
+                           ss << "status_code:" << static_cast<int>(info.base().result());
+                           a->lastConnectCheckResult = ss.str();
                        },
                        [t, a](std::string reason) {
                            // ok error

@@ -44,6 +44,8 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     unsigned char downstream_data_[max_data_length];
     unsigned char upstream_data_[max_data_length];
 
+    UpstreamServerRef nowServer;
+
 public:
     TcpRelaySession(boost::asio::executor ex, std::shared_ptr<UpstreamPool> upstreamPool) :
             downstream_socket_(ex),
@@ -75,6 +77,7 @@ private:
         auto s = upstreamPool->getServerBasedOnAddress();
         std::cout << "TcpRelaySession try_connect_upstream()"
                   << " " << s->host << ":" << s->port << std::endl;
+        nowServer = s;
         do_resolve(s->host, s->port);
     }
 
@@ -90,6 +93,7 @@ private:
                         boost::asio::ip::tcp::resolver::results_type results) {
                     if (error) {
                         std::cerr << "do_resolve error:" << error.message() << "\n";
+                        nowServer->isOffline = true;
                         // try next
                         try_connect_upstream();
                     }
@@ -114,6 +118,9 @@ private:
 
                         std::cout << "TcpRelaySession do_connect_upstream()" << std::endl;
 
+                        ++nowServer->connectCount;
+                        nowServer->updateOnlineTime();
+
                         // Setup async read from remote server (upstream)
                         do_upstream_read();
 
@@ -122,6 +129,7 @@ private:
 
                     } else {
                         std::cerr << "do_connect_upstream error:" << error.message() << "\n";
+                        nowServer->isOffline = true;
                         // try next
                         try_connect_upstream();
                     }
@@ -227,6 +235,8 @@ private:
         if (upstream_socket_.is_open()) {
             upstream_socket_.close();
         }
+
+        --nowServer->connectCount;
     }
 
 };
