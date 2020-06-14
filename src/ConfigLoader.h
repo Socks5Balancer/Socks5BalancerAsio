@@ -19,32 +19,72 @@
 #ifndef SOCKS5BALANCERASIO_CONFIGLOADER_H
 #define SOCKS5BALANCERASIO_CONFIGLOADER_H
 
+#ifdef MSVC
+#pragma once
+#endif
+
 #include <string>
 #include <fstream>
 #include <vector>
+#include <iostream>
+#include <memory>
+#include <optional>
+#include <chrono>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-class ConfigLoader {
+using ConfigTimeDuration = std::chrono::milliseconds;
+
+struct Upstream {
+    std::string host;
+    uint16_t port;
+    std::string name;
+};
+
+enum class RuleEnum {
+    loop,
+    random,
+    one_by_one,
+    change_by_time,
+};
+
+struct Config {
+    std::vector<Upstream> upstream;
+
+    std::string listenHost;
+    uint16_t listenPort;
+
+    std::string testRemoteHost;
+    uint16_t testRemotePort;
+
+    RuleEnum upstreamSelectRule;
+
+    ConfigTimeDuration serverChangeTime;
+};
+
+RuleEnum string2RuleEnum(std::string s);
+
+std::string ruleEnum2string(RuleEnum r);
+
+class ConfigLoader : public std::enable_shared_from_this<ConfigLoader> {
 public:
-    struct Upstream {
-        std::string host;
-        uint16_t port;
-        std::string name;
-    };
-    struct Config {
-        std::vector<Upstream> upstream;
-
-        std::string listenHost;
-        uint16_t listenPort;
-
-        std::string testRemoteHost;
-        uint16_t testRemotePort;
-
-        std::string upstreamSelectRule;
-    };
-
     Config config;
+
+    void print() {
+        std::cout << "config.listenHost:" << config.listenHost << "\n";
+        std::cout << "config.listenPort:" << config.listenPort << "\n";
+        std::cout << "config.testRemoteHost:" << config.testRemoteHost << "\n";
+        std::cout << "config.testRemotePort:" << config.testRemotePort << "\n";
+        std::cout << "config.upstreamSelectRule:" << ruleEnum2string(config.upstreamSelectRule) << "\n";
+        std::cout << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
+        for (size_t i = 0; i != config.upstream.size(); ++i) {
+            const auto &it = config.upstream[i];
+            std::cout << "config.upstream [" << i << "]:\n";
+            std::cout << "\t" << "upstream.name:" << it.name << "\n";
+            std::cout << "\t" << "upstream.host:" << it.host << "\n";
+            std::cout << "\t" << "upstream.port:" << it.port << "\n";
+        }
+    }
 
     void
     load(const std::string &filename) {
@@ -69,8 +109,10 @@ public:
         c.testRemotePort = testRemotePort;
 
         auto upstreamSelectRule = tree.get("upstreamSelectRule", std::string{"random"});
+        c.upstreamSelectRule = string2RuleEnum(upstreamSelectRule);
 
-        c.upstreamSelectRule = upstreamSelectRule;
+        auto serverChangeTime = tree.get("serverChangeTime", static_cast<long long>(60 * 1000));
+        c.serverChangeTime = ConfigTimeDuration{serverChangeTime};
 
         if (tree.get_child_optional("upstream")) {
             auto upstream = tree.get_child("upstream");

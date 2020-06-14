@@ -17,3 +17,34 @@
  */
 
 #include "ConfigLoader.h"
+
+RuleEnum string2RuleEnum(std::string s) {
+    if ("loop" == s) {
+        return RuleEnum::loop;
+    }
+    if ("random" == s) {
+        return RuleEnum::random;
+    }
+    if ("one_by_one" == s) {
+        return RuleEnum::one_by_one;
+    }
+    if ("change_by_time" == s) {
+        return RuleEnum::change_by_time;
+    }
+    return RuleEnum::random;
+}
+
+std::string ruleEnum2string(RuleEnum r) {
+    switch (r) {
+        case RuleEnum::loop:
+            return "loop";
+        case RuleEnum::random:
+            return "random";
+        case RuleEnum::one_by_one:
+            return "one_by_one";
+        case RuleEnum::change_by_time:
+            return "change_by_time";
+        default:
+            return "random";
+    }
+}
