@@ -81,7 +81,7 @@ private:
         if (retryCount <= retryLimit) {
             ++retryCount;
             auto s = upstreamPool->getServerBasedOnAddress();
-            if (s) {
+            if (!s) {
                 std::cout << "TcpRelaySession try_connect_upstream()"
                           << " " << s->host << ":" << s->port << std::endl;
                 nowServer = s;
