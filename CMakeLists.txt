@@ -8,6 +8,7 @@ if (MSVC)
     add_definitions(-DBOOST_ALL_NO_LIB)
 
     add_definitions(-DMSVC)
+    add_definitions(-D_WIN32_WINNT=0x0A00)
 else ()
     add_definitions(-Wall -Wextra)
 endif ()
