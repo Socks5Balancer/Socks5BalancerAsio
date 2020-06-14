@@ -19,6 +19,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <memory>
+#include <exception>
 #include "TcpRelayServer.h"
 #include "UpstreamPool.h"
 #include "StateMonitorServer.h"
@@ -26,26 +27,32 @@
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
+    try {
+        boost::asio::io_context ioc;
 
-    boost::asio::io_context ioc;
+        auto configLoader = std::make_shared<ConfigLoader>();
+        configLoader->load(R"(config.json)");
+        configLoader->print();
 
-    auto configLoader = std::make_shared<ConfigLoader>();
-    configLoader->load(R"(config.json)");
-    configLoader->print();
+        auto upstreamPool = std::make_shared<UpstreamPool>(boost::asio::make_strand(ioc));
+        upstreamPool->setConfig(configLoader);
+        for (int i = 0; i != 100; ++i) {
+            auto s = upstreamPool->getServerBasedOnAddress();
+            std::cout << "[" << i << "] getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+        }
 
-    auto upstreamPool = std::make_shared<UpstreamPool>(boost::asio::make_strand(ioc));
-    upstreamPool->setConfig(configLoader);
-    for (int i = 0; i != 100; ++i) {
-        auto s = upstreamPool->getServerBasedOnAddress();
-        std::cout << "[" << i << "] getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+        auto tcpRelay = std::make_shared<TcpRelayServer>(boost::asio::make_strand(ioc));
+        auto stateMonitor = std::make_shared<StateMonitorServer>(boost::asio::make_strand(ioc));
+
+        upstreamPool->pool();
+
+        ioc.run();
+
+    } catch (const std::exception e) {
+        std::cerr << "catch std::exception: " << e.what() << "\n";
+    } catch (...) {
+        std::cerr << "catch (...) exception: " << "\n";
     }
-
-    auto tcpRelay = std::make_shared<TcpRelayServer>(boost::asio::make_strand(ioc));
-    auto stateMonitor = std::make_shared<StateMonitorServer>(boost::asio::make_strand(ioc));
-
-    upstreamPool->pool();
-
-    ioc.run();
 
     return 0;
 }
