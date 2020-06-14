@@ -39,6 +39,7 @@ struct Upstream {
     std::string host;
     uint16_t port;
     std::string name;
+    bool disable;
 };
 
 enum class RuleEnum {
@@ -107,6 +108,7 @@ public:
             std::cout << "\t" << "upstream.name:" << it.name << "\n";
             std::cout << "\t" << "upstream.host:" << it.host << "\n";
             std::cout << "\t" << "upstream.port:" << it.port << "\n";
+            std::cout << "\t" << "upstream.disable:" << it.disable << "\n";
         }
     }
 
@@ -165,6 +167,7 @@ public:
                 u.host = pts.get("host", std::string{"127.0.0.1"});
                 u.port = pts.get("port", uint16_t{});
                 u.name = pts.get("name", std::string{});
+                u.disable = pts.get("disable", false);
                 c.upstream.push_back(u);
             }
         }

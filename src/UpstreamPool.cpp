@@ -17,3 +17,31 @@
  */
 
 #include "UpstreamPool.h"
+
+std::chrono::time_point<std::chrono::system_clock> UpstreamTimePointNow() {
+    return std::chrono::system_clock::now();
+}
+
+std::string printUpstreamTimePoint(std::chrono::time_point<std::chrono::system_clock> p) {
+    using namespace std;
+    using namespace std::chrono;
+    // https://stackoverflow.com/questions/12835577/how-to-convert-stdchronotime-point-to-calendar-datetime-string-with-fraction
+
+    auto ttime_t = system_clock::to_time_t(p);
+    auto tp_sec = system_clock::from_time_t(ttime_t);
+    milliseconds ms = duration_cast<milliseconds>(p - tp_sec);
+
+    std::tm *ttm = localtime(&ttime_t);
+
+    char date_time_format[] = "%Y.%m.%d-%H.%M.%S";
+
+    char time_str[] = "yyyy.mm.dd.HH-MM.SS.fff";
+
+    strftime(time_str, strlen(time_str), date_time_format, ttm);
+
+    string result(time_str);
+    result.append(".");
+    result.append(to_string(ms.count()));
+
+    return result;
+}

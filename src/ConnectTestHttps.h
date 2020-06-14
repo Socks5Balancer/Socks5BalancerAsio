@@ -156,7 +156,7 @@ private:
 
     void
     allOk() {
-        std::cout << res_ << std::endl;
+//        std::cout << res_ << std::endl;
         if (callback && callback->successfulCallback) {
             callback->successfulCallback(res_);
         }

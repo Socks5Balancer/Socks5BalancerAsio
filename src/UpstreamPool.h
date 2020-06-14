@@ -37,11 +37,39 @@
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
 
+using UpstreamTimePoint = std::chrono::time_point<std::chrono::system_clock>;
+
+UpstreamTimePoint UpstreamTimePointNow();
+
+std::string printUpstreamTimePoint(UpstreamTimePoint p);
+
 struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     std::string host;
     uint16_t port;
     std::string name;
-    int index;
+    size_t index;
+
+    std::optional<UpstreamTimePoint> lastOnlineTime;
+    std::optional<UpstreamTimePoint> lastConnectTime;
+    bool lastConnectFailed = true;
+//    std::string lastConnectCheckResult;
+    bool isOffline = true;
+    size_t connectCount = 0;
+    bool isManualDisable = false;
+    bool disable = false;
+
+    UpstreamServer(
+            size_t index,
+            std::string name,
+            std::string host,
+            uint16_t port,
+            bool disable
+    ) :
+            index(index),
+            name(name),
+            host(host),
+            port(port),
+            disable(disable) {}
 
     std::string print() {
         std::stringstream ss;
@@ -56,7 +84,6 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
 };
 
 using UpstreamServerRef = std::shared_ptr<UpstreamServer>;
-using UpstreamServerRefRef = std::optional<std::shared_ptr<UpstreamServer>>;
 
 class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
     boost::asio::executor ex;
@@ -68,8 +95,7 @@ class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
 
     std::default_random_engine randomGenerator;
 
-    using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
-    TimePoint lastChangeUpstreamTime;
+    UpstreamTimePoint lastChangeUpstreamTime;
 
     std::shared_ptr<TcpTest> tcpTest;
     std::shared_ptr<ConnectTestHttps> connectTestHttps;
@@ -92,11 +118,9 @@ public:
         _pool.clear();
         for (size_t i = 0; i != c.size(); ++i) {
             auto &r = c[i];
-            UpstreamServerRef u = std::make_shared<UpstreamServer>();
-            u->index = i;
-            u->name = r.name;
-            u->host = r.host;
-            u->port = r.port;
+            UpstreamServerRef u = std::make_shared<UpstreamServer>(
+                    i, r.name, r.host, r.port, r.disable
+            );
             _pool.push_back(u);
         }
     }
@@ -113,8 +137,12 @@ public:
 
 protected:
     bool checkServer(const UpstreamServerRef &u) const {
-        // TODO impl
-        return u && true;
+        return u
+               && u->lastConnectTime.has_value()
+               && u->lastOnlineTime.has_value()
+               && !u->lastConnectFailed
+               && !u->isOffline
+               && !u->isManualDisable;
     }
 
     auto getNextServer() -> UpstreamServerRef {
@@ -179,11 +207,11 @@ public:
                 std::cout << "getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
                 return s;
             case RuleEnum::change_by_time: {
-                TimePoint t;
+                UpstreamTimePoint t;
                 const auto &d = _configLoader->config.serverChangeTime;
                 if ((t - lastChangeUpstreamTime) > d) {
                     s = getNextServer();
-                    lastChangeUpstreamTime = TimePoint{};
+                    lastChangeUpstreamTime = UpstreamTimePointNow();
                 } else {
                     s = tryGetLastServer();
                 }
@@ -239,6 +267,27 @@ public:
 
     }
 
+    std::string print() {
+        std::stringstream ss;
+        for (size_t i = 0; i != _pool.size(); ++i) {
+            const auto &r = _pool[i];
+            ss << r->index << ":[" << "\n"
+               << "\t" << "name :" << r->name << "\n"
+               << "\t" << "host :" << r->host << "\n"
+               << "\t" << "port :" << r->port << "\n"
+               << "\t" << "isOffline :" << r->isOffline << "\n"
+               << "\t" << "lastConnectFailed :" << r->lastConnectFailed << "\n"
+               << "\t" << "lastOnlineTime :" << (
+                       r->lastOnlineTime.has_value() ?
+                       printUpstreamTimePoint(r->lastOnlineTime.value()) : "empty") << "\n"
+               << "\t" << "lastConnectTime :" << (
+                       r->lastConnectTime.has_value() ?
+                       printUpstreamTimePoint(r->lastConnectTime.value()) : "empty") << "\n"
+               << "]" << "\n";
+        }
+        return ss.str();
+    }
+
 private:
     void do_tcpCheckerTimer() {
         auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
@@ -246,14 +295,21 @@ private:
                 return;
             }
             std::cout << "do_tcpCheckerTimer()" << std::endl;
+            std::cout << print() << std::endl;
 
-            for (const auto &a: _pool) {
+            for (auto &a: _pool) {
                 auto t = tcpTest->createTest(a->host, std::to_string(a->port));
-                t->run([t]() {
+                t->run([t, a]() {
                            // on ok
+                           if (a->isOffline) {
+                               a->lastConnectFailed = false;
+                           }
+                           a->lastOnlineTime = UpstreamTimePointNow();
+                           a->isOffline = false;
                        },
-                       [t](std::string reason) {
+                       [t, a](std::string reason) {
                            // ok error
+                           a->isOffline = true;
                        });
             }
 
@@ -278,12 +334,15 @@ private:
                         _configLoader->config.testRemotePort,
                         R"(\)"
                 );
-                t->run([t](ConnectTestHttpsSession::SuccessfulInfo info) {
+                t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
                            // on ok
-//                           std::cout << "SuccessfulInfo:" << info << std::endl;
+                           // std::cout << "SuccessfulInfo:" << info << std::endl;
+                           a->lastConnectTime = UpstreamTimePointNow();
+                           a->lastConnectFailed = false;
                        },
-                       [t](std::string reason) {
+                       [t, a](std::string reason) {
                            // ok error
+                           a->lastConnectFailed = true;
                        });
             }
 
