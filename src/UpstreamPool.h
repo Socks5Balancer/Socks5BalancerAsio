@@ -107,8 +107,8 @@ public:
 
     size_t getLastUseUpstreamIndex();
 
-protected:
     bool checkServer(const UpstreamServerRef &u) const;
+protected:
 
     auto getNextServer() -> UpstreamServerRef;
 

@@ -44,11 +44,14 @@ int main() {
         upstreamPool->setConfig(configLoader);
 
         auto tcpRelay = std::make_shared<TcpRelayServer>(ex, configLoader, upstreamPool);
-        auto stateMonitor = std::make_shared<StateMonitorServer>(boost::asio::make_strand(ioc));
+        auto stateMonitor = std::make_shared<StateMonitorServer>(
+                boost::asio::make_strand(ioc), configLoader, upstreamPool);
 
         tcpRelay->start();
 
         upstreamPool->startCheckTimer();
+
+        stateMonitor->start();
 
         ioc.run();
 

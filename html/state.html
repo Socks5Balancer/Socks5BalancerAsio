@@ -1,0 +1,276 @@
+<html lang="zh">
+<header>
+    <meta charset="UTF-8"/>
+    <title>Socks5BalancerAsio</title>
+    <style type="text/css">
+        th {
+            border: black 0 dashed;
+            border-left-width: 1px;
+            border-bottom: lightslategrey 1px solid;
+        }
+
+        td {
+            border: lightslategrey 1px solid;
+            border-right-width: 0;
+            border-top-width: 0;
+        }
+
+        tr:hover {
+            background-color: lightblue;
+        }
+
+        tfoot > tr:hover {
+            background-color: inherit;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</header>
+<body>
+<div id="body">
+    now running connect: <%= monitorCenter.connectCount %>
+    <br/>
+    now rule: <%= rule %>
+    <br/>
+    <form action="/op" method="get" target="_self">
+        <select name="newRule">
+            <% UpstreamSelectRuleList.forEach(function(u, i){ %>
+            <option value="<%= u %>"
+            <%= u === rule ? 'selected' : '' %>><%= u %></option>
+            <% }); %>
+        </select>
+        <input type="submit" value="Change It"/>
+    </form>
+    <button v-on:click="flush">Flush</button>
+    <br/>
+    <template v-if="!upstreamPool.find(function(u) {
+      return u.isWork==='true';
+    })">
+        <h3 style="color: red">Warning: we don't have Usable Server !!! </h3>
+        <br/>
+    </template>
+    ---------------------------------------------------------------------------------------------
+    <br/>
+    <table style="border: black 3px dashed;">
+        <thead>
+        <tr>
+            <th style="border-left-width: 0;">No.</th>
+            <th>Host:Port</th>
+            <th>name</th>
+            <th>online</th>
+            <th>connectable</th>
+            <th>running</th>
+            <th>lastTCPCheckTime</th>
+            <th>lastConnectCheckTime</th>
+            <th>ManualDisable</th>
+            <th>Usable</th>
+            <th>Close Connect</th>
+            <th>Select</th>
+            <th>data</th>
+            <th>speed</th>
+            <!--        <th></th>-->
+        </tr>
+        </thead>
+        <tbody>
+
+        <tr v-for="u in upstreamPool">
+            <td style="border-left-width: 0;">{{_.parseInt(u.index) + 1}}.</td>
+            <td>{{u.host}}:{{u.port}}</td>
+            <td>{{u.name}}</td>
+            <td>
+                <span style="color: gray" v-if="u.lastOnlineTime==='<empty>'">Unknown</span>
+                <span style="color: green" v-else-if="u.isOffline==='false'">True</span>
+                <span style="color: red" v-else>False</span>
+            </td>
+            <td>
+                <span style="color: gray" v-if="u.lastConnectTime==='<empty>'">Unknown</span>
+                <span style="color: green" v-else-if="u.lastConnectFailed==='false'">True</span>
+                <span style="color: red" v-else>False</span>
+            </td>
+            <td>{{u.connectCount}}</td>
+            <td>{{u.lastOnlineTime}}</td>
+            <td>{{u.lastConnectTime}}</td>
+            <td>
+                <template v-if="u.isManualDisable==='true'">
+                    <span style="color: red">Disabled</span>
+                    <a href="javascript:void(0)"
+                       v-on:click="sendCommand('/op?enable=' + _.parseInt(u.index) + 1)"
+                    >
+                        Enable It
+                    </a>
+                </template>
+                <template v-else>
+                    <span style="color: green">Enabled</span>
+                    <a href="javascript:void(0)"
+                       v-on:click="sendCommand('/op?disable=' + _.parseInt(u.index) + 1)"
+                    >
+                        Disable It
+                    </a>
+                </template>
+            </td>
+            <td>
+                <span style="color: green" v-if="u.isWork==='true'">True</span>
+                <span style="color: red" v-else-if="u.isWork==='false'">False</span>
+            </td>
+            <td>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand('/op?endConnectOnServer=' + _.parseInt(u.index) + 1)"
+                >
+                    Close Connect
+                </a>
+            </td>
+            <td>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand('/op?forceNowUseServer=' + _.parseInt(u.index) + 1)"
+                >
+                    Use This Now
+                </a>
+            </td>
+            <td><%= dataArray[i] %></td>
+            <td><%= speedArray[i] %></td>
+            <!--            <td></td>-->
+        </tr>
+
+        </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="14">
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand('/op?cleanAllCheckState=1')"
+                   style="margin-right: 1em;"
+                >
+                    Clean Check State
+                </a>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand('/op?endAllConnect=1')"
+                   style="margin-right: 1em;"
+                >
+                    Force Close All Connect
+                </a>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand('/op?forceCheckAllServer=1')"
+                   style="margin-right: 1em;"
+                >
+                    Force Check All Now
+                </a>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+    ---------------------------------------------------------------------------------------------
+    <br/>
+    lastConnectServer:
+    <% if(monitorCenter.lastConnectServer){ %>
+    <%= monitorCenter.lastConnectServer.host + ':' + monitorCenter.lastConnectServer.port %>
+    <% } else { %>
+    Undefined
+    <% } %>
+    <br/>
+    lastUseUpstreamIndex: {{ _.parseInt(lastUseUpstreamIndex) + 1 }}
+    <br/>
+    <br/>
+    now time: {{ nowTime }}
+    <br/>
+    runTime: {{ runTimeString }}
+    <br/>
+    runTime: {{ runTimeString2 }}
+    <br/>
+    listen On: {{ listenOn }}
+    <br/>
+    ---------------------------------------------------------------------------------------------
+    <br/>
+    <h5>Fast Issue Resolve</h5>
+    <ul>
+        <li>Web page Open very Sloooow :&emsp;<a href="javascript:void(0)"
+                                                 v-on:click="sendCommand('/op?endAllConnect=1')">
+            Force Close All Connect
+        </a></li>
+        <li>Seems like Server State not update :&emsp;<a href="javascript:void(0)"
+                                                         v-on:click="sendCommand('/op?forceCheckAllServer=1')">
+            Force Check All Now
+        </a></li>
+        <li>I Want To Disable All Server :&emsp;<a href="javascript:void(0)"
+                                                   v-on:click="sendCommand('/op?disableAllServer=1')">
+            Disable All Server
+        </a></li>
+        <li>I Want To Enable All Server :&emsp;<a href="javascript:void(0)"
+                                                  v-on:click="sendCommand('/op?enableAllServer=1')">
+            Enable All Server
+        </a></li>
+    </ul>
+    <br/>
+    ---------------------------------------------------------------------------------------------
+    <br/>
+    <pre>
+{{ JSON.stringify(upstreamPool, null, 2) }}
+</pre>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#body',
+        data: {
+            test: 11244,
+            upstreamPool: [],
+            //monitorCenter: refMonitorCenter(),
+            //formatTime: (m: moment.Moment | undefined) => {
+            //  return m ? m.format('ll HH:mm:ss') : 'undefined';
+            //},
+            rule: "",
+            nowTime: "",
+            runTimeString: "",
+            runTimeString2: "",
+            listenOn: "",
+            haveUsableServer: true,
+            UpstreamSelectRuleList: [],
+            lastUseUpstreamIndex: 0,
+            //isWork: checkServer,
+            //speedArray: speedArray,
+            //dataArray: dataArray,
+        },
+        methods: {
+            flush: function () {
+                fetch('http://127.0.0.1:5010/', {
+                    credentials: 'omit'
+                }).then(function (T) {
+                    if (T.ok) {
+                        return T.json();
+                    }
+                    return Promise.reject(T);
+                }).then(function (T) {
+                    console.log(T);
+                    if (
+                        _.has(T, 'pool') &&
+                        _.has(T, 'config') &&
+                        _.isObject(T.pool) &&
+                        _.isArray(T.pool.upstream) &&
+                        _.isObject(T.config)
+                    ) {
+                        app.lastUseUpstreamIndex = T.pool.getLastUseUpstreamIndex;
+                        app.upstreamPool = T.pool.upstream;
+                        app.listenOn = ' ' + T.config.listenHost + ' : ' + T.config.listenPort;
+                    }
+                }).then(function () {
+                    console.log(app);
+                }).catch(function (e) {
+                    console.error(e);
+                });
+            },
+            sendCommand: function (cmd) {
+                fetch('http://127.0.0.1:5010' + cmd, {
+                    credentials: 'omit'
+                }).then(function (T) {
+                    if (T.ok) {
+                        return T;
+                    }
+                    return Promise.reject(T);
+                }).catch(function (e) {
+                    console.error(e);
+                });
+            },
+        }
+    });
+    app.flush();
+</script>
+</body>
+</html>
