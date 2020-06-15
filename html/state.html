@@ -30,16 +30,18 @@
 <div id="body">
     now running connect: <%= monitorCenter.connectCount %>
     <br/>
-    now rule: <%= rule %>
+    now rule: {{ rule }}
     <br/>
     <form action="/op" method="get" target="_self">
-        <select name="newRule">
-            <% UpstreamSelectRuleList.forEach(function(u, i){ %>
-            <option value="<%= u %>"
-            <%= u === rule ? 'selected' : '' %>><%= u %></option>
-            <% }); %>
+        <select name="newRule" v-model="newRule">
+            <template v-for="u in UpstreamSelectRuleList">
+                <option v-if="u===rule" v-bind:value="u" selected>{{ u }}</option>
+                <option v-else v-bind:value="u">{{ u }}</option>
+            </template>
         </select>
-        <input type="submit" value="Change It"/>
+        <input type="button" value="Change It"
+               v-on:click="sendCommand('/op?newRule=' + newRule)"
+        />
     </form>
     <button v-on:click="flush">Flush</button>
     <br/>
@@ -227,6 +229,7 @@
             //isWork: checkServer,
             //speedArray: speedArray,
             //dataArray: dataArray,
+            newRule: "",
         },
         methods: {
             flush: function () {
@@ -248,6 +251,9 @@
                     ) {
                         app.lastUseUpstreamIndex = T.pool.getLastUseUpstreamIndex;
                         app.upstreamPool = T.pool.upstream;
+                        app.UpstreamSelectRuleList = T.RuleEnumList;
+                        app.rule = T.nowRule;
+                        app.newRule = T.nowRule;
                         app.listenOn = ' ' + T.config.listenHost + ' : ' + T.config.listenPort;
                     }
                 }).then(function () {

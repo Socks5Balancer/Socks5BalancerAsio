@@ -56,6 +56,8 @@ std::string HttpConnectSession::createJsonString() {
         config.add_child("upstream", pUS);
 
         root.add_child("config", config);
+
+        root.put("nowRule", ruleEnum2string(configLoader->config.upstreamSelectRule));
     }
 
     if (upstreamPool) {
@@ -87,10 +89,20 @@ std::string HttpConnectSession::createJsonString() {
         }
         pool.add_child("upstream", pS);
 
-        root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
-
         root.add_child("pool", pool);
     }
+
+    if (!RuleEnumList.empty()) {
+        boost::property_tree::ptree rs;
+        for (const auto &a: RuleEnumList) {
+            boost::property_tree::ptree n;
+            n.put("", a);
+            rs.push_back(std::make_pair("", n));
+        }
+        root.add_child("RuleEnumList", rs);
+    }
+
+    root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
 
     std::stringstream ss;
     boost::property_tree::write_json(ss, root);
@@ -259,13 +271,31 @@ void HttpConnectSession::create_response() {
                             // TODO
                         }
                     } else if (q.first == "newRule") {
-                        // TODO
+                        std::optional<decltype(RuleEnumList)::value_type> n;
+                        for (const auto &a : RuleEnumList) {
+                            if (a == q.second) {
+                                n = a;
+                                break;
+                            }
+                        }
+                        if (n.has_value()) {
+                            configLoader->config.upstreamSelectRule = string2RuleEnum(n.value());
+                        } else {
+                            response_.result(boost::beast::http::status::bad_request);
+                            response_.set(boost::beast::http::field::content_type, "text/plain");
+                            boost::beast::ostream(response_.body()) << "newRule not in RuleEnumList" << "\r\n";
+                        }
                     }
                 } catch (const boost::bad_lexical_cast &e) {
-                    std::cout << "bad_lexical_cast:" << e.what() << std::endl;
+                    std::cout << "boost::bad_lexical_cast:" << e.what() << std::endl;
                     response_.result(boost::beast::http::status::bad_request);
                     response_.set(boost::beast::http::field::content_type, "text/plain");
-                    boost::beast::ostream(response_.body()) << e.what() << "\r\n";
+                    boost::beast::ostream(response_.body()) << "boost::bad_lexical_cast:" << e.what() << "\r\n";
+                } catch (const std::exception &e) {
+                    std::cout << "std::exception:" << e.what() << std::endl;
+                    response_.result(boost::beast::http::status::bad_request);
+                    response_.set(boost::beast::http::field::content_type, "text/plain");
+                    boost::beast::ostream(response_.body()) << "std::exception:" << e.what() << "\r\n";
                 }
             }
             return;
