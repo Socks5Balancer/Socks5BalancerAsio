@@ -167,7 +167,10 @@ void TcpRelaySession::close(boost::system::error_code error) {
         upstream_socket_.close();
     }
 
-    --nowServer->connectCount;
+    if (!isDeCont) {
+        isDeCont = true;
+        --nowServer->connectCount;
+    }
 }
 
 void TcpRelayServer::start() {
