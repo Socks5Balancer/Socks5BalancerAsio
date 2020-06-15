@@ -94,7 +94,7 @@
                 <template v-if="u.isManualDisable==='true'">
                     <span style="color: red">Disabled</span>
                     <a href="javascript:void(0)"
-                       v-on:click="sendCommand('/op?enable=' + _.parseInt(u.index) + 1)"
+                       v-on:click="sendCommand('/op?enable=' + _.parseInt(u.index))"
                     >
                         Enable It
                     </a>
@@ -102,7 +102,7 @@
                 <template v-else>
                     <span style="color: green">Enabled</span>
                     <a href="javascript:void(0)"
-                       v-on:click="sendCommand('/op?disable=' + _.parseInt(u.index) + 1)"
+                       v-on:click="sendCommand('/op?disable=' + _.parseInt(u.index))"
                     >
                         Disable It
                     </a>
@@ -114,14 +114,14 @@
             </td>
             <td>
                 <a href="javascript:void(0)"
-                   v-on:click="sendCommand('/op?endConnectOnServer=' + _.parseInt(u.index) + 1)"
+                   v-on:click="sendCommand('/op?endConnectOnServer=' + _.parseInt(u.index))"
                 >
                     Close Connect
                 </a>
             </td>
             <td>
                 <a href="javascript:void(0)"
-                   v-on:click="sendCommand('/op?forceNowUseServer=' + _.parseInt(u.index) + 1)"
+                   v-on:click="sendCommand('/op?forceNowUseServer=' + _.parseInt(u.index))"
                 >
                     Use This Now
                 </a>
@@ -266,6 +266,8 @@
                     return Promise.reject(T);
                 }).catch(function (e) {
                     console.error(e);
+                }).then(function () {
+                    app.flush();
                 });
             },
         }
