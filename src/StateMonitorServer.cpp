@@ -219,27 +219,47 @@ void HttpConnectSession::create_response() {
                         }
                     } else if (q.first == "enableAllServer") {
                         auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                        if (index == 1) {
                             for (auto &a: upstreamPool->pool()) {
                                 a->isManualDisable = false;
                             }
                         }
                     } else if (q.first == "disableAllServer") {
                         auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                        if (index == 1) {
                             for (auto &a: upstreamPool->pool()) {
                                 a->isManualDisable = true;
                             }
                         }
                     } else if (q.first == "cleanAllCheckState") {
                         auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                        if (index == 1) {
                             for (auto &a: upstreamPool->pool()) {
                                 a->isOffline = false;
                                 a->lastConnectFailed = false;
-                                // TODO recheck
+                                a->lastOnlineTime.reset();
+                                a->lastConnectTime.reset();
                             }
+                            // recheck
+                            upstreamPool->forceCheckNow();
                         }
+                    } else if (q.first == "forceCheckAllServer") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index == 1) {
+                            upstreamPool->forceCheckNow();
+                        }
+                    } else if (q.first == "endConnectOnServer") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            // TODO
+                        }
+                    } else if (q.first == "endAllConnect") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index == 1) {
+                            // TODO
+                        }
+                    } else if (q.first == "newRule") {
+                        // TODO
                     }
                 } catch (const boost::bad_lexical_cast &e) {
                     std::cout << "bad_lexical_cast:" << e.what() << std::endl;
