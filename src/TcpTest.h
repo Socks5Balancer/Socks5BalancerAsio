@@ -103,7 +103,7 @@ public:
             executor(ex),
             cleanTimer(ex, std::chrono::seconds{5}) {}
 
-    std::shared_ptr<TcpTestSession> &&createTest(
+    std::shared_ptr<TcpTestSession> createTest(
             const std::string socks5Host,
             const std::string socks5Port
     );

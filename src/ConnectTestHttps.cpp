@@ -454,7 +454,7 @@ ConnectTestHttps::ConnectTestHttps(boost::asio::executor ex) :
 
 }
 
-std::shared_ptr<ConnectTestHttpsSession> &&
+std::shared_ptr<ConnectTestHttpsSession>
 ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &socks5Port,
                              const std::string &targetHost, int targetPort, const std::string &targetPath,
                              int httpVersion) {
@@ -470,7 +470,7 @@ ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &s
     );
     sessions.push_back(s->shared_from_this());
     // sessions.front().lock();
-    return std::move(s);
+    return s;
 }
 
 void ConnectTestHttps::do_cleanTimer() {

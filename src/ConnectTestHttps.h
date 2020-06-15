@@ -146,7 +146,7 @@ class ConnectTestHttps : public std::enable_shared_from_this<ConnectTestHttps> {
 public:
     ConnectTestHttps(boost::asio::executor ex);
 
-    std::shared_ptr<ConnectTestHttpsSession> &&createTest(
+    std::shared_ptr<ConnectTestHttpsSession> createTest(
             const std::string &socks5Host,
             const std::string &socks5Port,
             const std::string &targetHost,

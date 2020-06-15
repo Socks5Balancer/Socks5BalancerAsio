@@ -138,12 +138,12 @@ void TcpTest::do_cleanTimer() {
     cleanTimer.async_wait(c);
 }
 
-std::shared_ptr<TcpTestSession> &&TcpTest::createTest(std::string socks5Host, std::string socks5Port) {
+std::shared_ptr<TcpTestSession> TcpTest::createTest(std::string socks5Host, std::string socks5Port) {
     auto s = std::make_shared<TcpTestSession>(
             this->executor,
             socks5Host,
             socks5Port
     );
     sessions.push_back(s->shared_from_this());
-    return std::move(s);
+    return s;
 }
