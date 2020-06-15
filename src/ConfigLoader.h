@@ -58,6 +58,9 @@ struct Config {
     std::string testRemoteHost;
     uint16_t testRemotePort;
 
+    std::string stateServerHost;
+    uint16_t stateServerPort;
+
     RuleEnum upstreamSelectRule;
 
     ConfigTimeDuration serverChangeTime;

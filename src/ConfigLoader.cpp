@@ -54,6 +54,8 @@ void ConfigLoader::print() {
     std::cout << "config.listenPort:" << config.listenPort << "\n";
     std::cout << "config.testRemoteHost:" << config.testRemoteHost << "\n";
     std::cout << "config.testRemotePort:" << config.testRemotePort << "\n";
+    std::cout << "config.stateServerHost:" << config.stateServerHost << "\n";
+    std::cout << "config.stateServerPort:" << config.stateServerPort << "\n";
     std::cout << "config.upstreamSelectRule:" << ruleEnum2string(config.upstreamSelectRule) << "\n";
 
     std::cout << "config.retryTimes:" << config.retryTimes << "\n";
@@ -100,6 +102,12 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
 
     c.testRemoteHost = testRemoteHost;
     c.testRemotePort = testRemotePort;
+
+    auto stateServerHost = tree.get("stateServerHost", std::string{"127.0.0.1"});
+    auto stateServerPort = tree.get<uint16_t>("stateServerPort", static_cast<uint16_t>(5010));
+
+    c.stateServerHost = stateServerHost;
+    c.stateServerPort = stateServerPort;
 
     auto upstreamSelectRule = tree.get("upstreamSelectRule", std::string{"random"});
     c.upstreamSelectRule = string2RuleEnum(upstreamSelectRule);
