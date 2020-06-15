@@ -18,6 +18,10 @@
 
 #include "StateMonitorServer.h"
 
+#include <regex>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+
 std::string HttpConnectSession::createJsonString() {
     boost::property_tree::ptree root;
 
@@ -140,15 +144,118 @@ void HttpConnectSession::process_request() {
 }
 
 void HttpConnectSession::create_response() {
+    std::cout << "request_.target():" << request_.target() << std::endl;
+
     if (request_.target() == "/") {
         response_.set(boost::beast::http::field::content_type, "text/json");
         boost::beast::ostream(response_.body())
                 << createJsonString() << "\n";
-    } else {
-        response_.result(boost::beast::http::status::not_found);
-        response_.set(boost::beast::http::field::content_type, "text/plain");
-        boost::beast::ostream(response_.body()) << "File not found\r\n";
+        return;
     }
+
+    // from https://github.com/boostorg/beast/issues/787#issuecomment-376259849
+    static const std::regex PARSE_URL{R"((/([^ ?]+)?)?/?\??([^/ ]+\=[^/ ]+)?)",
+                                      std::regex_constants::ECMAScript | std::regex_constants::icase};
+    std::smatch match;
+    auto url = request_.target().to_string();
+    if (std::regex_match(url, match, PARSE_URL) && match.size() == 4) {
+        std::string path = match[1];
+        std::string query = match[3];
+
+        std::vector<std::string> queryList;
+        boost::split(queryList, query, boost::is_any_of("&"));
+
+        std::vector<std::pair<std::string, std::string>> queryPairs;
+        for (const auto &a : queryList) {
+            std::vector<std::string> p;
+            boost::split(p, query, boost::is_any_of("="));
+            if (p.size() == 1) {
+                queryPairs.emplace_back(p.at(0), "");
+            }
+            if (p.size() == 2) {
+                queryPairs.emplace_back(p.at(0), p.at(1));
+            }
+            if (p.size() > 2) {
+                std::stringstream ss;
+                for (size_t i = 1; i != p.size(); ++i) {
+                    ss << p.at(i);
+                }
+                queryPairs.emplace_back(p.at(0), ss.str());
+            }
+        }
+
+        if (path == "/op") {
+            response_.result(boost::beast::http::status::ok);
+
+            std::cout << "query:" << query << std::endl;
+            std::cout << "queryList:" << "\n";
+            for (const auto &a : queryList) {
+                std::cout << "\t" << a;
+            }
+            std::cout << std::endl;
+            std::cout << "queryPairs:" << "\n";
+            for (const auto &a : queryPairs) {
+                std::cout << "\t" << a.first << " = " << a.second;
+            }
+            std::cout << std::endl;
+
+            if (!queryPairs.empty()) {
+                const auto &q = queryPairs.at(0);
+                try {
+                    if (q.first == "enable") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            upstreamPool->pool().at(index)->isManualDisable = false;
+                        }
+                    } else if (q.first == "disable") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            upstreamPool->pool().at(index)->isManualDisable = true;
+                        }
+                    } else if (q.first == "forceNowUseServer") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            upstreamPool->forceSetLastUseUpstreamIndex(index);
+                        }
+                    } else if (q.first == "enableAllServer") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            for (auto &a: upstreamPool->pool()) {
+                                a->isManualDisable = false;
+                            }
+                        }
+                    } else if (q.first == "disableAllServer") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            for (auto &a: upstreamPool->pool()) {
+                                a->isManualDisable = true;
+                            }
+                        }
+                    } else if (q.first == "cleanAllCheckState") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            for (auto &a: upstreamPool->pool()) {
+                                a->isOffline = false;
+                                a->lastConnectFailed = false;
+                                // TODO recheck
+                            }
+                        }
+                    }
+                } catch (const boost::bad_lexical_cast &e) {
+                    std::cout << "bad_lexical_cast:" << e.what() << std::endl;
+                    response_.result(boost::beast::http::status::bad_request);
+                    response_.set(boost::beast::http::field::content_type, "text/plain");
+                    boost::beast::ostream(response_.body()) << e.what() << "\r\n";
+                }
+            }
+            return;
+        }
+    }
+
+    response_.result(boost::beast::http::status::not_found);
+    response_.set(boost::beast::http::field::content_type, "text/plain");
+    boost::beast::ostream(response_.body()) << "File not found\r\n";
+
 }
 
 void HttpConnectSession::write_response() {
