@@ -50,7 +50,7 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     const size_t retryLimit;
 
 public:
-    TcpRelaySession(boost::asio::executor ex, std::shared_ptr<UpstreamPool> upstreamPool, int retryLimit) :
+    TcpRelaySession(boost::asio::executor ex, std::shared_ptr<UpstreamPool> upstreamPool, size_t retryLimit) :
             downstream_socket_(ex),
             upstream_socket_(ex),
             resolver_(ex),
