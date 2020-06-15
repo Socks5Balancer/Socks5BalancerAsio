@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 set(ProjectMainName Socks5BalancerAsio)
 project(${ProjectMainName})
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 if (MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     add_definitions(-DBOOST_ALL_NO_LIB)
@@ -27,12 +27,15 @@ message(STATUS "Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 message(STATUS "Boost_VERSION: ${Boost_VERSION}")
 
-if (${Boost_VERSION} VERSION_LESS_EQUAL 1.72.0)
-    # https://github.com/boostorg/asio/issues/312
-    # https://github.com/microsoft/vcpkg/issues/9731
-    # https://github.com/boostorg/beast/issues/1884
-    add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
-    message(STATUS "Boost_VERSION <= 1.72")
+if (MSVC)
+else ()
+    if (${Boost_VERSION} VERSION_LESS_EQUAL 1.72.0)
+        # https://github.com/boostorg/asio/issues/312
+        # https://github.com/microsoft/vcpkg/issues/9731
+        # https://github.com/boostorg/beast/issues/1884
+        add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
+        message(STATUS "Boost_VERSION <= 1.72")
+    endif ()
 endif ()
 
 find_package(OpenSSL 1.1.0 REQUIRED)
