@@ -209,10 +209,10 @@ void UpstreamPool::startCheckTimer() {
     }
     endCheckTimer();
 
-    tcpCheckerTimer = std::make_unique<CheckerTimerType>(ex, _configLoader->config.tcpCheckStart);
+    tcpCheckerTimer = std::make_shared<CheckerTimerType>(ex, _configLoader->config.tcpCheckStart);
     do_tcpCheckerTimer();
 
-    connectCheckerTimer = std::make_unique<CheckerTimerType>(ex, _configLoader->config.connectCheckStart);
+    connectCheckerTimer = std::make_shared<CheckerTimerType>(ex, _configLoader->config.connectCheckStart);
     do_connectCheckerTimer();
 
 }
@@ -251,7 +251,9 @@ void UpstreamPool::do_tcpCheckerTimer() {
         std::cout << print() << std::endl;
 
         for (auto &a: _pool) {
-            auto t = tcpTest->createTest(a->host, std::to_string(a->port));
+            auto p = std::to_string(a->port);
+            std::cout << a->host << ":" << p << std::endl;
+            auto t = tcpTest->createTest(a->host, p);
             t->run([t, a]() {
                        // on ok
                        if (a->isOffline) {

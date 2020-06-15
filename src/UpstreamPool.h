@@ -123,8 +123,8 @@ public:
 private:
     using CheckerTimerType = boost::asio::steady_timer;
     using CheckerTimerPeriodType = boost::asio::chrono::microseconds;
-    std::unique_ptr<CheckerTimerType> tcpCheckerTimer;
-    std::unique_ptr<CheckerTimerType> connectCheckerTimer;
+    std::shared_ptr<CheckerTimerType> tcpCheckerTimer;
+    std::shared_ptr<CheckerTimerType> connectCheckerTimer;
 
 public:
     void endCheckTimer();
