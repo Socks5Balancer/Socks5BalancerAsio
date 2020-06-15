@@ -28,7 +28,7 @@
 </header>
 <body>
 <div id="body">
-    now running connect: <%= monitorCenter.connectCount %>
+    now running connect: {{ allConnectCount }}
     <br/>
     now rule: {{ rule }}
     <br/>
@@ -230,6 +230,7 @@
             //speedArray: speedArray,
             //dataArray: dataArray,
             newRule: "",
+            allConnectCount: 0,
         },
         methods: {
             flush: function () {
@@ -255,6 +256,10 @@
                         app.rule = T.nowRule;
                         app.newRule = T.nowRule;
                         app.listenOn = ' ' + T.config.listenHost + ' : ' + T.config.listenPort;
+
+                        app.allConnectCount = _.reduce(T.pool.upstream, function (acc, T) {
+                            return acc + _.parseInt(T.connectCount);
+                        }, 0);
                     }
                 }).then(function () {
                     console.log(app);
