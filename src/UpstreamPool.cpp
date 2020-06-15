@@ -242,6 +242,26 @@ std::string UpstreamPool::print() {
     return ss.str();
 }
 
+void UpstreamPool::do_tcpCheckerTimer_impl() {
+    for (auto &a: _pool) {
+        auto p = std::to_string(a->port);
+//            std::cout << a->host << ":" << p << std::endl;
+        auto t = tcpTest->createTest(a->host, p);
+        t->run([t, a]() {
+                   // on ok
+                   if (a->isOffline) {
+                       a->lastConnectFailed = false;
+                   }
+                   a->lastOnlineTime = UpstreamTimePointNow();
+                   a->isOffline = false;
+               },
+               [t, a](std::string reason) {
+                   // ok error
+                   a->isOffline = true;
+               });
+    }
+}
+
 void UpstreamPool::do_tcpCheckerTimer() {
     auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
         if (e) {
@@ -250,28 +270,38 @@ void UpstreamPool::do_tcpCheckerTimer() {
         std::cout << "do_tcpCheckerTimer()" << std::endl;
 //        std::cout << print() << std::endl;
 
-        for (auto &a: _pool) {
-            auto p = std::to_string(a->port);
-//            std::cout << a->host << ":" << p << std::endl;
-            auto t = tcpTest->createTest(a->host, p);
-            t->run([t, a]() {
-                       // on ok
-                       if (a->isOffline) {
-                           a->lastConnectFailed = false;
-                       }
-                       a->lastOnlineTime = UpstreamTimePointNow();
-                       a->isOffline = false;
-                   },
-                   [t, a](std::string reason) {
-                       // ok error
-                       a->isOffline = true;
-                   });
-        }
+        do_tcpCheckerTimer_impl();
 
         tcpCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.tcpCheckPeriod);
         do_tcpCheckerTimer();
     };
     tcpCheckerTimer->async_wait(c);
+}
+
+void UpstreamPool::do_connectCheckerTimer_impl() {
+    for (const auto &a: _pool) {
+        auto t = connectTestHttps->createTest(
+                a->host,
+                std::to_string(a->port),
+                _configLoader->config.testRemoteHost,
+                _configLoader->config.testRemotePort,
+                R"(\)"
+        );
+        t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
+                   // on ok
+                   // std::cout << "SuccessfulInfo:" << info << std::endl;
+                   a->lastConnectTime = UpstreamTimePointNow();
+                   a->lastConnectFailed = false;
+
+                   std::stringstream ss;
+                   ss << "status_code:" << static_cast<int>(info.base().result());
+                   a->lastConnectCheckResult = ss.str();
+               },
+               [t, a](std::string reason) {
+                   // ok error
+                   a->lastConnectFailed = true;
+               });
+    }
 }
 
 void UpstreamPool::do_connectCheckerTimer() {
@@ -281,32 +311,35 @@ void UpstreamPool::do_connectCheckerTimer() {
         }
         std::cout << "do_connectCheckerTimer()" << std::endl;
 
-        for (const auto &a: _pool) {
-            auto t = connectTestHttps->createTest(
-                    a->host,
-                    std::to_string(a->port),
-                    _configLoader->config.testRemoteHost,
-                    _configLoader->config.testRemotePort,
-                    R"(\)"
-            );
-            t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
-                       // on ok
-                       // std::cout << "SuccessfulInfo:" << info << std::endl;
-                       a->lastConnectTime = UpstreamTimePointNow();
-                       a->lastConnectFailed = false;
-
-                       std::stringstream ss;
-                       ss << "status_code:" << static_cast<int>(info.base().result());
-                       a->lastConnectCheckResult = ss.str();
-                   },
-                   [t, a](std::string reason) {
-                       // ok error
-                       a->lastConnectFailed = true;
-                   });
-        }
+        do_connectCheckerTimer_impl();
 
         connectCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.connectCheckPeriod);
         do_connectCheckerTimer();
     };
     connectCheckerTimer->async_wait(c);
+}
+
+void UpstreamPool::forceCheckNow() {
+    if (!forceCheckerTimer.expired()) {
+        return;
+    }
+
+    auto _forceCheckerTimer = std::make_shared<CheckerTimerType>(ex, ConfigTimeDuration{500});
+    do_forceCheckNow(_forceCheckerTimer);
+    forceCheckerTimer = _forceCheckerTimer;
+}
+
+void UpstreamPool::do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceCheckerTimer) {
+    auto c = [this, self = shared_from_this(), _forceCheckerTimer](const boost::system::error_code &e) {
+        if (e) {
+            return;
+        }
+        std::cout << "do_forceCheckNow()" << std::endl;
+
+        do_tcpCheckerTimer_impl();
+        do_connectCheckerTimer_impl();
+
+        // now _forceCheckerTimer reset auto
+    };
+    _forceCheckerTimer->async_wait(c);
 }

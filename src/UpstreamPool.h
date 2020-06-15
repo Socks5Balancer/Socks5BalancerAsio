@@ -108,6 +108,7 @@ public:
     size_t getLastUseUpstreamIndex();
 
     bool checkServer(const UpstreamServerRef &u) const;
+
 protected:
 
     auto getNextServer() -> UpstreamServerRef;
@@ -125,6 +126,7 @@ private:
     using CheckerTimerPeriodType = boost::asio::chrono::microseconds;
     std::shared_ptr<CheckerTimerType> tcpCheckerTimer;
     std::shared_ptr<CheckerTimerType> connectCheckerTimer;
+    std::weak_ptr<CheckerTimerType> forceCheckerTimer;
 
 public:
     void endCheckTimer();
@@ -133,10 +135,18 @@ public:
 
     std::string print();
 
+    void forceCheckNow();
+
 private:
     void do_tcpCheckerTimer();
 
+    void do_tcpCheckerTimer_impl();
+
     void do_connectCheckerTimer();
+
+    void do_connectCheckerTimer_impl();
+
+    void do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceCheckerTimer);
 
 };
 
