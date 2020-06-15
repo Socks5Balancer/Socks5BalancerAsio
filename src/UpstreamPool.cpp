@@ -248,11 +248,11 @@ void UpstreamPool::do_tcpCheckerTimer() {
             return;
         }
         std::cout << "do_tcpCheckerTimer()" << std::endl;
-        std::cout << print() << std::endl;
+//        std::cout << print() << std::endl;
 
         for (auto &a: _pool) {
             auto p = std::to_string(a->port);
-            std::cout << a->host << ":" << p << std::endl;
+//            std::cout << a->host << ":" << p << std::endl;
             auto t = tcpTest->createTest(a->host, p);
             t->run([t, a]() {
                        // on ok
