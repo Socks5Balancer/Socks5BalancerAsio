@@ -49,6 +49,13 @@ std::string ruleEnum2string(RuleEnum r) {
     }
 }
 
+std::vector<std::string> RuleEnumList{
+        "loop",
+        "random",
+        "one_by_one",
+        "change_by_time",
+};
+
 void ConfigLoader::print() {
     std::cout << "config.listenHost:" << config.listenHost << "\n";
     std::cout << "config.listenPort:" << config.listenPort << "\n";

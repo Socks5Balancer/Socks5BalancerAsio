@@ -80,6 +80,8 @@ RuleEnum string2RuleEnum(std::string s);
 
 std::string ruleEnum2string(RuleEnum r);
 
+extern std::vector<std::string> RuleEnumList;
+
 class ConfigLoader : public std::enable_shared_from_this<ConfigLoader> {
 public:
     Config config;
