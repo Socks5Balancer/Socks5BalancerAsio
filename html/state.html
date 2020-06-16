@@ -43,6 +43,10 @@
                v-on:click="sendCommand('/op?newRule=' + newRule)"
         />
     </form>
+    <label>
+        backend:
+        <input name="backend" v-bind:value="backend"/>
+    </label>
     <button v-on:click="flush">Flush</button>
     <br/>
     <template v-if="!upstreamPool.find(function(u) {
@@ -234,10 +238,11 @@
             //dataArray: dataArray,
             newRule: "",
             allConnectCount: 0,
+            backend: "127.0.0.1:5010",
         },
         methods: {
             flush: function () {
-                fetch('http://127.0.0.1:5010/', {
+                fetch('http://' + app.backend + '/', {
                     credentials: 'omit'
                 }).then(function (T) {
                     if (T.ok) {
@@ -274,7 +279,7 @@
                 });
             },
             sendCommand: function (cmd) {
-                fetch('http://127.0.0.1:5010' + cmd, {
+                fetch('http://' + app.backend + cmd, {
                     credentials: 'omit'
                 }).then(function (T) {
                     if (T.ok) {
