@@ -25,6 +25,8 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.26.0/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.26.0/locale/zh-cn.js"></script>
 </header>
 <body>
 <div id="body">
@@ -179,9 +181,11 @@
     <br/>
     startTime: {{ startTime }}
     <br/>
-    runTime: {{ runTime }}
+    runTime: {{ runTime }} ms
     <br/>
     runTime: {{ runTimeString }}
+    <br/>
+    runTime: {{ runTimeString2 }}
     <br/>
     listen On: {{ listenOn }}
     <br/>
@@ -215,6 +219,26 @@
 </div>
 
 <script>
+    // https://github.com/moment/moment/issues/463#issuecomment-552498641
+    function formatInt(int) {
+        if (int < 10) {
+            return `0${int}`;
+        }
+        return `${int}`;
+    }
+    function formatDuration(time) {
+        const seconds = moment.duration(time).seconds();
+        const minutes = moment.duration(time).minutes();
+        const hours = moment.duration(time).hours();
+        if (hours > 0) {
+            return `${formatInt(hours)}:${formatInt(minutes)}:${formatInt(seconds)}`;
+        }
+        if (minutes > 0) {
+            return `${formatInt(minutes)}:${formatInt(seconds)}`;
+        }
+        return `00:${formatInt(seconds)}`;
+    }
+    moment.locale('zh-cn');
     var app = new Vue({
         el: '#body',
         data: {
@@ -229,6 +253,7 @@
             startTime: "",
             runTime: 0,
             runTimeString: "",
+            runTimeString2: "",
             listenOn: "",
             haveUsableServer: true,
             UpstreamSelectRuleList: [],
@@ -265,6 +290,8 @@
                         app.newRule = T.nowRule;
                         app.nowTime = T.nowTime;
                         app.runTime = T.runTime;
+                        app.runTimeString = moment.duration(_.parseInt(T.runTime)).humanize();
+                        app.runTimeString2 = formatDuration(_.parseInt(T.runTime));
                         app.startTime = T.startTime;
                         app.listenOn = ' ' + T.config.listenHost + ' : ' + T.config.listenPort;
 

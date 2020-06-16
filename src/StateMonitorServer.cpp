@@ -103,7 +103,9 @@ std::string HttpConnectSession::createJsonString() {
     }
 
     root.put("startTime", printUpstreamTimePoint(startTime));
-    root.put("runTime", (UpstreamTimePointNow() - startTime).count());
+    root.put("runTime", std::chrono::duration_cast<std::chrono::milliseconds>(
+            UpstreamTimePointNow() - startTime
+    ).count());
     root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
 
     std::stringstream ss;
