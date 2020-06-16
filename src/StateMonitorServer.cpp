@@ -346,7 +346,8 @@ void StateMonitorServer::http_server() {
                     std::make_shared<HttpConnectSession>(
                             std::move(socket),
                             configLoader,
-                            upstreamPool
+                            upstreamPool,
+                            startTime
                     )->start();
                 }
                 if (ec && (

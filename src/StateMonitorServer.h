@@ -42,11 +42,12 @@ class HttpConnectSession : public std::enable_shared_from_this<HttpConnectSessio
 public:
     HttpConnectSession(boost::asio::ip::tcp::socket socket,
                        std::shared_ptr<ConfigLoader> configLoader,
-                       std::shared_ptr<UpstreamPool> upstreamPool)
+                       std::shared_ptr<UpstreamPool> upstreamPool,
+                       UpstreamTimePoint startTime)
             : configLoader(configLoader),
               upstreamPool(upstreamPool),
               socket_(std::move(socket)),
-              startTime(UpstreamTimePointNow()) {}
+              startTime(startTime) {}
 
     void start() {
         read_request();
@@ -94,6 +95,7 @@ class StateMonitorServer : public std::enable_shared_from_this<StateMonitorServe
     std::shared_ptr<ConfigLoader> configLoader;
     std::shared_ptr<UpstreamPool> upstreamPool;
 
+    UpstreamTimePoint startTime;
 public:
     StateMonitorServer(
             boost::asio::executor ex,
@@ -103,6 +105,7 @@ public:
             ex(ex),
             configLoader(configLoader),
             upstreamPool(upstreamPool),
+            startTime(UpstreamTimePointNow()),
             address(boost::asio::ip::make_address(configLoader->config.stateServerHost)),
             port(configLoader->config.stateServerPort),
             acceptor(ex, {address, port}),
