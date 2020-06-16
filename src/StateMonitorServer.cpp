@@ -128,9 +128,11 @@ void HttpConnectSession::process_request() {
     response_.version(request_.version());
     response_.keep_alive(false);
 
-    auto origin = request_.at(boost::beast::http::field::origin);
-    if (!origin.empty()) {
-        response_.set(boost::beast::http::field::access_control_allow_origin, origin);
+    if (request_.find(boost::beast::http::field::origin) != request_.end()) {
+        auto origin = request_.at(boost::beast::http::field::origin);
+        if (!origin.empty()) {
+            response_.set(boost::beast::http::field::access_control_allow_origin, origin);
+        }
     }
 
     switch (request_.method()) {
