@@ -97,11 +97,11 @@ class TcpTest : public std::enable_shared_from_this<TcpTest> {
     boost::asio::executor executor;
     std::list<std::shared_ptr<TcpTestSession>> sessions;
 
-    boost::asio::steady_timer cleanTimer;
+    std::shared_ptr<boost::asio::steady_timer> cleanTimer;
 public:
     TcpTest(boost::asio::executor ex) :
-            executor(ex),
-            cleanTimer(ex, std::chrono::seconds{5}) {}
+            executor(ex) {
+    }
 
     std::shared_ptr<TcpTestSession> createTest(
             const std::string socks5Host,

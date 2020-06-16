@@ -426,7 +426,6 @@ void ConnectTestHttpsSession::do_shutdown(bool isOn) {
 
 ConnectTestHttps::ConnectTestHttps(boost::asio::executor ex) :
         executor(ex),
-        cleanTimer(ex, std::chrono::seconds{5}),
         ssl_context(std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23)) {
 
     if (need_verify_ssl) {
@@ -434,19 +433,19 @@ ConnectTestHttps::ConnectTestHttps(boost::asio::executor ex) :
         ssl_context->set_default_verify_paths();
 #ifdef _WIN32
         HCERTSTORE h_store = CertOpenSystemStore(0, _T("ROOT"));
-            if (h_store) {
-                X509_STORE *store = SSL_CTX_get_cert_store(ssl_context->native_handle());
-                PCCERT_CONTEXT p_context = NULL;
-                while ((p_context = CertEnumCertificatesInStore(h_store, p_context))) {
-                    const unsigned char *encoded_cert = p_context->pbCertEncoded;
-                    X509 *x509 = d2i_X509(NULL, &encoded_cert, p_context->cbCertEncoded);
-                    if (x509) {
-                        X509_STORE_add_cert(store, x509);
-                        X509_free(x509);
-                    }
+        if (h_store) {
+            X509_STORE *store = SSL_CTX_get_cert_store(ssl_context->native_handle());
+            PCCERT_CONTEXT p_context = NULL;
+            while ((p_context = CertEnumCertificatesInStore(h_store, p_context))) {
+                const unsigned char *encoded_cert = p_context->pbCertEncoded;
+                X509 *x509 = d2i_X509(NULL, &encoded_cert, p_context->cbCertEncoded);
+                if (x509) {
+                    X509_STORE_add_cert(store, x509);
+                    X509_free(x509);
                 }
-                CertCloseStore(h_store, 0);
             }
+            CertCloseStore(h_store, 0);
+        }
 #endif // _WIN32
     } else {
         ssl_context->set_verify_mode(boost::asio::ssl::verify_none);
@@ -458,6 +457,10 @@ std::shared_ptr<ConnectTestHttpsSession>
 ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &socks5Port,
                              const std::string &targetHost, int targetPort, const std::string &targetPath,
                              int httpVersion) {
+    if (!cleanTimer) {
+        cleanTimer = std::make_shared<boost::asio::steady_timer>(executor, std::chrono::seconds{5});
+        do_cleanTimer();
+    }
     auto s = std::make_shared<ConnectTestHttpsSession>(
             this->executor,
             this->ssl_context,
@@ -474,7 +477,8 @@ ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &s
 }
 
 void ConnectTestHttps::do_cleanTimer() {
-    auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
+    auto c = [this, self = shared_from_this(), cleanTimer = this->cleanTimer]
+            (const boost::system::error_code &e) {
         if (e) {
             return;
         }
@@ -489,8 +493,8 @@ void ConnectTestHttps::do_cleanTimer() {
             }
         }
 
-        cleanTimer.expires_at(cleanTimer.expiry() + std::chrono::seconds{5});
+        cleanTimer->expires_at(cleanTimer->expiry() + std::chrono::seconds{5});
         do_cleanTimer();
     };
-    cleanTimer.async_wait(c);
+    cleanTimer->async_wait(c);
 }

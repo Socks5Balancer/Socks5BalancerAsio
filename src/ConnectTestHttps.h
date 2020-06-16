@@ -142,7 +142,7 @@ class ConnectTestHttps : public std::enable_shared_from_this<ConnectTestHttps> {
     bool need_verify_ssl = true;
     std::list<std::shared_ptr<ConnectTestHttpsSession>> sessions;
 
-    boost::asio::steady_timer cleanTimer;
+    std::shared_ptr<boost::asio::steady_timer> cleanTimer;
 public:
     ConnectTestHttps(boost::asio::executor ex);
 

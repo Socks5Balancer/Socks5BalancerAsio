@@ -117,7 +117,8 @@ bool TcpTestSession::isComplete() {
 }
 
 void TcpTest::do_cleanTimer() {
-    auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
+    auto c = [this, self = shared_from_this(), cleanTimer = this->cleanTimer]
+            (const boost::system::error_code &e) {
         if (e) {
             return;
         }
@@ -132,15 +133,19 @@ void TcpTest::do_cleanTimer() {
             }
         }
 
-        cleanTimer.expires_at(cleanTimer.expiry() + std::chrono::seconds{5});
+        cleanTimer->expires_at(cleanTimer->expiry() + std::chrono::seconds{5});
         do_cleanTimer();
     };
-    cleanTimer.async_wait(c);
+    cleanTimer->async_wait(c);
 }
 
 std::shared_ptr<TcpTestSession> TcpTest::createTest(std::string socks5Host, std::string socks5Port) {
+    if (!cleanTimer) {
+        cleanTimer = std::make_shared<boost::asio::steady_timer>(executor, std::chrono::seconds{5});
+        do_cleanTimer();
+    }
     auto s = std::make_shared<TcpTestSession>(
-            this->executor,
+            executor,
             socks5Host,
             socks5Port
     );
