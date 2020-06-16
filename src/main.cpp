@@ -45,7 +45,7 @@ int main() {
 
         auto tcpRelay = std::make_shared<TcpRelayServer>(ex, configLoader, upstreamPool);
         auto stateMonitor = std::make_shared<StateMonitorServer>(
-                boost::asio::make_strand(ioc), configLoader, upstreamPool);
+                boost::asio::make_strand(ioc), configLoader, upstreamPool, tcpRelay);
 
         tcpRelay->start();
 
@@ -58,11 +58,11 @@ int main() {
     } catch (int) {
         std::cerr << "catch (int) exception" << "\n";
     }
-    catch (const std::exception &e) {
-        std::cerr << "catch std::exception: " << e.what() << "\n";
-    } catch (...) {
-        std::cerr << "catch (...) exception" << "\n";
-    }
+//    catch (const std::exception &e) {
+//        std::cerr << "catch std::exception: " << e.what() << "\n";
+//    } catch (...) {
+//        std::cerr << "catch (...) exception" << "\n";
+//    }
 
     return 0;
 }

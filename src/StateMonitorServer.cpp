@@ -269,12 +269,18 @@ void HttpConnectSession::create_response() {
                     } else if (q.first == "endConnectOnServer") {
                         auto index = boost::lexical_cast<size_t>(q.second);
                         if (index >= 0 && index < upstreamPool->pool().size()) {
-                            // TODO
+                            auto p = tcpRelayServer.lock();
+                            if (p) {
+                                p->getStatisticsInfo()->closeAllSession(index);
+                            }
                         }
                     } else if (q.first == "endAllConnect") {
                         auto index = boost::lexical_cast<size_t>(q.second);
                         if (index == 1) {
-                            // TODO
+                            auto p = tcpRelayServer.lock();
+                            if (p) {
+                                p->closeAllSession();
+                            }
                         }
                     } else if (q.first == "newRule") {
                         std::optional<decltype(RuleEnumList)::value_type> n;
@@ -349,6 +355,7 @@ void StateMonitorServer::http_server() {
                             std::move(socket),
                             configLoader,
                             upstreamPool,
+                            tcpRelayServer,
                             startTime
                     )->start();
                 }

@@ -28,15 +28,70 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <list>
+#include <map>
 #include "UpstreamPool.h"
+
+class TcpRelaySession;
+
+class TcpRelayStatisticsInfo : public std::enable_shared_from_this<TcpRelayStatisticsInfo> {
+public:
+    struct Info : public std::enable_shared_from_this<Info> {
+        std::list<std::weak_ptr<TcpRelaySession>> sessions;
+
+        void removeExpiredSession();
+
+        void closeAllSession();
+    };
+
+private:
+    std::map<size_t, std::shared_ptr<Info>> upstreamIndex;
+
+public:
+    void addSession(size_t index, std::weak_ptr<TcpRelaySession> s);
+
+    std::shared_ptr<Info> getInfo(size_t index) {
+        auto n = upstreamIndex.find(index);
+        if (n != upstreamIndex.end()) {
+            return n->second;
+        } else {
+            return {};
+        }
+    }
+
+    void removeExpiredSession(size_t index) {
+        auto p = getInfo(index);
+        if (p) {
+            p->removeExpiredSession();
+        }
+    }
+
+    void removeExpiredSessionAll() {
+        for (auto &a: upstreamIndex) {
+            a.second->removeExpiredSession();
+        }
+    }
+
+    void closeAllSession(size_t index) {
+        auto p = getInfo(index);
+        if (p) {
+            p->closeAllSession();
+        }
+    }
+
+};
 
 // code template from https://github.com/ArashPartow/proxy/blob/master/tcpproxy_server.cpp
 class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
+
+    boost::asio::executor ex;
 
     boost::asio::ip::tcp::socket downstream_socket_;
     boost::asio::ip::tcp::socket upstream_socket_;
     boost::asio::ip::tcp::resolver resolver_;
     std::shared_ptr<UpstreamPool> upstreamPool;
+
+    std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo;
 
     enum {
         max_data_length = 8192
@@ -51,11 +106,18 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
 
     bool isDeCont = false;
 public:
-    TcpRelaySession(boost::asio::executor ex, std::shared_ptr<UpstreamPool> upstreamPool, size_t retryLimit) :
+    TcpRelaySession(
+            boost::asio::executor ex,
+            std::shared_ptr<UpstreamPool> upstreamPool,
+            std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo,
+            size_t retryLimit
+    ) :
+            ex(ex),
             downstream_socket_(ex),
             upstream_socket_(ex),
             resolver_(ex),
             upstreamPool(std::move(upstreamPool)),
+            statisticsInfo(statisticsInfo),
             retryLimit(retryLimit) {
         std::cout << "TcpRelaySession create" << std::endl;
     }
@@ -106,6 +168,8 @@ private:
 
     void close(boost::system::error_code error = {});
 
+public:
+    void forceClose();
 };
 
 class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
@@ -115,6 +179,10 @@ class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
     std::shared_ptr<UpstreamPool> upstreamPool;
     boost::asio::ip::tcp::acceptor socket_acceptor;
 
+    std::list<std::weak_ptr<TcpRelaySession>> sessions;
+    std::shared_ptr<TcpRelayStatisticsInfo> statisticsInfo;
+
+    std::shared_ptr<boost::asio::steady_timer> cleanTimer;
 public:
     TcpRelayServer(
             boost::asio::executor ex,
@@ -123,7 +191,8 @@ public:
     ) : ex(ex),
         configLoader(std::move(configLoader)),
         upstreamPool(std::move(upstreamPool)),
-        socket_acceptor(ex) {
+        socket_acceptor(ex),
+        statisticsInfo(std::make_shared<TcpRelayStatisticsInfo>()) {
     }
 
     void start();
@@ -132,6 +201,15 @@ public:
 
 private:
     void async_accept();
+
+    void removeExpiredSession();
+
+public:
+    void closeAllSession();
+
+    std::shared_ptr<TcpRelayStatisticsInfo> getStatisticsInfo();
+
+    void do_cleanTimer();
 
 };
 

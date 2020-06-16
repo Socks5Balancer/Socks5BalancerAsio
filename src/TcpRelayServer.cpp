@@ -70,6 +70,10 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
 
                     ++nowServer->connectCount;
                     nowServer->updateOnlineTime();
+                    auto pSI = statisticsInfo.lock();
+                    if (pSI) {
+                        pSI->addSession(nowServer->index, weak_from_this());
+                    }
 
                     // Setup async read from remote server (upstream)
                     do_upstream_read();
@@ -169,11 +173,24 @@ void TcpRelaySession::close(boost::system::error_code error) {
 
     if (!isDeCont) {
         isDeCont = true;
-        --nowServer->connectCount;
+        if (nowServer) {
+            --nowServer->connectCount;
+        }
     }
 }
 
+void TcpRelaySession::forceClose() {
+    boost::asio::post(ex, [this, self = shared_from_this()]() {
+        close();
+    });
+}
+
 void TcpRelayServer::start() {
+    if (!cleanTimer) {
+        cleanTimer = std::make_shared<boost::asio::steady_timer>(ex, std::chrono::seconds{5});
+        do_cleanTimer();
+    }
+
     boost::asio::ip::tcp::resolver resolver(ex);
     boost::asio::ip::tcp::endpoint listen_endpoint =
             *resolver.resolve(configLoader->config.listenHost,
@@ -196,7 +213,13 @@ void TcpRelayServer::stop() {
 }
 
 void TcpRelayServer::async_accept() {
-    auto session = std::make_shared<TcpRelaySession>(ex, upstreamPool, configLoader->config.retryTimes);
+    auto session = std::make_shared<TcpRelaySession>(
+            ex,
+            upstreamPool,
+            statisticsInfo,
+            configLoader->config.retryTimes
+    );
+    sessions.push_back(session->weak_from_this());
     socket_acceptor.async_accept(
             session->downstream_socket(),
             [this, session](const boost::system::error_code error) {
@@ -219,4 +242,80 @@ void TcpRelayServer::async_accept() {
                 std::cout << "async_accept next." << "\n";
                 async_accept();
             });
+}
+
+void TcpRelayServer::removeExpiredSession() {
+    auto it = sessions.begin();
+    while (it != sessions.end()) {
+        if ((*it).expired()) {
+            it = sessions.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void TcpRelayServer::closeAllSession() {
+    auto it = sessions.begin();
+    while (it != sessions.end()) {
+        auto p = (*it).lock();
+        if (p) {
+            p->forceClose();
+            ++it;
+        } else {
+            it = sessions.erase(it);
+        }
+    }
+}
+
+std::shared_ptr<TcpRelayStatisticsInfo> TcpRelayServer::getStatisticsInfo() {
+    return statisticsInfo;
+}
+
+void TcpRelayServer::do_cleanTimer() {
+    auto c = [this, self = shared_from_this(), cleanTimer = this->cleanTimer]
+            (const boost::system::error_code &e) {
+        if (e) {
+            return;
+        }
+        std::cout << "do_cleanTimer()" << std::endl;
+
+        removeExpiredSession();
+        statisticsInfo->removeExpiredSessionAll();
+
+        cleanTimer->expires_at(cleanTimer->expiry() + std::chrono::seconds{5});
+        do_cleanTimer();
+    };
+    cleanTimer->async_wait(c);
+}
+
+void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
+    auto it = sessions.begin();
+    while (it != sessions.end()) {
+        if ((*it).expired()) {
+            it = sessions.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void TcpRelayStatisticsInfo::Info::closeAllSession() {
+    auto it = sessions.begin();
+    while (it != sessions.end()) {
+        auto p = (*it).lock();
+        if (p) {
+            p->forceClose();
+            ++it;
+        } else {
+            it = sessions.erase(it);
+        }
+    }
+}
+
+void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySession> s) {
+    if (upstreamIndex.find(index) == upstreamIndex.end()) {
+        upstreamIndex.try_emplace(index, std::make_shared<Info>());
+    }
+    upstreamIndex.at(index)->sessions.push_back(s);
 }
