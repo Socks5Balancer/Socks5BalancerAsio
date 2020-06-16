@@ -181,6 +181,19 @@
     lastUseUpstreamIndex: <span class="string-pad">{{ _.parseInt(lastUseUpstreamIndex) + 1 }}</span>
     <br/>
     <br/>
+    totalUp: <span class="string-pad">{{ dataCount2String(totalUp) }}</span>
+    <br/>
+    totalDown: <span class="string-pad">{{ dataCount2String(totalDown) }}</span>
+    <br/>
+    totalUpSpeed: <span class="string-pad">{{ speed2String(totalUpSpeed) }}</span>
+    <br/>
+    totalDownSpeed: <span class="string-pad">{{ speed2String(totalDownSpeed) }}</span>
+    <br/>
+    totalUpSpeedMax: <span class="string-pad">{{ speed2String(totalUpSpeedMax) }}</span>
+    <br/>
+    totalDownSpeedMax: <span class="string-pad">{{ speed2String(totalDownSpeedMax) }}</span>
+    <br/>
+    <br/>
     now time: <span class="string-pad">{{ nowTime }}</span>
     <br/>
     startTime: <span class="string-pad">{{ startTime }}</span>
@@ -333,11 +346,19 @@
             newRule: "",
             allConnectCount: 0,
             backend: "127.0.0.1:5010",
+            totalUp: 0,
+            totalDown: 0,
+            totalUpSpeed: 0,
+            totalDownSpeed: 0,
+            totalUpSpeedMax: 0,
+            totalDownSpeedMax: 0,
         },
         methods: {
             formatSpeedMax: formatSpeedMax,
             formatSpeed: formatSpeed,
             formatData: formatData,
+            speed2String: speed2String,
+            dataCount2String: dataCount2String,
             flush: function () {
                 fetch('http://' + app.backend + '/', {
                     credentials: 'omit'
@@ -362,6 +383,24 @@
                         app.newRule = T.nowRule;
                         app.nowTime = T.nowTime;
                         app.runTime = T.runTime;
+                        app.totalUp = _.reduce(app.upstreamPool, function (acc, n) {
+                            return acc + _.parseInt(n.byteUpLast);
+                        }, 0);
+                        app.totalDown = _.reduce(app.upstreamPool, function (acc, n) {
+                            return acc + _.parseInt(n.byteDownLast);
+                        }, 0);
+                        app.totalUpSpeed = _.reduce(app.upstreamPool, function (acc, n) {
+                            return acc + _.parseInt(n.byteUpChange);
+                        }, 0);
+                        app.totalDownSpeed = _.reduce(app.upstreamPool, function (acc, n) {
+                            return acc + _.parseInt(n.byteDownChange);
+                        }, 0);
+                        app.totalUpSpeedMax = _.reduce(app.upstreamPool, function (acc, n) {
+                            return acc + _.parseInt(n.byteUpChangeMax);
+                        }, 0);
+                        app.totalDownSpeedMax = _.reduce(app.upstreamPool, function (acc, n) {
+                            return acc + _.parseInt(n.byteDownChangeMax);
+                        }, 0);
                         app.runTimeString = moment.duration(_.parseInt(T.runTime)).humanize();
                         app.runTimeString2 = formatDuration(_.parseInt(T.runTime));
                         app.startTime = T.startTime;
