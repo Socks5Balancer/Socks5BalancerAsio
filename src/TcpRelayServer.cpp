@@ -73,6 +73,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                     auto pSI = statisticsInfo.lock();
                     if (pSI) {
                         pSI->addSession(nowServer->index, weak_from_this());
+                        pSI->lastConnectServerIndex.store(nowServer->index);
                     }
 
                     // Setup async read from remote server (upstream)

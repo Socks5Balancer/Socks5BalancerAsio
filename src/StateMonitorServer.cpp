@@ -102,6 +102,11 @@ std::string HttpConnectSession::createJsonString() {
         root.add_child("RuleEnumList", rs);
     }
 
+    if (auto pT = tcpRelayServer.lock()) {
+        if (pT) {
+            root.put("lastConnectServerIndex", pT->getStatisticsInfo()->lastConnectServerIndex);
+        }
+    }
     root.put("startTime", printUpstreamTimePoint(startTime));
     root.put("runTime", std::chrono::duration_cast<std::chrono::milliseconds>(
             UpstreamTimePointNow() - startTime

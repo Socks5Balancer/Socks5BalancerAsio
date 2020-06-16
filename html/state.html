@@ -22,6 +22,10 @@
         tfoot > tr:hover {
             background-color: inherit;
         }
+
+        .string-pad {
+            margin: 0 0.5em 0 0.5em;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
@@ -30,9 +34,9 @@
 </header>
 <body>
 <div id="body">
-    now running connect: {{ allConnectCount }}
+    now running connect: <span class="string-pad">{{ allConnectCount }}</span>
     <br/>
-    now rule: {{ rule }}
+    now rule: <span class="string-pad">{{ rule }}</span>
     <br/>
     <form action="/op" method="get" target="_self">
         <select name="newRule" v-model="newRule">
@@ -47,7 +51,7 @@
     </form>
     <label>
         backend:
-        <input name="backend" v-bind:value="backend"/>
+        <input class="string-pad" name="backend" v-bind:value="backend"/>
     </label>
     <button v-on:click="flush">Flush</button>
     <br/>
@@ -168,26 +172,24 @@
     ---------------------------------------------------------------------------------------------
     <br/>
     lastConnectServer:
-    <% if(monitorCenter.lastConnectServer){ %>
-    <%= monitorCenter.lastConnectServer.host + ':' + monitorCenter.lastConnectServer.port %>
-    <% } else { %>
-    Undefined
-    <% } %>
+    <span class="string-pad">
+        {{ (lastConnectServer?(lastConnectServer.host+':'+lastConnectServer.port):'Undefined') }}
+    </span>
     <br/>
-    lastUseUpstreamIndex: {{ _.parseInt(lastUseUpstreamIndex) + 1 }}
+    lastUseUpstreamIndex: <span class="string-pad">{{ _.parseInt(lastUseUpstreamIndex) + 1 }}</span>
     <br/>
     <br/>
-    now time: {{ nowTime }}
+    now time: <span class="string-pad">{{ nowTime }}</span>
     <br/>
-    startTime: {{ startTime }}
+    startTime: <span class="string-pad">{{ startTime }}</span>
     <br/>
-    runTime: {{ runTime }} ms
+    runTime: <span class="string-pad">{{ runTime }} ms</span>
     <br/>
-    runTime: {{ runTimeString }}
+    runTime: <span class="string-pad">{{ runTimeString }}</span>
     <br/>
-    runTime: {{ runTimeString2 }}
+    runTime: <span class="string-pad">{{ runTimeString2 }}</span>
     <br/>
-    listen On: {{ listenOn }}
+    listen On: <span class="string-pad">{{ listenOn }}</span>
     <br/>
     ---------------------------------------------------------------------------------------------
     <br/>
@@ -226,6 +228,7 @@
         }
         return `${int}`;
     }
+
     function formatDuration(time) {
         const seconds = moment.duration(time).seconds();
         const minutes = moment.duration(time).minutes();
@@ -238,6 +241,7 @@
         }
         return `00:${formatInt(seconds)}`;
     }
+
     moment.locale('zh-cn');
     var app = new Vue({
         el: '#body',
@@ -258,6 +262,8 @@
             haveUsableServer: true,
             UpstreamSelectRuleList: [],
             lastUseUpstreamIndex: 0,
+            lastConnectServerIndex: 0,
+            lastConnectServer: {},
             //isWork: checkServer,
             //speedArray: speedArray,
             //dataArray: dataArray,
@@ -293,6 +299,10 @@
                         app.runTimeString = moment.duration(_.parseInt(T.runTime)).humanize();
                         app.runTimeString2 = formatDuration(_.parseInt(T.runTime));
                         app.startTime = T.startTime;
+                        app.lastConnectServerIndex = _.parseInt(T.lastConnectServerIndex);
+                        app.lastConnectServer = app.upstreamPool.find(function (n) {
+                            return _.parseInt(n.index) === app.lastConnectServerIndex;
+                        });
                         app.listenOn = ' ' + T.config.listenHost + ' : ' + T.config.listenPort;
 
                         app.allConnectCount = _.reduce(T.pool.upstream, function (acc, T) {

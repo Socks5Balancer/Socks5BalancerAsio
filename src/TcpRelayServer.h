@@ -30,6 +30,7 @@
 #include <utility>
 #include <list>
 #include <map>
+#include <atomic>
 #include "UpstreamPool.h"
 
 class TcpRelaySession;
@@ -46,6 +47,9 @@ public:
 
 private:
     std::map<size_t, std::shared_ptr<Info>> upstreamIndex;
+
+public:
+    std::atomic_size_t lastConnectServerIndex{0};
 
 public:
     void addSession(size_t index, std::weak_ptr<TcpRelaySession> s);
