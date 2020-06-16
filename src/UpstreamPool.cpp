@@ -66,6 +66,7 @@ UpstreamPool::UpstreamPool(boost::asio::executor ex, std::shared_ptr<TcpTest> tc
                            std::shared_ptr<ConnectTestHttps> connectTestHttps)
         : ex(ex),
           tcpTest(std::move(tcpTest)),
+          lastConnectComeTime(UpstreamTimePointNow()),
           connectTestHttps(std::move(connectTestHttps)) {}
 
 const std::deque<UpstreamServerRef> &UpstreamPool::pool() {
@@ -305,7 +306,9 @@ void UpstreamPool::do_AdditionTimer() {
                 }
         );
         if (isAllDown) {
-            do_AdditionTimer_impl();
+            if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
+                do_AdditionTimer_impl();
+            }
         }
 
         additionTimer->expires_at(additionTimer->expiry() + _configLoader->config.additionCheckPeriod);
@@ -337,7 +340,9 @@ void UpstreamPool::do_tcpCheckerTimer() {
         std::cout << "do_tcpCheckerTimer()" << std::endl;
 //        std::cout << print() << std::endl;
 
-        do_tcpCheckerTimer_impl();
+        if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
+            do_tcpCheckerTimer_impl();
+        }
 
         tcpCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.tcpCheckPeriod);
         do_tcpCheckerTimer();
@@ -378,7 +383,9 @@ void UpstreamPool::do_connectCheckerTimer() {
         }
         std::cout << "do_connectCheckerTimer()" << std::endl;
 
-        do_connectCheckerTimer_impl();
+        if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
+            do_connectCheckerTimer_impl();
+        }
 
         connectCheckerTimer->expires_at(tcpCheckerTimer->expiry() + _configLoader->config.connectCheckPeriod);
         do_connectCheckerTimer();
@@ -409,4 +416,12 @@ void UpstreamPool::do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceChec
         // now _forceCheckerTimer reset auto
     };
     _forceCheckerTimer->async_wait(c);
+}
+
+void UpstreamPool::updateLastConnectComeTime() {
+    this->lastConnectComeTime = UpstreamTimePointNow();
+}
+
+UpstreamTimePoint UpstreamPool::getLastConnectComeTime() {
+    return this->lastConnectComeTime;
 }

@@ -91,6 +91,8 @@ class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
 
     UpstreamTimePoint lastChangeUpstreamTime;
 
+    UpstreamTimePoint lastConnectComeTime;
+
     std::shared_ptr<TcpTest> tcpTest;
     std::shared_ptr<ConnectTestHttps> connectTestHttps;
 
@@ -108,6 +110,10 @@ public:
     size_t getLastUseUpstreamIndex();
 
     bool checkServer(const UpstreamServerRef &u) const;
+
+    void updateLastConnectComeTime();
+
+    UpstreamTimePoint getLastConnectComeTime();
 
 protected:
 

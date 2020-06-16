@@ -65,6 +65,10 @@ std::string HttpConnectSession::createJsonString() {
         boost::property_tree::ptree pool;
 
         pool.put("getLastUseUpstreamIndex", upstreamPool->getLastUseUpstreamIndex());
+        pool.put("lastConnectComeTime", printUpstreamTimePoint(upstreamPool->getLastConnectComeTime()));
+        pool.put("lastConnectComeTimeAgo", std::chrono::duration_cast<std::chrono::milliseconds>(
+                UpstreamTimePointNow() - upstreamPool->getLastConnectComeTime()
+        ).count());
 
         auto pT = tcpRelayServer.lock();
         decltype(std::declval<decltype(pT)::element_type>().getStatisticsInfo()) info;

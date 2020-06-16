@@ -68,6 +68,7 @@ struct Config {
     size_t retryTimes;
 
     ConfigTimeDuration connectTimeout;
+    ConfigTimeDuration sleepTime;
 
     ConfigTimeDuration tcpCheckPeriod;
     ConfigTimeDuration tcpCheckStart;

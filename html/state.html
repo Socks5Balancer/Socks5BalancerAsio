@@ -204,6 +204,16 @@
     <br/>
     runTime: <span class="string-pad">{{ runTimeString2 }}</span>
     <br/>
+    <br/>
+    lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTime }}</span>
+    <br/>
+    lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTimeAgo }} ms</span>
+    <br/>
+    lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTimeAgoString }}</span>
+    <br/>
+    lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTimeAgoString2 }}</span>
+    <br/>
+    <br/>
     listen On: <span class="string-pad">{{ listenOn }}</span>
     <br/>
     ---------------------------------------------------------------------------------------------
@@ -334,6 +344,10 @@
             runTime: 0,
             runTimeString: "",
             runTimeString2: "",
+            lastConnectComeTime: "",
+            lastConnectComeTimeAgo: 0,
+            lastConnectComeTimeAgoString: "",
+            lastConnectComeTimeAgoString2: "",
             listenOn: "",
             haveUsableServer: true,
             UpstreamSelectRuleList: [],
@@ -381,8 +395,6 @@
                         app.UpstreamSelectRuleList = T.RuleEnumList;
                         app.rule = T.nowRule;
                         app.newRule = T.nowRule;
-                        app.nowTime = T.nowTime;
-                        app.runTime = T.runTime;
                         app.totalUp = _.reduce(app.upstreamPool, function (acc, n) {
                             return acc + _.parseInt(n.byteUpLast);
                         }, 0);
@@ -401,9 +413,20 @@
                         app.totalDownSpeedMax = _.reduce(app.upstreamPool, function (acc, n) {
                             return acc + _.parseInt(n.byteDownChangeMax);
                         }, 0);
+
+                        app.nowTime = T.nowTime;
+
+                        app.runTime = T.runTime;
                         app.runTimeString = moment.duration(_.parseInt(T.runTime)).humanize();
                         app.runTimeString2 = formatDuration(_.parseInt(T.runTime));
+
                         app.startTime = T.startTime;
+
+                        app.lastConnectComeTime = T.pool.lastConnectComeTime;
+                        app.lastConnectComeTimeAgo = _.parseInt(T.pool.lastConnectComeTimeAgo);
+                        app.lastConnectComeTimeAgoString = moment.duration(app.lastConnectComeTimeAgo).humanize();
+                        app.lastConnectComeTimeAgoString2 = formatDuration(app.lastConnectComeTimeAgo);
+
                         app.lastConnectServerIndex = _.parseInt(T.lastConnectServerIndex);
                         app.lastConnectServer = app.upstreamPool.find(function (n) {
                             return _.parseInt(n.index) === app.lastConnectServerIndex;

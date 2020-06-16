@@ -71,6 +71,8 @@ void ConfigLoader::print() {
 
     std::cout << "config.connectTimeout:" << config.connectTimeout.count() << "\n";
 
+    std::cout << "config.sleepTime:" << config.sleepTime.count() << "\n";
+
     std::cout << "config.tcpCheckPeriod:" << config.tcpCheckPeriod.count() << "\n";
     std::cout << "config.tcpCheckStart:" << config.tcpCheckStart.count() << "\n";
 
@@ -127,6 +129,9 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
 
     auto connectTimeout = tree.get("connectTimeout", static_cast<long long>(2 * 1000));
     c.connectTimeout = ConfigTimeDuration{connectTimeout};
+
+    auto sleepTime = tree.get("sleepTime", static_cast<long long>(30 * 60 * 1000));
+    c.sleepTime = ConfigTimeDuration{sleepTime};
 
     auto tcpCheckPeriod = tree.get("tcpCheckPeriod", static_cast<long long>(5 * 1000));
     c.tcpCheckPeriod = ConfigTimeDuration{tcpCheckPeriod};

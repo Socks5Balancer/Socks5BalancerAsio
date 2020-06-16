@@ -249,6 +249,7 @@ void TcpRelayServer::async_accept() {
                         std::cout << "incoming connection from : "
                                   << endpoint.address() << ":" << endpoint.port() << "\n";
 
+                        upstreamPool->updateLastConnectComeTime();
                         session->start();
                     }
                 }
