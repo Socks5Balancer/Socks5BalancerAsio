@@ -37,13 +37,16 @@
 class HttpConnectSession : public std::enable_shared_from_this<HttpConnectSession> {
     std::shared_ptr<ConfigLoader> configLoader;
     std::shared_ptr<UpstreamPool> upstreamPool;
+
+    UpstreamTimePoint startTime;
 public:
     HttpConnectSession(boost::asio::ip::tcp::socket socket,
                        std::shared_ptr<ConfigLoader> configLoader,
                        std::shared_ptr<UpstreamPool> upstreamPool)
             : configLoader(configLoader),
               upstreamPool(upstreamPool),
-              socket_(std::move(socket)) {}
+              socket_(std::move(socket)),
+              startTime(UpstreamTimePointNow()) {}
 
     void start() {
         read_request();

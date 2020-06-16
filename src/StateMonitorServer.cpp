@@ -102,6 +102,8 @@ std::string HttpConnectSession::createJsonString() {
         root.add_child("RuleEnumList", rs);
     }
 
+    root.put("startTime", printUpstreamTimePoint(startTime));
+    root.put("runTime", (UpstreamTimePointNow() - startTime).count());
     root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
 
     std::stringstream ss;
