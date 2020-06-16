@@ -106,6 +106,9 @@ bool UpstreamPool::checkServer(const UpstreamServerRef &u) const {
 
 auto UpstreamPool::getNextServer() -> UpstreamServerRef {
     const auto _lastUseUpstreamIndex = lastUseUpstreamIndex;
+    if (_pool.empty()) {
+        return UpstreamServerRef{};
+    }
     while (true) {
         ++lastUseUpstreamIndex;
         if (lastUseUpstreamIndex >= _pool.size()) {
@@ -123,6 +126,9 @@ auto UpstreamPool::getNextServer() -> UpstreamServerRef {
 
 auto UpstreamPool::tryGetLastServer() -> UpstreamServerRef {
     const auto _lastUseUpstreamIndex = lastUseUpstreamIndex;
+    if (_pool.empty()) {
+        return UpstreamServerRef{};
+    }
     while (true) {
         if (lastUseUpstreamIndex >= _pool.size()) {
             lastUseUpstreamIndex = 0;
