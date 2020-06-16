@@ -128,6 +128,7 @@ private:
     std::shared_ptr<CheckerTimerType> connectCheckerTimer;
     std::weak_ptr<CheckerTimerType> forceCheckerTimer;
 
+    std::shared_ptr<boost::asio::steady_timer> additionTimer;
 public:
     void endCheckTimer();
 
@@ -147,6 +148,17 @@ private:
     void do_connectCheckerTimer_impl();
 
     void do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceCheckerTimer);
+
+private:
+    void startAdditionTimer();
+
+    void endAdditionTimer();
+
+    void do_AdditionTimer();
+
+    void do_AdditionTimer_impl();
+
+    std::atomic_bool isAdditionTimerRunning{false};
 
 };
 

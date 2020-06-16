@@ -192,6 +192,13 @@ auto UpstreamPool::getServerBasedOnAddress() -> UpstreamServerRef {
     }
 }
 
+void UpstreamPool::endAdditionTimer() {
+    if (additionTimer) {
+        additionTimer->cancel();
+        additionTimer.reset();
+    }
+}
+
 void UpstreamPool::endCheckTimer() {
     if (tcpCheckerTimer) {
         tcpCheckerTimer->cancel();
@@ -203,11 +210,26 @@ void UpstreamPool::endCheckTimer() {
     }
 }
 
+void UpstreamPool::startAdditionTimer() {
+    if (!additionTimer) {
+        additionTimer = std::make_shared<boost::asio::steady_timer>(
+                ex,
+                (_configLoader->config.tcpCheckStart
+                 + _configLoader->config.connectCheckStart
+                 + _configLoader->config.tcpCheckPeriod
+                ) * 2
+        );
+        do_AdditionTimer();
+    }
+}
+
 void UpstreamPool::startCheckTimer() {
     if (tcpCheckerTimer && connectCheckerTimer) {
         return;
     }
     endCheckTimer();
+    endAdditionTimer();
+    startAdditionTimer();
 
     tcpCheckerTimer = std::make_shared<CheckerTimerType>(ex, _configLoader->config.tcpCheckStart);
     do_tcpCheckerTimer();
@@ -260,6 +282,45 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
                    a->isOffline = true;
                });
     }
+}
+
+void UpstreamPool::do_AdditionTimer() {
+    auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
+        if (e) {
+            return;
+        }
+        std::cout << "do_AdditionTimer()" << std::endl;
+
+        bool isAllDown = std::all_of(
+                _pool.begin(),
+                _pool.end(),
+                [this, self = shared_from_this()](const decltype(_pool)::value_type &a) {
+                    return !checkServer(a);
+                }
+        );
+        if (isAllDown) {
+            do_AdditionTimer_impl();
+        }
+
+        additionTimer->expires_at(additionTimer->expiry() + _configLoader->config.additionCheckPeriod);
+        do_AdditionTimer();
+    };
+    additionTimer->async_wait(c);
+}
+
+void UpstreamPool::do_AdditionTimer_impl() {
+    bool old = false;
+    if (!isAdditionTimerRunning.compare_exchange_strong(old, true)) {
+        return;
+    }
+    std::cout << "do_AdditionTimer_impl()" << std::endl;
+    auto ct = std::make_shared<boost::asio::steady_timer>(ex, _configLoader->config.additionCheckPeriod * 3);
+    ct->async_wait([this, self = shared_from_this(), ct](const boost::system::error_code &e) {
+        isAdditionTimerRunning.store(false);
+    });
+
+    do_tcpCheckerTimer_impl();
+    do_connectCheckerTimer_impl();
 }
 
 void UpstreamPool::do_tcpCheckerTimer() {
