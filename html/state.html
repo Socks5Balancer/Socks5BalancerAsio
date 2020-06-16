@@ -79,6 +79,7 @@
             <th>Close Connect</th>
             <th>Select</th>
             <th>data</th>
+            <th>speedMax</th>
             <th>speed</th>
             <!--        <th></th>-->
         </tr>
@@ -138,8 +139,9 @@
                     Use This Now
                 </a>
             </td>
-            <td><%= dataArray[i] %></td>
-            <td><%= speedArray[i] %></td>
+            <td>{{formatData(u)}}</td>
+            <td>{{formatSpeedMax(u)}}</td>
+            <td>{{formatSpeed(u)}}</td>
             <!--            <td></td>-->
         </tr>
 
@@ -242,6 +244,67 @@
         return `00:${formatInt(seconds)}`;
     }
 
+    function formatNumber2FixedLength(n) {
+        return n.toFixed(3);
+    }
+
+    function speed2String(s) {
+        if (s < 1024) {
+            return '' + s + 'Byte/s';
+        } else if (s < Math.pow(1024, 2)) {
+            return '' + formatNumber2FixedLength(s / Math.pow(1024, 1)) + 'KB/s';
+        } else if (s < Math.pow(1024, 3)) {
+            return '' + formatNumber2FixedLength(s / Math.pow(1024, 2)) + 'MB/s';
+        } else if (s < Math.pow(1024, 4)) {
+            return '' + formatNumber2FixedLength(s / Math.pow(1024, 3)) + 'GB/s';
+        } else if (s < Math.pow(1024, 5)) {
+            return '' + formatNumber2FixedLength(s / Math.pow(1024, 4)) + 'TB/s';
+        } else if (s < Math.pow(1024, 6)) {
+            return '' + formatNumber2FixedLength(s / Math.pow(1024, 5)) + 'EB/s';
+        }
+    }
+
+    function dataCount2String(d) {
+        if (d < 1024) {
+            return '' + d + 'Byte';
+        } else if (d < Math.pow(1024, 2)) {
+            return '' + formatNumber2FixedLength(d / Math.pow(1024, 1)) + 'KB';
+        } else if (d < Math.pow(1024, 3)) {
+            return '' + formatNumber2FixedLength(d / Math.pow(1024, 2)) + 'MB';
+        } else if (d < Math.pow(1024, 4)) {
+            return '' + formatNumber2FixedLength(d / Math.pow(1024, 3)) + 'GB';
+        } else if (d < Math.pow(1024, 5)) {
+            return '' + formatNumber2FixedLength(d / Math.pow(1024, 4)) + 'TB';
+        } else if (d < Math.pow(1024, 6)) {
+            return '' + formatNumber2FixedLength(d / Math.pow(1024, 5)) + 'EB';
+        }
+    }
+
+    function formatSpeedMax(u) {
+        if (u.byteInfo === 'true') {
+            return '↑' + speed2String(_.parseInt(u.byteUpChangeMax)) + ' ↓' + speed2String(_.parseInt(u.byteDownChangeMax));
+        } else {
+            return '↑' + speed2String(0) + ' ↓' + speed2String(0);
+        }
+    }
+
+    function formatSpeed(u) {
+        if (u.byteInfo === 'true') {
+            return '↑' + speed2String(_.parseInt(u.byteUpChange)) + ' ↓' + speed2String(_.parseInt(u.byteDownChange));
+        } else {
+            return '↑' + speed2String(0) + ' ↓' + speed2String(0);
+        }
+    }
+
+    function formatData(u) {
+        if (u.byteInfo === 'true') {
+            return '↑' + dataCount2String(_.parseInt(u.byteUpLast)) + ' ↓' + dataCount2String(_.parseInt(u.byteDownLast));
+        } else {
+            return '↑' + dataCount2String(0) + ' ↓' + dataCount2String(0);
+        }
+    }
+
+
     moment.locale('zh-cn');
     var app = new Vue({
         el: '#body',
@@ -272,6 +335,9 @@
             backend: "127.0.0.1:5010",
         },
         methods: {
+            formatSpeedMax: formatSpeedMax,
+            formatSpeed: formatSpeed,
+            formatData: formatData,
             flush: function () {
                 fetch('http://' + app.backend + '/', {
                     credentials: 'omit'

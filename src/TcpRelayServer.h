@@ -40,9 +40,33 @@ public:
     struct Info : public std::enable_shared_from_this<Info> {
         std::list<std::weak_ptr<TcpRelaySession>> sessions;
 
+        std::atomic_size_t byteUp = 0;
+        std::atomic_size_t byteDown = 0;
+        size_t byteUpLast = 0;
+        size_t byteDownLast = 0;
+        size_t byteUpChange = 0;
+        size_t byteDownChange = 0;
+        size_t byteUpChangeMax = 0;
+        size_t byteDownChangeMax = 0;
+
         void removeExpiredSession();
 
         void closeAllSession();
+
+        void calcByte() {
+            size_t newByteUp = byteUp.load();
+            size_t newByteDown = byteDown.load();
+            byteUpChange = newByteUp - byteUpLast;
+            byteDownChange = newByteDown - byteDownLast;
+            byteUpLast = newByteUp;
+            byteDownLast = newByteDown;
+            if (byteUpChange > byteUpChangeMax) {
+                byteUpChangeMax = byteUpChange;
+            }
+            if (byteDownChange > byteDownChangeMax) {
+                byteDownChangeMax = byteDownChange;
+            }
+        }
     };
 
 private:
@@ -67,6 +91,26 @@ public:
         auto p = getInfo(index);
         if (p) {
             p->removeExpiredSession();
+        }
+    }
+
+    void addByteUp(size_t index, size_t b) {
+        auto p = getInfo(index);
+        if (p) {
+            p->byteUp += b;
+        }
+    }
+
+    void addByteDown(size_t index, size_t b) {
+        auto p = getInfo(index);
+        if (p) {
+            p->byteDown += b;
+        }
+    }
+
+    void calcByteAll() {
+        for (auto &a: upstreamIndex) {
+            a.second->calcByte();
         }
     }
 
@@ -187,6 +231,7 @@ class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
     std::shared_ptr<TcpRelayStatisticsInfo> statisticsInfo;
 
     std::shared_ptr<boost::asio::steady_timer> cleanTimer;
+    std::shared_ptr<boost::asio::steady_timer> speedCalcTimer;
 public:
     TcpRelayServer(
             boost::asio::executor ex,
@@ -214,6 +259,8 @@ public:
     std::shared_ptr<TcpRelayStatisticsInfo> getStatisticsInfo();
 
     void do_cleanTimer();
+
+    void do_speedCalcTimer();
 
 };
 

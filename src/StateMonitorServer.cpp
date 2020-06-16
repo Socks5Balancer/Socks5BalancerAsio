@@ -19,6 +19,7 @@
 #include "StateMonitorServer.h"
 
 #include <regex>
+#include <type_traits>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -65,6 +66,12 @@ std::string HttpConnectSession::createJsonString() {
 
         pool.put("getLastUseUpstreamIndex", upstreamPool->getLastUseUpstreamIndex());
 
+        auto pT = tcpRelayServer.lock();
+        decltype(std::declval<decltype(pT)::element_type>().getStatisticsInfo()) info;
+        if (pT) {
+            info = pT->getStatisticsInfo();
+        }
+
         boost::property_tree::ptree pS;
         for (const auto &a : upstreamPool->pool()) {
             boost::property_tree::ptree n;
@@ -84,6 +91,31 @@ std::string HttpConnectSession::createJsonString() {
                     a->lastConnectTime.has_value() ?
                     printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
             n.put("isWork", upstreamPool->checkServer(a));
+
+            if (info) {
+                auto iInfo = info->getInfo(a->index);
+                if (iInfo) {
+                    n.put("byteDownChange", iInfo->byteDownChange);
+                    n.put("byteUpChange", iInfo->byteUpChange);
+                    n.put("byteDownLast", iInfo->byteDownLast);
+                    n.put("byteUpLast", iInfo->byteUpLast);
+                    n.put("byteUpChangeMax", iInfo->byteUpChangeMax);
+                    n.put("byteDownChangeMax", iInfo->byteDownChangeMax);
+                    n.put("byteInfo", true);
+                } else {
+                    n.put("byteDownChange", 0ll);
+                    n.put("byteUpChange", 0ll);
+                    n.put("byteDownLast", 0ll);
+                    n.put("byteUpLast", 0ll);
+                    n.put("byteUpChangeMax", 0ll);
+                    n.put("byteDownChangeMax", 0ll);
+                    n.put("byteInfo", false);
+                }
+            }
+
+            if (!n.get_child_optional("byteDownChange").has_value()) {
+                n.put("byteInfo", false);
+            }
 
             pS.push_back(std::make_pair("", n));
         }

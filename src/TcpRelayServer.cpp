@@ -116,6 +116,10 @@ void TcpRelaySession::do_downstream_write(const size_t &bytes_transferred) {
                     const boost::system::error_code &error,
                     std::size_t bytes_transferred_) {
                 if (!error || bytes_transferred_ != bytes_transferred) {
+                    auto pSI = statisticsInfo.lock();
+                    if (pSI) {
+                        pSI->addByteDown(nowServer->index, bytes_transferred_);
+                    }
                     // Write to client complete
                     // read more again
                     do_upstream_read();
@@ -148,6 +152,10 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
                     const boost::system::error_code &error,
                     std::size_t bytes_transferred_) {
                 if (!error || bytes_transferred_ != bytes_transferred) {
+                    auto pSI = statisticsInfo.lock();
+                    if (pSI) {
+                        pSI->addByteUp(nowServer->index, bytes_transferred_);
+                    }
                     // Write to remote server complete
                     // read more again
                     do_downstream_read();
@@ -191,6 +199,10 @@ void TcpRelayServer::start() {
         cleanTimer = std::make_shared<boost::asio::steady_timer>(ex, std::chrono::seconds{5});
         do_cleanTimer();
     }
+    if (!speedCalcTimer) {
+        speedCalcTimer = std::make_shared<boost::asio::steady_timer>(ex, std::chrono::seconds{1});
+        do_speedCalcTimer();
+    }
 
     boost::asio::ip::tcp::resolver resolver(ex);
     boost::asio::ip::tcp::endpoint listen_endpoint =
@@ -217,7 +229,7 @@ void TcpRelayServer::async_accept() {
     auto session = std::make_shared<TcpRelaySession>(
             ex,
             upstreamPool,
-            statisticsInfo,
+            statisticsInfo->weak_from_this(),
             configLoader->config.retryTimes
     );
     sessions.push_back(session->weak_from_this());
@@ -288,6 +300,22 @@ void TcpRelayServer::do_cleanTimer() {
         do_cleanTimer();
     };
     cleanTimer->async_wait(c);
+}
+
+void TcpRelayServer::do_speedCalcTimer() {
+    auto c = [this, self = shared_from_this(), speedCalcTimer = this->speedCalcTimer]
+            (const boost::system::error_code &e) {
+        if (e) {
+            return;
+        }
+//        std::cout << "do_speedCalcTimer()" << std::endl;
+
+        statisticsInfo->calcByteAll();
+
+        speedCalcTimer->expires_at(speedCalcTimer->expiry() + std::chrono::seconds{1});
+        do_speedCalcTimer();
+    };
+    speedCalcTimer->async_wait(c);
 }
 
 void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
