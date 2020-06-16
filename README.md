@@ -9,6 +9,11 @@ Some code about how to use Boost.Asio & openssl come from [trojan](https://githu
 The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.com/philave/boost_socks5) , Thank you~  
 
 ---
+## Monitor
+
+![Monitor Screen](https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/monitor-screen.png)
+
+---
 
 ## porting reason
 
