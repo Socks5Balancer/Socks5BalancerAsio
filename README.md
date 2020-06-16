@@ -13,6 +13,18 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 
 ![Monitor Screen](https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/monitor-screen.png)
 
+## Struct Info
+now the main server write with pure c++ (c++11/17) , powered by Boost.Asio/Boost.Beast .  
+and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) .  
+
+if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config.  
+then, it will get server info json from main server , and control it with a `/op?xxx` path on same place. 
+
+if you think the simple Monitor html looks so ugly, you can re-write it with any other tools,  
+only need to follow the data process way on the simple Monitor html.  
+BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date.  
+<small>(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)</small>
+
 ---
 
 ## porting reason
