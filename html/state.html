@@ -173,9 +173,11 @@
     <br/>
     now time: {{ nowTime }}
     <br/>
-    runTime: {{ runTimeString }}
+    startTime: {{ startTime }}
     <br/>
-    runTime: {{ runTimeString2 }}
+    runTime: {{ runTime }}
+    <br/>
+    runTime: {{ runTimeString }}
     <br/>
     listen On: {{ listenOn }}
     <br/>
@@ -220,8 +222,9 @@
             //},
             rule: "",
             nowTime: "",
+            startTime: "",
+            runTime: 0,
             runTimeString: "",
-            runTimeString2: "",
             listenOn: "",
             haveUsableServer: true,
             UpstreamSelectRuleList: [],
@@ -255,6 +258,9 @@
                         app.UpstreamSelectRuleList = T.RuleEnumList;
                         app.rule = T.nowRule;
                         app.newRule = T.nowRule;
+                        app.nowTime = T.nowTime;
+                        app.runTime = T.runTime;
+                        app.startTime = T.startTime;
                         app.listenOn = ' ' + T.config.listenHost + ' : ' + T.config.listenPort;
 
                         app.allConnectCount = _.reduce(T.pool.upstream, function (acc, T) {
