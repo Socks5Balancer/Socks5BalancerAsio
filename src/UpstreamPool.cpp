@@ -67,7 +67,8 @@ UpstreamPool::UpstreamPool(boost::asio::executor ex, std::shared_ptr<TcpTest> tc
         : ex(ex),
           tcpTest(std::move(tcpTest)),
           lastConnectComeTime(UpstreamTimePointNow()),
-          connectTestHttps(std::move(connectTestHttps)) {}
+          connectTestHttps(std::move(connectTestHttps)),
+          lastChangeUpstreamTime(UpstreamTimePointNow()) {}
 
 const std::deque<UpstreamServerRef> &UpstreamPool::pool() {
     return _pool;
