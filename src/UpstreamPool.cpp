@@ -173,7 +173,7 @@ auto UpstreamPool::getServerBasedOnAddress() -> UpstreamServerRef {
             std::cout << "getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
             return s;
         case RuleEnum::change_by_time: {
-            UpstreamTimePoint t;
+            UpstreamTimePoint t = UpstreamTimePointNow();
             const auto &d = _configLoader->config.serverChangeTime;
             if ((t - lastChangeUpstreamTime) > d) {
                 s = getNextServer();
