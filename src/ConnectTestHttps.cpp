@@ -482,7 +482,7 @@ void ConnectTestHttps::do_cleanTimer() {
         if (e) {
             return;
         }
-        std::cout << "do_cleanTimer()" << std::endl;
+//        std::cout << "do_cleanTimer()" << std::endl;
 
         auto it = sessions.begin();
         while (it != sessions.end()) {

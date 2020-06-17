@@ -314,7 +314,7 @@ void UpstreamPool::do_AdditionTimer() {
         if (e) {
             return;
         }
-        std::cout << "do_AdditionTimer()" << std::endl;
+//        std::cout << "do_AdditionTimer()" << std::endl;
 
         bool isAllDown = std::all_of(
                 _pool.begin(),
@@ -355,7 +355,7 @@ void UpstreamPool::do_tcpCheckerTimer() {
         if (e) {
             return;
         }
-        std::cout << "do_tcpCheckerTimer()" << std::endl;
+//        std::cout << "do_tcpCheckerTimer()" << std::endl;
 //        std::cout << print() << std::endl;
 
         if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
@@ -425,7 +425,7 @@ void UpstreamPool::do_connectCheckerTimer() {
         if (e) {
             return;
         }
-        std::cout << "do_connectCheckerTimer()" << std::endl;
+//        std::cout << "do_connectCheckerTimer()" << std::endl;
 
         if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
             do_connectCheckerTimer_impl();

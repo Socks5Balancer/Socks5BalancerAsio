@@ -154,7 +154,7 @@ public:
             upstreamPool(std::move(upstreamPool)),
             statisticsInfo(statisticsInfo),
             retryLimit(retryLimit) {
-        std::cout << "TcpRelaySession create" << std::endl;
+//        std::cout << "TcpRelaySession create" << std::endl;
     }
 
     boost::asio::ip::tcp::socket &downstream_socket();
