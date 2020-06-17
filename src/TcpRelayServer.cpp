@@ -343,9 +343,73 @@ void TcpRelayStatisticsInfo::Info::closeAllSession() {
     }
 }
 
+void TcpRelayStatisticsInfo::Info::calcByte() {
+    size_t newByteUp = byteUp.load();
+    size_t newByteDown = byteDown.load();
+    byteUpChange = newByteUp - byteUpLast;
+    byteDownChange = newByteDown - byteDownLast;
+    byteUpLast = newByteUp;
+    byteDownLast = newByteDown;
+    if (byteUpChange > byteUpChangeMax) {
+        byteUpChangeMax = byteUpChange;
+    }
+    if (byteDownChange > byteDownChangeMax) {
+        byteDownChangeMax = byteDownChange;
+    }
+}
+
 void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySession> s) {
     if (upstreamIndex.find(index) == upstreamIndex.end()) {
         upstreamIndex.try_emplace(index, std::make_shared<Info>());
     }
     upstreamIndex.at(index)->sessions.push_back(s);
+}
+
+std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(size_t index) {
+    auto n = upstreamIndex.find(index);
+    if (n != upstreamIndex.end()) {
+        return n->second;
+    } else {
+        return {};
+    }
+}
+
+void TcpRelayStatisticsInfo::removeExpiredSession(size_t index) {
+    auto p = getInfo(index);
+    if (p) {
+        p->removeExpiredSession();
+    }
+}
+
+void TcpRelayStatisticsInfo::addByteUp(size_t index, size_t b) {
+    auto p = getInfo(index);
+    if (p) {
+        p->byteUp += b;
+    }
+}
+
+void TcpRelayStatisticsInfo::addByteDown(size_t index, size_t b) {
+    auto p = getInfo(index);
+    if (p) {
+        p->byteDown += b;
+    }
+}
+
+void TcpRelayStatisticsInfo::calcByteAll() {
+    for (auto &a: upstreamIndex) {
+        a.second->calcByte();
+    }
+}
+
+void TcpRelayStatisticsInfo::removeExpiredSessionAll() {
+    for (auto &a: upstreamIndex) {
+        a.second->removeExpiredSession();
+    }
+}
+
+void TcpRelayStatisticsInfo::closeAllSession(size_t index) {
+    auto p = getInfo(index);
+    if (p) {
+        p->closeAllSession();
+    }
 }

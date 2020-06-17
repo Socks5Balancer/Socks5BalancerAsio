@@ -53,20 +53,7 @@ public:
 
         void closeAllSession();
 
-        void calcByte() {
-            size_t newByteUp = byteUp.load();
-            size_t newByteDown = byteDown.load();
-            byteUpChange = newByteUp - byteUpLast;
-            byteDownChange = newByteDown - byteDownLast;
-            byteUpLast = newByteUp;
-            byteDownLast = newByteDown;
-            if (byteUpChange > byteUpChangeMax) {
-                byteUpChangeMax = byteUpChange;
-            }
-            if (byteDownChange > byteDownChangeMax) {
-                byteDownChangeMax = byteDownChange;
-            }
-        }
+        void calcByte();
     };
 
 private:
@@ -78,54 +65,19 @@ public:
 public:
     void addSession(size_t index, std::weak_ptr<TcpRelaySession> s);
 
-    std::shared_ptr<Info> getInfo(size_t index) {
-        auto n = upstreamIndex.find(index);
-        if (n != upstreamIndex.end()) {
-            return n->second;
-        } else {
-            return {};
-        }
-    }
+    std::shared_ptr<Info> getInfo(size_t index);
 
-    void removeExpiredSession(size_t index) {
-        auto p = getInfo(index);
-        if (p) {
-            p->removeExpiredSession();
-        }
-    }
+    void removeExpiredSession(size_t index);
 
-    void addByteUp(size_t index, size_t b) {
-        auto p = getInfo(index);
-        if (p) {
-            p->byteUp += b;
-        }
-    }
+    void addByteUp(size_t index, size_t b);
 
-    void addByteDown(size_t index, size_t b) {
-        auto p = getInfo(index);
-        if (p) {
-            p->byteDown += b;
-        }
-    }
+    void addByteDown(size_t index, size_t b);
 
-    void calcByteAll() {
-        for (auto &a: upstreamIndex) {
-            a.second->calcByte();
-        }
-    }
+    void calcByteAll();
 
-    void removeExpiredSessionAll() {
-        for (auto &a: upstreamIndex) {
-            a.second->removeExpiredSession();
-        }
-    }
+    void removeExpiredSessionAll();
 
-    void closeAllSession(size_t index) {
-        auto p = getInfo(index);
-        if (p) {
-            p->closeAllSession();
-        }
-    }
+    void closeAllSession(size_t index);
 
 };
 
