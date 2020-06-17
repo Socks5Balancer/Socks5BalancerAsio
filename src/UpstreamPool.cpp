@@ -273,21 +273,22 @@ std::string UpstreamPool::print() {
 
 void UpstreamPool::do_tcpCheckerTimer_impl() {
     for (auto &a: _pool) {
-        auto p = std::to_string(a->port);
-//            std::cout << a->host << ":" << p << std::endl;
-        auto t = tcpTest->createTest(a->host, p);
-        t->run([t, a]() {
-                   // on ok
-                   if (a->isOffline) {
-                       a->lastConnectFailed = false;
-                   }
-                   a->lastOnlineTime = UpstreamTimePointNow();
-                   a->isOffline = false;
-               },
-               [t, a](std::string reason) {
-                   // ok error
-                   a->isOffline = true;
-               });
+        if (!a->isManualDisable) {
+            auto p = std::to_string(a->port);
+            auto t = tcpTest->createTest(a->host, p);
+            t->run([t, a]() {
+                       // on ok
+                       if (a->isOffline) {
+                           a->lastConnectFailed = false;
+                       }
+                       a->lastOnlineTime = UpstreamTimePointNow();
+                       a->isOffline = false;
+                   },
+                   [t, a](std::string reason) {
+                       // ok error
+                       a->isOffline = true;
+                   });
+        }
     }
 }
 
@@ -369,27 +370,29 @@ void UpstreamPool::do_tcpCheckerTimer() {
 
 void UpstreamPool::do_connectCheckerTimer_impl() {
     for (const auto &a: _pool) {
-        auto t = connectTestHttps->createTest(
-                a->host,
-                std::to_string(a->port),
-                _configLoader->config.testRemoteHost,
-                _configLoader->config.testRemotePort,
-                R"(\)"
-        );
-        t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
-                   // on ok
-                   // std::cout << "SuccessfulInfo:" << info << std::endl;
-                   a->lastConnectTime = UpstreamTimePointNow();
-                   a->lastConnectFailed = false;
+        if (!a->isManualDisable) {
+            auto t = connectTestHttps->createTest(
+                    a->host,
+                    std::to_string(a->port),
+                    _configLoader->config.testRemoteHost,
+                    _configLoader->config.testRemotePort,
+                    R"(\)"
+            );
+            t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
+                       // on ok
+                       // std::cout << "SuccessfulInfo:" << info << std::endl;
+                       a->lastConnectTime = UpstreamTimePointNow();
+                       a->lastConnectFailed = false;
 
-                   std::stringstream ss;
-                   ss << "status_code:" << static_cast<int>(info.base().result());
-                   a->lastConnectCheckResult = ss.str();
-               },
-               [t, a](std::string reason) {
-                   // ok error
-                   a->lastConnectFailed = true;
-               });
+                       std::stringstream ss;
+                       ss << "status_code:" << static_cast<int>(info.base().result());
+                       a->lastConnectCheckResult = ss.str();
+                   },
+                   [t, a](std::string reason) {
+                       // ok error
+                       a->lastConnectFailed = true;
+                   });
+        }
     }
 }
 

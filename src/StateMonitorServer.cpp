@@ -87,6 +87,7 @@ std::string HttpConnectSession::createJsonString() {
             n.put("lastConnectFailed", a->lastConnectFailed);
             n.put("isManualDisable", a->isManualDisable);
             n.put("disable", a->disable);
+            n.put("lastConnectCheckResult", a->lastConnectCheckResult);
             n.put("connectCount", a->connectCount.load());
             n.put("lastOnlineTime", (
                     a->lastOnlineTime.has_value() ?

@@ -70,7 +70,8 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
             name(name),
             host(host),
             port(port),
-            disable(disable) {}
+            disable(disable),
+            isManualDisable(disable) {}
 
     std::string print();
 
