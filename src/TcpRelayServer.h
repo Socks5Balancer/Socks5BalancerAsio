@@ -49,35 +49,67 @@ public:
         size_t byteUpChangeMax = 0;
         size_t byteDownChangeMax = 0;
 
+        std::atomic_size_t connectCount{0};
+
         void removeExpiredSession();
 
         void closeAllSession();
 
         void calcByte();
+
+        void connectCountAdd();
+
+        void connectCountSub();
     };
 
 private:
     std::map<size_t, std::shared_ptr<Info>> upstreamIndex;
+    std::map<std::string, std::shared_ptr<Info>> clientIndex;
 
 public:
     std::atomic_size_t lastConnectServerIndex{0};
 
 public:
+    std::map<size_t, std::shared_ptr<Info>> &getUpstreamIndex();
+
+    std::map<std::string, std::shared_ptr<Info>> &getClientIndex();
+
+public:
     void addSession(size_t index, std::weak_ptr<TcpRelaySession> s);
+
+    void addSession(std::string addr, std::weak_ptr<TcpRelaySession> s);
 
     std::shared_ptr<Info> getInfo(size_t index);
 
+    std::shared_ptr<Info> getInfo(std::string addr);
+
     void removeExpiredSession(size_t index);
+
+    void removeExpiredSession(std::string addr);
 
     void addByteUp(size_t index, size_t b);
 
+    void addByteUp(std::string addr, size_t b);
+
     void addByteDown(size_t index, size_t b);
+
+    void addByteDown(std::string addr, size_t b);
+
+    void connectCountAdd(size_t index);
+
+    void connectCountAdd(std::string addr);
+
+    void connectCountSub(size_t index);
+
+    void connectCountSub(std::string addr);
 
     void calcByteAll();
 
     void removeExpiredSessionAll();
 
     void closeAllSession(size_t index);
+
+    void closeAllSession(std::string addr);
 
 };
 
@@ -92,6 +124,9 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     std::shared_ptr<UpstreamPool> upstreamPool;
 
     std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo;
+
+    boost::asio::ip::tcp::endpoint endpoint;
+    std::string clientEndpointAddrString;
 
     enum {
         max_data_length = 8192

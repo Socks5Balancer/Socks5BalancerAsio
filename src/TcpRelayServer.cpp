@@ -12,6 +12,10 @@ boost::asio::ip::tcp::socket &TcpRelaySession::upstream_socket() {
 }
 
 void TcpRelaySession::start() {
+    boost::system::error_code ec;
+    endpoint = downstream_socket().remote_endpoint(ec);
+    clientEndpointAddrString = endpoint.address().to_string();
+
     std::cout << "TcpRelaySession start()" << std::endl;
     try_connect_upstream();
 }
@@ -73,7 +77,10 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                     auto pSI = statisticsInfo.lock();
                     if (pSI) {
                         pSI->addSession(nowServer->index, weak_from_this());
+                        pSI->addSession(clientEndpointAddrString, weak_from_this());
                         pSI->lastConnectServerIndex.store(nowServer->index);
+                        pSI->connectCountAdd(nowServer->index);
+                        pSI->connectCountAdd(clientEndpointAddrString);
                     }
 
                     // Setup async read from remote server (upstream)
@@ -119,6 +126,7 @@ void TcpRelaySession::do_downstream_write(const size_t &bytes_transferred) {
                     auto pSI = statisticsInfo.lock();
                     if (pSI) {
                         pSI->addByteDown(nowServer->index, bytes_transferred_);
+                        pSI->addByteDown(clientEndpointAddrString, bytes_transferred_);
                     }
                     // Write to client complete
                     // read more again
@@ -155,6 +163,7 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
                     auto pSI = statisticsInfo.lock();
                     if (pSI) {
                         pSI->addByteUp(nowServer->index, bytes_transferred_);
+                        pSI->addByteUp(clientEndpointAddrString, bytes_transferred_);
                     }
                     // Write to remote server complete
                     // read more again
@@ -184,6 +193,11 @@ void TcpRelaySession::close(boost::system::error_code error) {
         isDeCont = true;
         if (nowServer) {
             --nowServer->connectCount;
+            auto pSI = statisticsInfo.lock();
+            if (pSI) {
+                pSI->connectCountSub(nowServer->index);
+                pSI->connectCountSub(clientEndpointAddrString);
+            }
         }
     }
 }
@@ -358,6 +372,14 @@ void TcpRelayStatisticsInfo::Info::calcByte() {
     }
 }
 
+void TcpRelayStatisticsInfo::Info::connectCountAdd() {
+    ++connectCount;
+}
+
+void TcpRelayStatisticsInfo::Info::connectCountSub() {
+    --connectCount;
+}
+
 void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySession> s) {
     if (upstreamIndex.find(index) == upstreamIndex.end()) {
         upstreamIndex.try_emplace(index, std::make_shared<Info>());
@@ -365,9 +387,25 @@ void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySess
     upstreamIndex.at(index)->sessions.push_back(s);
 }
 
+void TcpRelayStatisticsInfo::addSession(std::string addr, std::weak_ptr<TcpRelaySession> s) {
+    if (clientIndex.find(addr) == clientIndex.end()) {
+        clientIndex.try_emplace(addr, std::make_shared<Info>());
+    }
+    clientIndex.at(addr)->sessions.push_back(s);
+}
+
 std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(size_t index) {
     auto n = upstreamIndex.find(index);
     if (n != upstreamIndex.end()) {
+        return n->second;
+    } else {
+        return {};
+    }
+}
+
+std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(std::string addr) {
+    auto n = clientIndex.find(addr);
+    if (n != clientIndex.end()) {
         return n->second;
     } else {
         return {};
@@ -381,8 +419,22 @@ void TcpRelayStatisticsInfo::removeExpiredSession(size_t index) {
     }
 }
 
+void TcpRelayStatisticsInfo::removeExpiredSession(std::string addr) {
+    auto p = getInfo(addr);
+    if (p) {
+        p->removeExpiredSession();
+    }
+}
+
 void TcpRelayStatisticsInfo::addByteUp(size_t index, size_t b) {
     auto p = getInfo(index);
+    if (p) {
+        p->byteUp += b;
+    }
+}
+
+void TcpRelayStatisticsInfo::addByteUp(std::string addr, size_t b) {
+    auto p = getInfo(addr);
     if (p) {
         p->byteUp += b;
     }
@@ -395,14 +447,27 @@ void TcpRelayStatisticsInfo::addByteDown(size_t index, size_t b) {
     }
 }
 
+void TcpRelayStatisticsInfo::addByteDown(std::string addr, size_t b) {
+    auto p = getInfo(addr);
+    if (p) {
+        p->byteDown += b;
+    }
+}
+
 void TcpRelayStatisticsInfo::calcByteAll() {
     for (auto &a: upstreamIndex) {
+        a.second->calcByte();
+    }
+    for (auto &a: clientIndex) {
         a.second->calcByte();
     }
 }
 
 void TcpRelayStatisticsInfo::removeExpiredSessionAll() {
     for (auto &a: upstreamIndex) {
+        a.second->removeExpiredSession();
+    }
+    for (auto &a: clientIndex) {
         a.second->removeExpiredSession();
     }
 }
@@ -412,4 +477,47 @@ void TcpRelayStatisticsInfo::closeAllSession(size_t index) {
     if (p) {
         p->closeAllSession();
     }
+}
+
+void TcpRelayStatisticsInfo::closeAllSession(std::string addr) {
+    auto p = getInfo(addr);
+    if (p) {
+        p->closeAllSession();
+    }
+}
+
+void TcpRelayStatisticsInfo::connectCountAdd(size_t index) {
+    auto p = getInfo(index);
+    if (p) {
+        p->connectCountAdd();
+    }
+}
+
+void TcpRelayStatisticsInfo::connectCountAdd(std::string addr) {
+    auto p = getInfo(addr);
+    if (p) {
+        p->connectCountAdd();
+    }
+}
+
+void TcpRelayStatisticsInfo::connectCountSub(size_t index) {
+    auto p = getInfo(index);
+    if (p) {
+        p->connectCountSub();
+    }
+}
+
+void TcpRelayStatisticsInfo::connectCountSub(std::string addr) {
+    auto p = getInfo(addr);
+    if (p) {
+        p->connectCountSub();
+    }
+}
+
+std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getUpstreamIndex() {
+    return upstreamIndex;
+}
+
+std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getClientIndex() {
+    return clientIndex;
 }

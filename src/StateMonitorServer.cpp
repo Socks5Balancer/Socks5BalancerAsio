@@ -139,8 +139,45 @@ std::string HttpConnectSession::createJsonString() {
     }
 
     if (auto pT = tcpRelayServer.lock()) {
+        decltype(std::declval<decltype(pT)::element_type>().getStatisticsInfo()) info;
         if (pT) {
-            root.put("lastConnectServerIndex", pT->getStatisticsInfo()->lastConnectServerIndex);
+            info = pT->getStatisticsInfo();
+            root.put("lastConnectServerIndex", info->lastConnectServerIndex);
+
+            boost::property_tree::ptree pS;
+            for (const auto &a: info->getUpstreamIndex()) {
+                boost::property_tree::ptree n;
+
+                n.put("index", a.first);
+                n.put("connectCount", a.second->connectCount.load());
+                n.put("byteDownChange", a.second->byteDownChange);
+                n.put("byteUpChange", a.second->byteUpChange);
+                n.put("byteDownLast", a.second->byteDownLast);
+                n.put("byteUpLast", a.second->byteUpLast);
+                n.put("byteUpChangeMax", a.second->byteUpChangeMax);
+                n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+
+                pS.push_back(std::make_pair("", n));
+            }
+            root.add_child("UpstreamIndex", pS);
+
+            boost::property_tree::ptree pC;
+            for (const auto &a: info->getClientIndex()) {
+                boost::property_tree::ptree n;
+
+                n.put("index", a.first);
+                n.put("connectCount", a.second->connectCount.load());
+                n.put("byteDownChange", a.second->byteDownChange);
+                n.put("byteUpChange", a.second->byteUpChange);
+                n.put("byteDownLast", a.second->byteDownLast);
+                n.put("byteUpLast", a.second->byteUpLast);
+                n.put("byteUpChangeMax", a.second->byteUpChangeMax);
+                n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+
+                pC.push_back(std::make_pair("", n));
+            }
+            root.add_child("ClientIndex", pC);
+
         }
     }
     root.put("startTime", printUpstreamTimePoint(startTime));
