@@ -285,6 +285,7 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
                        a->isOffline = false;
                    },
                    [t, a](std::string reason) {
+                       boost::ignore_unused(reason);
                        // ok error
                        a->isOffline = true;
                    });
@@ -304,6 +305,7 @@ void UpstreamPool::do_tcpCheckerOne_impl(UpstreamServerRef a) {
                a->isOffline = false;
            },
            [t, a](std::string reason) {
+               boost::ignore_unused(reason);
                // ok error
                a->isOffline = true;
            });
@@ -389,6 +391,7 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
                        a->lastConnectCheckResult = ss.str();
                    },
                    [t, a](std::string reason) {
+                       boost::ignore_unused(reason);
                        // ok error
                        a->lastConnectFailed = true;
                    });
@@ -415,6 +418,7 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
                a->lastConnectCheckResult = ss.str();
            },
            [t, a](std::string reason) {
+               boost::ignore_unused(reason);
                // ok error
                a->lastConnectFailed = true;
            });
