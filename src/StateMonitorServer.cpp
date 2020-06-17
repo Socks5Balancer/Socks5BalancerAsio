@@ -265,7 +265,7 @@ void HttpConnectSession::create_response() {
         std::vector<std::pair<std::string, std::string>> queryPairs;
         for (const auto &a : queryList) {
             std::vector<std::string> p;
-            boost::split(p, query, boost::is_any_of("="));
+            boost::split(p, a, boost::is_any_of("="));
             if (p.size() == 1) {
                 queryPairs.emplace_back(p.at(0), "");
             }
