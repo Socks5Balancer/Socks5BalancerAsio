@@ -313,6 +313,11 @@ void HttpConnectSession::create_response() {
                         if (index >= 0 && index < upstreamPool->pool().size()) {
                             upstreamPool->forceSetLastUseUpstreamIndex(index);
                         }
+                    } else if (q.first == "forceCheckServer") {
+                        auto index = boost::lexical_cast<size_t>(q.second);
+                        if (index >= 0 && index < upstreamPool->pool().size()) {
+                            upstreamPool->forceCheckOne(index);
+                        }
                     } else if (q.first == "enableAllServer") {
                         auto index = boost::lexical_cast<size_t>(q.second);
                         if (index == 1) {

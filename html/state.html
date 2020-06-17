@@ -76,14 +76,15 @@
             <th>Host:Port</th>
             <th>name</th>
             <th>online</th>
-            <th>connectable</th>
-            <th>running</th>
+            <th>work</th>
+            <th>run</th>
             <th>lastTCPCheckTime</th>
             <th>lastConnectCheckTime</th>
             <th>ManualDisable</th>
             <th>Usable</th>
             <th>Close Connect</th>
             <th>Select</th>
+            <th>Check</th>
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
@@ -123,7 +124,7 @@
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?disable=' + _.parseInt(u.index))"
                     >
-                        Disable It
+                        Disable
                     </a>
                 </template>
             </td>
@@ -142,7 +143,14 @@
                 <a href="javascript:void(0)"
                    v-on:click="sendCommand('/op?forceNowUseServer=' + _.parseInt(u.index))"
                 >
-                    Use This Now
+                    Use Now
+                </a>
+            </td>
+            <td>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand('/op?forceCheckServer=' + _.parseInt(u.index))"
+                >
+                    Check Now
                 </a>
             </td>
             <td>{{formatData(u)}}</td>
@@ -154,7 +162,7 @@
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="14">
+            <td colspan="15">
                 <a href="javascript:void(0)"
                    v-on:click="sendCommand('/op?cleanAllCheckState=1')"
                    style="margin-right: 1em;"

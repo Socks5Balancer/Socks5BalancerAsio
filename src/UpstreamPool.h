@@ -144,14 +144,20 @@ public:
 
     void forceCheckNow();
 
+    void forceCheckOne(size_t index);
+
 private:
     void do_tcpCheckerTimer();
 
     void do_tcpCheckerTimer_impl();
 
+    void do_tcpCheckerOne_impl(UpstreamServerRef a);
+
     void do_connectCheckerTimer();
 
     void do_connectCheckerTimer_impl();
+
+    void do_connectCheckerOne_impl(UpstreamServerRef a);
 
     void do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceCheckerTimer);
 

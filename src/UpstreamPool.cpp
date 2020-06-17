@@ -291,6 +291,23 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
     }
 }
 
+void UpstreamPool::do_tcpCheckerOne_impl(UpstreamServerRef a) {
+    auto p = std::to_string(a->port);
+    auto t = tcpTest->createTest(a->host, p);
+    t->run([t, a]() {
+               // on ok
+               if (a->isOffline) {
+                   a->lastConnectFailed = false;
+               }
+               a->lastOnlineTime = UpstreamTimePointNow();
+               a->isOffline = false;
+           },
+           [t, a](std::string reason) {
+               // ok error
+               a->isOffline = true;
+           });
+}
+
 void UpstreamPool::do_AdditionTimer() {
     auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
         if (e) {
@@ -376,6 +393,30 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
     }
 }
 
+void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
+    auto t = connectTestHttps->createTest(
+            a->host,
+            std::to_string(a->port),
+            _configLoader->config.testRemoteHost,
+            _configLoader->config.testRemotePort,
+            R"(\)"
+    );
+    t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
+               // on ok
+               // std::cout << "SuccessfulInfo:" << info << std::endl;
+               a->lastConnectTime = UpstreamTimePointNow();
+               a->lastConnectFailed = false;
+
+               std::stringstream ss;
+               ss << "status_code:" << static_cast<int>(info.base().result());
+               a->lastConnectCheckResult = ss.str();
+           },
+           [t, a](std::string reason) {
+               // ok error
+               a->lastConnectFailed = true;
+           });
+}
+
 void UpstreamPool::do_connectCheckerTimer() {
     auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
         if (e) {
@@ -401,6 +442,16 @@ void UpstreamPool::forceCheckNow() {
     auto _forceCheckerTimer = std::make_shared<CheckerTimerType>(ex, ConfigTimeDuration{500});
     do_forceCheckNow(_forceCheckerTimer);
     forceCheckerTimer = _forceCheckerTimer;
+}
+
+void UpstreamPool::forceCheckOne(size_t index) {
+    if (index >= 0 && index < _pool.size()) {
+        auto ref = _pool.at(index);
+        boost::asio::post(ex, [this, self = shared_from_this(), ref]() {
+            do_tcpCheckerOne_impl(ref);
+            do_connectCheckerOne_impl(ref);
+        });
+    }
 }
 
 void UpstreamPool::do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceCheckerTimer) {
