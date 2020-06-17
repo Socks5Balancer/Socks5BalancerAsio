@@ -106,7 +106,7 @@ public:
 
     void setConfig(std::shared_ptr<ConfigLoader> configLoader);
 
-    void forceSetLastUseUpstreamIndex(int i);
+    void forceSetLastUseUpstreamIndex(size_t i);
 
     size_t getLastUseUpstreamIndex();
 

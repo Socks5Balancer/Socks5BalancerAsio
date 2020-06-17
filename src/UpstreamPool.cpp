@@ -86,7 +86,7 @@ void UpstreamPool::setConfig(std::shared_ptr<ConfigLoader> configLoader) {
     }
 }
 
-void UpstreamPool::forceSetLastUseUpstreamIndex(int i) {
+void UpstreamPool::forceSetLastUseUpstreamIndex(size_t i) {
     if (i >= 0 && i < _pool.size()) {
         lastUseUpstreamIndex = i;
     }
