@@ -26,6 +26,12 @@
         .string-pad {
             margin: 0 0.5em 0 0.5em;
         }
+
+        .table-info-cell {
+            border: blueviolet 2px solid;
+            margin: 0.25em 0.5em;
+            padding: 0.2em 0;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
@@ -167,6 +173,18 @@
                 >
                     Force Check All Now
                 </a>
+                <span class="table-info-cell">
+                ↑ {{dataCount2String(totalUp)}}
+                ↓ {{dataCount2String(totalDown)}}
+                </span>
+                <span class="table-info-cell">
+                ↑Max {{speed2String(totalUpSpeedMax)}}
+                ↓Max {{speed2String(totalDownSpeedMax)}}
+                </span>
+                <span class="table-info-cell">
+                ↑ {{speed2String(totalUpSpeed)}}
+                ↓ {{speed2String(totalDownSpeed)}}
+                </span>
             </td>
         </tr>
         </tfoot>
@@ -180,41 +198,82 @@
     <br/>
     lastUseUpstreamIndex: <span class="string-pad">{{ _.parseInt(lastUseUpstreamIndex) + 1 }}</span>
     <br/>
-    <br/>
-    totalUp: <span class="string-pad">{{ dataCount2String(totalUp) }}</span>
-    <br/>
-    totalDown: <span class="string-pad">{{ dataCount2String(totalDown) }}</span>
-    <br/>
-    totalUpSpeed: <span class="string-pad">{{ speed2String(totalUpSpeed) }}</span>
-    <br/>
-    totalDownSpeed: <span class="string-pad">{{ speed2String(totalDownSpeed) }}</span>
-    <br/>
-    totalUpSpeedMax: <span class="string-pad">{{ speed2String(totalUpSpeedMax) }}</span>
-    <br/>
-    totalDownSpeedMax: <span class="string-pad">{{ speed2String(totalDownSpeedMax) }}</span>
-    <br/>
+<!--    <br/>-->
+<!--    totalUp: <span class="string-pad">{{ dataCount2String(totalUp) }}</span>-->
+<!--    <br/>-->
+<!--    totalDown: <span class="string-pad">{{ dataCount2String(totalDown) }}</span>-->
+<!--    <br/>-->
+<!--    totalUpSpeed: <span class="string-pad">{{ speed2String(totalUpSpeed) }}</span>-->
+<!--    <br/>-->
+<!--    totalDownSpeed: <span class="string-pad">{{ speed2String(totalDownSpeed) }}</span>-->
+<!--    <br/>-->
+<!--    totalUpSpeedMax: <span class="string-pad">{{ speed2String(totalUpSpeedMax) }}</span>-->
+<!--    <br/>-->
+<!--    totalDownSpeedMax: <span class="string-pad">{{ speed2String(totalDownSpeedMax) }}</span>-->
+<!--    <br/>-->
     <br/>
     now time: <span class="string-pad">{{ nowTime }}</span>
     <br/>
     startTime: <span class="string-pad">{{ startTime }}</span>
     <br/>
-    runTime: <span class="string-pad">{{ runTime }} ms</span>
-    <br/>
-    runTime: <span class="string-pad">{{ runTimeString }}</span>
-    <br/>
-    runTime: <span class="string-pad">{{ runTimeString2 }}</span>
+    runTime:
+    <span class="string-pad">{{ runTimeString }}</span>
+    <span class="string-pad">{{ runTimeString2 }}</span>
+    <span class="string-pad">{{ runTime }} ms</span>
     <br/>
     <br/>
     lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTime }}</span>
     <br/>
-    lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTimeAgo }} ms</span>
-    <br/>
-    lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTimeAgoString }}</span>
-    <br/>
-    lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTimeAgoString2 }}</span>
+    lastConnectComeTime:
+    <span class="string-pad">{{ lastConnectComeTimeAgoString }}</span>
+    <span class="string-pad">{{ lastConnectComeTimeAgoString2 }}</span>
+    <span class="string-pad">{{ lastConnectComeTimeAgo }} ms</span>
     <br/>
     <br/>
     listen On: <span class="string-pad">{{ listenOn }}</span>
+    <br/>
+    ---------------------------------------------------------------------------------------------
+    <br/>
+    <table style="border: black 3px dashed;">
+        <thead>
+        <tr>
+            <th>Host</th>
+            <th>data</th>
+            <th>speedMax</th>
+            <th>speed</th>
+            <!--        <th></th>-->
+        </tr>
+        </thead>
+        <tbody>
+
+        <tr v-for="u in ClientIndex">
+            <td>{{u.index}}</td>
+            <td>{{formatData(u)}}</td>
+            <td>{{formatSpeedMax(u)}}</td>
+            <td>{{formatSpeed(u)}}</td>
+            <!--            <td></td>-->
+        </tr>
+
+        </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="4">
+                <span class="table-info-cell">
+                ↑ {{dataCount2String(reduceField(ClientIndex, 'byteUpLast'))}}
+                ↓ {{dataCount2String(reduceField(ClientIndex, 'byteDownLast'))}}
+                </span>
+                <span class="table-info-cell">
+                ↑Max {{speed2String(reduceField(ClientIndex, 'byteUpChangeMax'))}}
+                ↓Max {{speed2String(reduceField(ClientIndex, 'byteDownChangeMax'))}}
+                </span>
+                <span class="table-info-cell">
+                ↑ {{speed2String(reduceField(ClientIndex, 'byteUpChange'))}}
+                ↓ {{speed2String(reduceField(ClientIndex, 'byteDownChange'))}}
+                </span>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
     <br/>
     ---------------------------------------------------------------------------------------------
     <br/>
@@ -327,6 +386,12 @@
         }
     }
 
+    function reduceField(T, F) {
+        return _.reduce(T, function (acc, n) {
+            return acc + _.parseInt(_.get(n, F, "0"));
+        }, 0);
+    }
+
 
     moment.locale('zh-cn');
     var app = new Vue({
@@ -366,6 +431,8 @@
             totalDownSpeed: 0,
             totalUpSpeedMax: 0,
             totalDownSpeedMax: 0,
+            UpstreamIndex: [],
+            ClientIndex: [],
         },
         methods: {
             formatSpeedMax: formatSpeedMax,
@@ -373,6 +440,7 @@
             formatData: formatData,
             speed2String: speed2String,
             dataCount2String: dataCount2String,
+            reduceField: reduceField,
             flush: function () {
                 fetch('http://' + app.backend + '/', {
                     credentials: 'omit'
@@ -391,28 +459,23 @@
                         _.isObject(T.config)
                     ) {
                         app.lastUseUpstreamIndex = T.pool.getLastUseUpstreamIndex;
-                        app.upstreamPool = T.pool.upstream;
+                        if (_.isArray(T.pool.upstream)) {
+                            app.upstreamPool = T.pool.upstream;
+                        } else {
+                            app.upstreamPool = [];
+                        }
                         app.UpstreamSelectRuleList = T.RuleEnumList;
                         app.rule = T.nowRule;
                         app.newRule = T.nowRule;
                         app.totalUp = _.reduce(app.upstreamPool, function (acc, n) {
                             return acc + _.parseInt(n.byteUpLast);
                         }, 0);
-                        app.totalDown = _.reduce(app.upstreamPool, function (acc, n) {
-                            return acc + _.parseInt(n.byteDownLast);
-                        }, 0);
-                        app.totalUpSpeed = _.reduce(app.upstreamPool, function (acc, n) {
-                            return acc + _.parseInt(n.byteUpChange);
-                        }, 0);
-                        app.totalDownSpeed = _.reduce(app.upstreamPool, function (acc, n) {
-                            return acc + _.parseInt(n.byteDownChange);
-                        }, 0);
-                        app.totalUpSpeedMax = _.reduce(app.upstreamPool, function (acc, n) {
-                            return acc + _.parseInt(n.byteUpChangeMax);
-                        }, 0);
-                        app.totalDownSpeedMax = _.reduce(app.upstreamPool, function (acc, n) {
-                            return acc + _.parseInt(n.byteDownChangeMax);
-                        }, 0);
+                        app.totalUp = reduceField(app.upstreamPool, 'byteUpLast');
+                        app.totalDown = reduceField(app.upstreamPool, 'byteDownLast');
+                        app.totalUpSpeed = reduceField(app.upstreamPool, 'byteUpChange');
+                        app.totalDownSpeed = reduceField(app.upstreamPool, 'byteDownChange');
+                        app.totalUpSpeedMax = reduceField(app.upstreamPool, 'byteUpChangeMax');
+                        app.totalDownSpeedMax = reduceField(app.upstreamPool, 'byteDownChangeMax');
 
                         app.nowTime = T.nowTime;
 
@@ -421,6 +484,23 @@
                         app.runTimeString2 = formatDuration(_.parseInt(T.runTime));
 
                         app.startTime = T.startTime;
+
+                        if (_.isArray(T.UpstreamIndex)) {
+                            app.UpstreamIndex = T.UpstreamIndex.map(N => {
+                                N.byteInfo = 'true';
+                                return N;
+                            });
+                        } else {
+                            app.UpstreamIndex = [];
+                        }
+                        if (_.isArray(T.ClientIndex)) {
+                            app.ClientIndex = T.ClientIndex.map(N => {
+                                N.byteInfo = 'true';
+                                return N;
+                            });
+                        } else {
+                            app.ClientIndex = [];
+                        }
 
                         app.lastConnectComeTime = T.pool.lastConnectComeTime;
                         app.lastConnectComeTimeAgo = _.parseInt(T.pool.lastConnectComeTimeAgo);
