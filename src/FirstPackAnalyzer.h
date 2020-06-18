@@ -30,6 +30,8 @@
 #include <functional>
 #include <utility>
 
+// see https://imququ.com/post/web-proxy.html
+
 class TcpRelaySession;
 
 struct ParsedURI {
