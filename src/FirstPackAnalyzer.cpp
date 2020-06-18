@@ -18,8 +18,37 @@
 
 #include "FirstPackAnalyzer.h"
 #include "TcpRelayServer.h"
+#include <regex>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/beast.hpp>
+
+// from https://github.com/boostorg/beast/issues/787#issuecomment-376259849
+ParsedURI FirstPackAnalyzer::parseURI(const std::string &url) {
+    ParsedURI result;
+    auto value_or = [](const std::string &value, std::string &&deflt) -> std::string {
+        return (value.empty() ? deflt : value);
+    };
+    // Note: only "http", "https", "ws", and "wss" protocols are supported
+    static const std::regex PARSE_URL{R"((([httpsw]{2,5})://)?([^/ :]+)(:(\d+))?(/([^ ?]+)?)?/?\??([^/ ]+\=[^/ ]+)?)",
+                                      std::regex_constants::ECMAScript | std::regex_constants::icase};
+    std::smatch match;
+    if (std::regex_match(url, match, PARSE_URL) && match.size() == 9) {
+        result.protocol = value_or(boost::algorithm::to_lower_copy(std::string(match[2])), "http");
+        result.domain = match[3];
+        const bool is_sequre_protocol = (result.protocol == "https" || result.protocol == "wss");
+        result.port = value_or(match[5], (is_sequre_protocol) ? "443" : "80");
+        result.resource = value_or(match[6], "/");
+        result.query = match[8];
+        if (result.domain.empty()) {
+            fail({}, "result.domain.empty()");
+        }
+    } else {
+        fail({}, "regex_match fail");
+    }
+    return result;
+}
+
 
 void FirstPackAnalyzer::start() {
     // we must keep strong ptr when running, until call the whenComplete,
@@ -213,41 +242,38 @@ void FirstPackAnalyzer::do_analysis_client_first_http_header() {
             // find
             std::cout << "do_analysis_client_first_http_header find!" << std::endl;
             try {
-                {
-                    auto it1 = s.find("\r\n");
-                    auto line1 = s.substr(0, it1);
-                    auto line1it1 = line1.find(" ");
-                    auto line1b1 = line1.substr(line1it1 + 1);
-                    auto httpOp = line1.substr(0, line1it1);
-                    auto line1it2 = line1b1.find(" ");
-                    auto target = line1b1.substr(0, line1it2);
-                    auto splitHP = target.find(":");
-                    auto host_ = target.substr(0, splitHP);
-                    auto port_ = target.substr(splitHP + 1);
-                    std::cout << "line1:" << line1 << std::endl;
-                    std::cout << "line1b1:" << line1b1 << std::endl;
-                    std::cout << "httpOp:" << httpOp << std::endl;
-                    std::cout << "target:" << target << std::endl;
-                    std::cout << "host_:" << host_ << std::endl;
-                    std::cout << "port_:" << port_ << std::endl;
-                    host = host_;
-                    port = boost::lexical_cast<uint16_t>(port_);
-                    std::cout << "host:" << host << std::endl;
-                    std::cout << "port:" << port << std::endl;
+                boost::beast::http::parser<true, boost::beast::http::buffer_body> headerParser;
+                headerParser.skip(true);
+                boost::system::error_code ec;
+                headerParser.put(boost::asio::buffer(s), ec);
+                if (ec) {
+                    std::cout << "do_analysis_client_first_http_header headerParser ec:" << ec.message() << std::endl;
+                    fail(ec, "do_analysis_client_first_http_header headerParser");
+                    return;
+                }
+                auto h = headerParser.get();
 
-                    if (httpOp.size() == 7 && boost::to_lower_copy(std::string(httpOp)) == "connect") {
-                        // is connect
-                        std::cout << "do_analysis_client_first_http_header is connect trim" << std::endl;
+                auto target = h.base().target();
+                std::cout << "target:" << target << std::endl;
+                auto uri = parseURI(std::string(target));
 
-                        isConnect = true;
+                host = uri.domain;
+                port = boost::lexical_cast<uint16_t>(uri.port);
+                std::cout << "host:" << host << std::endl;
+                std::cout << "port:" << port << std::endl;
 
-                        // remove connect request
-                        downstream_buf_.consume(it + 4);
+                if (h.method() == boost::beast::http::verb::connect) {
+                    // is connect
+                    std::cout << "do_analysis_client_first_http_header is connect trim" << std::endl;
 
-                        // send Connection Established
-                        do_send_Connection_Established();
-                        return;
-                    }
+                    isConnect = true;
+
+                    // remove connect request
+                    downstream_buf_.consume(it + 4);
+
+                    // send Connection Established
+                    do_send_Connection_Established();
+                    return;
                 }
 
                 // send socks5 handshake

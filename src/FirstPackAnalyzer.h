@@ -32,6 +32,14 @@
 
 class TcpRelaySession;
 
+struct ParsedURI {
+    std::string protocol;
+    std::string domain;  // only domain must be present
+    std::string port;
+    std::string resource;
+    std::string query;   // everything after '?', possibly nothing
+};
+
 class FirstPackAnalyzer : public std::enable_shared_from_this<FirstPackAnalyzer> {
 public:
     std::weak_ptr<TcpRelaySession> tcpRelaySession;
@@ -70,6 +78,8 @@ public:
             whenError(std::move(whenError)) {}
 
     void start();
+
+    ParsedURI parseURI(const std::string &url);
 
 private:
 
