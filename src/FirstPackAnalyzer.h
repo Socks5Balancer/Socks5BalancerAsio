@@ -25,6 +25,7 @@
 
 #include <boost/asio.hpp>
 #include <memory>
+#include <iostream>
 #include <string>
 #include <functional>
 #include <utility>
@@ -35,16 +36,25 @@ class FirstPackAnalyzer : public std::enable_shared_from_this<FirstPackAnalyzer>
 public:
     std::weak_ptr<TcpRelaySession> tcpRelaySession;
 
+    // Client --> Proxy --> Remove Server
     boost::asio::streambuf downstream_buf_;
+    // Remote Server --> Proxy --> Client
     boost::asio::streambuf upstream_buf_;
 
+    // Client
     boost::asio::ip::tcp::socket &downstream_socket_;
+    // Remote Server
     boost::asio::ip::tcp::socket &upstream_socket_;
 
     std::function<void()> whenComplete;
     std::function<void(boost::system::error_code error)> whenError;
 
     size_t beforeComplete = 2;
+
+    bool isConnect = false;
+
+    std::string host;
+    uint16_t port;
 public:
     FirstPackAnalyzer(
             std::weak_ptr<TcpRelaySession> tcpRelaySession,
@@ -61,6 +71,14 @@ public:
 
     void start();
 
+private:
+
+    void do_read_client_first_3_byte();
+
+    void do_read_client_first_http_header();
+
+    void do_analysis_client_first_http_header();
+
     void do_prepare_whenComplete();
 
     void do_whenComplete();
@@ -71,6 +89,19 @@ public:
 
     void do_prepare_complete_upstream_write();
 
+private:
+    void do_socks5_handshake_write();
+
+    void do_socks5_handshake_read();
+
+    void do_socks5_connect_write();
+
+    void do_socks5_connect_read();
+
+    void do_send_Connection_Established();
+
+private:
+    void fail(boost::system::error_code ec, const std::string &what);
 };
 
 
