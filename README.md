@@ -33,3 +33,10 @@ when i run the origin `Socks5Balancer` on a qemu of archlinux vm with 2G disk / 
 i find that it may crash on some times by memory limit and will hang hole system when connect create rate > 70/s .  
 so i write this, hope it can work more faster and more stable.  
 
+## TODO
+- [ ] listen on multi port
+- [ ] http proxy To socks5 proxy
+- [ ] http/socks5 on same port (mixed-port mode)
+- [ ] analysis socks5 protocol and communicate protocol type
+- [ ] monitor connect info
+- [ ] backend latency analysis 
