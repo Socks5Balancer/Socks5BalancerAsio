@@ -222,7 +222,7 @@ class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
     boost::asio::executor ex;
     std::shared_ptr<ConfigLoader> configLoader;
     std::shared_ptr<UpstreamPool> upstreamPool;
-    boost::asio::ip::tcp::acceptor socket_acceptor;
+    std::list<boost::asio::ip::tcp::acceptor> socket_acceptors;
 
     std::list<std::weak_ptr<TcpRelaySession>> sessions;
     std::shared_ptr<TcpRelayStatisticsInfo> statisticsInfo;
@@ -237,7 +237,6 @@ public:
     ) : ex(ex),
         configLoader(std::move(configLoader)),
         upstreamPool(std::move(upstreamPool)),
-        socket_acceptor(ex),
         statisticsInfo(std::make_shared<TcpRelayStatisticsInfo>()) {
     }
 
@@ -246,7 +245,7 @@ public:
     void stop();
 
 private:
-    void async_accept();
+    void async_accept(boost::asio::ip::tcp::acceptor& sa);
 
     void removeExpiredSession();
 

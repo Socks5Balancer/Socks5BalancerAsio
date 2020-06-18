@@ -42,6 +42,11 @@ struct Upstream {
     bool disable;
 };
 
+struct MultiListen {
+    std::string host;
+    uint16_t port;
+};
+
 enum class RuleEnum {
     loop,
     random,
@@ -54,6 +59,8 @@ struct Config {
 
     std::string listenHost;
     uint16_t listenPort;
+
+    std::vector<MultiListen> multiListen;
 
     std::string testRemoteHost;
     uint16_t testRemotePort;

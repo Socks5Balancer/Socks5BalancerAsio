@@ -255,27 +255,40 @@ void TcpRelayServer::start() {
     }
 
     boost::asio::ip::tcp::resolver resolver(ex);
-    boost::asio::ip::tcp::endpoint listen_endpoint =
-            *resolver.resolve(configLoader->config.listenHost,
-                              std::to_string(configLoader->config.listenPort)).begin();
-    socket_acceptor.open(listen_endpoint.protocol());
-    socket_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    MultiListen ul;
+    ul.host = configLoader->config.listenHost;
+    ul.port = configLoader->config.listenPort;
 
-    socket_acceptor.bind(listen_endpoint);
-    socket_acceptor.listen();
+    auto f = [this, self = shared_from_this(), &resolver](MultiListen &ul) {
+        boost::asio::ip::tcp::endpoint listen_endpoint =
+                *resolver.resolve(ul.host,
+                                  std::to_string(ul.port)).begin();
+        auto &sa = socket_acceptors.emplace_back(ex);
+        sa.open(listen_endpoint.protocol());
+        sa.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+        sa.bind(listen_endpoint);
+        sa.listen();
+        auto local_endpoint = sa.local_endpoint();
+        std::cout << "listening on: " << local_endpoint.address() << ":" << local_endpoint.port() << std::endl;
+    };
+    f(ul);
+    for (auto &a: configLoader->config.multiListen) {
+        f(a);
+    }
 
-    auto local_endpoint = socket_acceptor.local_endpoint();
-    std::cout << "listening on: " << local_endpoint.address() << ":" << local_endpoint.port() << std::endl;
-
-    async_accept();
+    for (auto &a: socket_acceptors) {
+        async_accept(a);
+    }
 }
 
 void TcpRelayServer::stop() {
-    boost::system::error_code ec;
-    socket_acceptor.cancel(ec);
+    for (auto &a: socket_acceptors) {
+        boost::system::error_code ec;
+        a.cancel(ec);
+    }
 }
 
-void TcpRelayServer::async_accept() {
+void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
     auto session = std::make_shared<TcpRelaySession>(
             ex,
             upstreamPool,
@@ -283,9 +296,9 @@ void TcpRelayServer::async_accept() {
             configLoader->config.retryTimes
     );
     sessions.push_back(session->weak_from_this());
-    socket_acceptor.async_accept(
+    sa.async_accept(
             session->downstream_socket(),
-            [this, session](const boost::system::error_code error) {
+            [this, session, &sa](const boost::system::error_code error) {
                 if (error == boost::asio::error::operation_aborted) {
                     // got cancel signal, stop calling myself
                     std::cerr << "async_accept error: operation_aborted" << "\n";
@@ -304,7 +317,7 @@ void TcpRelayServer::async_accept() {
                     }
                 }
                 std::cout << "async_accept next." << "\n";
-                async_accept();
+                async_accept(sa);
             });
 }
 

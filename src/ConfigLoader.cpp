@@ -89,6 +89,14 @@ void ConfigLoader::print() {
         std::cout << "\t" << "upstream.port:" << it.port << "\n";
         std::cout << "\t" << "upstream.disable:" << it.disable << "\n";
     }
+
+    for (size_t i = 0; i != config.multiListen.size(); ++i) {
+        const auto &it = config.multiListen[i];
+        std::cout << "config.multiListen [" << i << "]:\n";
+        std::cout << "\t" << "multiListen.host:" << it.host << "\n";
+        std::cout << "\t" << "multiListen.port:" << it.port << "\n";
+    }
+
 }
 
 void ConfigLoader::load(const std::string &filename) {
@@ -156,6 +164,17 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
             u.name = pts.get("name", std::string{});
             u.disable = pts.get("disable", false);
             c.upstream.push_back(u);
+        }
+    }
+
+    if (tree.get_child_optional("multiListen")) {
+        auto multiListen = tree.get_child("multiListen");
+        for (auto &item: multiListen) {
+            auto &pts = item.second;
+            MultiListen u;
+            u.host = pts.get("host", std::string{"127.0.0.1"});
+            u.port = pts.get("port", uint16_t{});
+            c.multiListen.push_back(u);
         }
     }
 
