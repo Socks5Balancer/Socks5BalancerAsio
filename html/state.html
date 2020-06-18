@@ -454,22 +454,21 @@
             totalDownSpeedMax: 0,
             UpstreamIndex: [],
             ClientIndex: [],
-        },
-        computed: {
-            backend: {
-                get: function () {
-                    var s = getSearchParams('backend');
-                    if (s) {
-                        return s;
-                    } else {
-                        setSearchParams('backend', defaultBackend);
-                        return defaultBackend;
-                    }
-                },
-                set: function (s) {
-                    setSearchParams('backend', s);
-                },
+            get backend() {
+                var s = getSearchParams('backend');
+                if (s) {
+                    return s;
+                } else {
+                    setSearchParams('backend', defaultBackend);
+                    return defaultBackend;
+                }
             },
+            set backend(s) {
+                setSearchParams('backend', s);
+            },
+        },
+        computed:{
+
         },
         methods: {
             formatSpeedMax: formatSpeedMax,
