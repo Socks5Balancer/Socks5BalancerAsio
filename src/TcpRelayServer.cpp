@@ -83,11 +83,39 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         pSI->connectCountAdd(clientEndpointAddrString);
                     }
 
-                    // Setup async read from remote server (upstream)
-                    do_upstream_read();
+                    // TODO impl : insert first pack analyzer on there
+                    if (!firstPackAnalyzer) {
+                        firstPackAnalyzer = std::make_shared<FirstPackAnalyzer>(
+                                shared_from_this(),
+                                downstream_socket_,
+                                upstream_socket_,
+                                [self = weak_from_this()]() {
+                                    // start relay
+                                    if (auto ptr = self.lock()) {
+                                        // Setup async read from remote server (upstream)
+                                        ptr->do_upstream_read();
 
-                    // Setup async read from client (downstream)
-                    do_downstream_read();
+                                        // Setup async read from client (downstream)
+                                        ptr->do_downstream_read();
+                                    }
+                                },
+                                [self = weak_from_this()](boost::system::error_code error) {
+                                    if (auto ptr = self.lock()) {
+                                        ptr->close(error);
+                                    }
+                                }
+                        );
+                        firstPackAnalyzer->start();
+                    } else {
+                        // wrong
+                        close(error);
+                    }
+
+//                    // Setup async read from remote server (upstream)
+//                    do_upstream_read();
+//
+//                    // Setup async read from client (downstream)
+//                    do_downstream_read();
 
                 } else {
                     std::cerr << "do_connect_upstream error:" << error.message() << "\n";
@@ -123,11 +151,7 @@ void TcpRelaySession::do_downstream_write(const size_t &bytes_transferred) {
                     const boost::system::error_code &error,
                     std::size_t bytes_transferred_) {
                 if (!error || bytes_transferred_ != bytes_transferred) {
-                    auto pSI = statisticsInfo.lock();
-                    if (pSI) {
-                        pSI->addByteDown(nowServer->index, bytes_transferred_);
-                        pSI->addByteDown(clientEndpointAddrString, bytes_transferred_);
-                    }
+                    addDown2Statistics(bytes_transferred_);
                     // Write to client complete
                     // read more again
                     do_upstream_read();
@@ -160,11 +184,7 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
                     const boost::system::error_code &error,
                     std::size_t bytes_transferred_) {
                 if (!error || bytes_transferred_ != bytes_transferred) {
-                    auto pSI = statisticsInfo.lock();
-                    if (pSI) {
-                        pSI->addByteUp(nowServer->index, bytes_transferred_);
-                        pSI->addByteUp(clientEndpointAddrString, bytes_transferred_);
-                    }
+                    addUp2Statistics(bytes_transferred_);
                     // Write to remote server complete
                     // read more again
                     do_downstream_read();
@@ -206,6 +226,22 @@ void TcpRelaySession::forceClose() {
     boost::asio::post(ex, [this, self = shared_from_this()]() {
         close();
     });
+}
+
+void TcpRelaySession::addUp2Statistics(size_t bytes_transferred_) {
+    auto pSI = statisticsInfo.lock();
+    if (pSI) {
+        pSI->addByteUp(nowServer->index, bytes_transferred_);
+        pSI->addByteUp(clientEndpointAddrString, bytes_transferred_);
+    }
+}
+
+void TcpRelaySession::addDown2Statistics(size_t bytes_transferred_) {
+    auto pSI = statisticsInfo.lock();
+    if (pSI) {
+        pSI->addByteDown(nowServer->index, bytes_transferred_);
+        pSI->addByteDown(clientEndpointAddrString, bytes_transferred_);
+    }
 }
 
 void TcpRelayServer::start() {

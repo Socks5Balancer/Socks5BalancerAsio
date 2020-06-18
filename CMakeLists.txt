@@ -29,13 +29,13 @@ message(STATUS "Boost_VERSION: ${Boost_VERSION}")
 
 if (MSVC)
 else ()
-#    if (${Boost_VERSION} VERSION_LESS_EQUAL 1.72.0)
-#        # https://github.com/boostorg/asio/issues/312
-#        # https://github.com/microsoft/vcpkg/issues/9731
-#        # https://github.com/boostorg/beast/issues/1884
-#        add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
-#        message(STATUS "Boost_VERSION <= 1.72")
-#    endif ()
+    #    if (${Boost_VERSION} VERSION_LESS_EQUAL 1.72.0)
+    #        # https://github.com/boostorg/asio/issues/312
+    #        # https://github.com/microsoft/vcpkg/issues/9731
+    #        # https://github.com/boostorg/beast/issues/1884
+    #        add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
+    #        message(STATUS "Boost_VERSION <= 1.72")
+    #    endif ()
 endif ()
 
 find_package(OpenSSL 1.1.0 REQUIRED)
@@ -53,7 +53,9 @@ add_executable(${ProjectMainName}
         src/ConfigLoader.cpp
         src/ConfigLoader.h
         src/TcpTest.cpp
-        src/TcpTest.h)
+        src/TcpTest.h
+        src/FirstPackAnalyzer.cpp
+        src/FirstPackAnalyzer.h)
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})

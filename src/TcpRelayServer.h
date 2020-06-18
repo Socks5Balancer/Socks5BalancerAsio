@@ -24,7 +24,6 @@
 #endif
 
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -32,6 +31,7 @@
 #include <map>
 #include <atomic>
 #include "UpstreamPool.h"
+#include "FirstPackAnalyzer.h"
 
 class TcpRelaySession;
 
@@ -134,6 +134,8 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     unsigned char downstream_data_[max_data_length];
     unsigned char upstream_data_[max_data_length];
 
+    std::shared_ptr<FirstPackAnalyzer> firstPackAnalyzer;
+
     UpstreamServerRef nowServer;
 
     size_t retryCount = 0;
@@ -157,12 +159,20 @@ public:
 //        std::cout << "TcpRelaySession create" << std::endl;
     }
 
+    ~TcpRelaySession() {
+//        std::cout << "~TcpRelaySession()" << std::endl;
+    }
+
     boost::asio::ip::tcp::socket &downstream_socket();
 
     boost::asio::ip::tcp::socket &upstream_socket();
 
 
     void start();
+
+    void addUp2Statistics(size_t bytes_transferred_);
+
+    void addDown2Statistics(size_t bytes_transferred_);
 
 private:
 
