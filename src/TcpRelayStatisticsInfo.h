@@ -59,6 +59,8 @@ public:
         void connectCountAdd();
 
         void connectCountSub();
+
+        size_t calcSessionsNumber();
     };
 
 private:

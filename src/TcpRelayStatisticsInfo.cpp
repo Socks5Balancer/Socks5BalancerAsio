@@ -66,6 +66,11 @@ void TcpRelayStatisticsInfo::Info::connectCountSub() {
     --connectCount;
 }
 
+size_t TcpRelayStatisticsInfo::Info::calcSessionsNumber() {
+    removeExpiredSession();
+    return sessions.size();
+}
+
 void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySession> s) {
     if (upstreamIndex.find(index) == upstreamIndex.end()) {
         upstreamIndex.try_emplace(index, std::make_shared<Info>());

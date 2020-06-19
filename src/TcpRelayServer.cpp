@@ -56,13 +56,14 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
                     nowServer->isOffline = true;
                     // try next
                     try_connect_upstream();
+                } else {
+
+                    std::cout << "TcpRelaySession do_resolve()"
+                              << " " << results->endpoint().address() << ":" << results->endpoint().port()
+                              << std::endl;
+
+                    do_connect_upstream(results);
                 }
-
-                std::cout << "TcpRelaySession do_resolve()"
-                          << " " << results->endpoint().address() << ":" << results->endpoint().port()
-                          << std::endl;
-
-                do_connect_upstream(results);
             });
 
 }
@@ -97,7 +98,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                 downstream_socket_,
                                 upstream_socket_,
                                 [self = weak_from_this()]() {
-                                    // TODO impl: insert protocol analysis on here
+                                    // impl: insert protocol analysis on here
 
                                     // start relay
                                     if (auto ptr = self.lock()) {
@@ -205,10 +206,14 @@ void TcpRelaySession::close(boost::system::error_code error) {
     }
 
     if (downstream_socket_.is_open()) {
+        downstream_socket_.shutdown(boost::asio::socket_base::shutdown_both);
+        downstream_socket_.cancel();
         downstream_socket_.close();
     }
 
     if (upstream_socket_.is_open()) {
+        upstream_socket_.shutdown(boost::asio::socket_base::shutdown_both);
+        upstream_socket_.cancel();
         upstream_socket_.close();
     }
 

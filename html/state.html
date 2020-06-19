@@ -107,7 +107,7 @@
                 <span style="color: green" v-else-if="u.lastConnectFailed==='false'">True</span>
                 <span style="color: red" v-else>False</span>
             </td>
-            <td>{{u.connectCount}}</td>
+            <td>{{u.connectCount}} / {{u.connectCount2}} / {{u.sessionsCount}}</td>
             <td>{{u.lastOnlineTime}}</td>
             <td>{{u.lastConnectTime}}</td>
             <td>
@@ -265,7 +265,7 @@
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
-            <td>{{u.connectCount}}</td>
+            <td>{{u.connectCount}} / {{u.sessionsCount}}</td>
             <!--            <td></td>-->
         </tr>
 
@@ -314,7 +314,7 @@
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
-            <td>{{u.connectCount}}</td>
+            <td>{{u.connectCount}} / {{u.sessionsCount}}</td>
             <!--            <td></td>-->
         </tr>
 

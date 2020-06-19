@@ -106,6 +106,8 @@ std::string HttpConnectSession::createJsonString() {
                     n.put("byteUpLast", iInfo->byteUpLast);
                     n.put("byteUpChangeMax", iInfo->byteUpChangeMax);
                     n.put("byteDownChangeMax", iInfo->byteDownChangeMax);
+                    n.put("sessionsCount", iInfo->calcSessionsNumber());
+                    n.put("connectCount2", iInfo->connectCount.load());
                     n.put("byteInfo", true);
                 } else {
                     n.put("byteDownChange", 0ll);
@@ -114,6 +116,8 @@ std::string HttpConnectSession::createJsonString() {
                     n.put("byteUpLast", 0ll);
                     n.put("byteUpChangeMax", 0ll);
                     n.put("byteDownChangeMax", 0ll);
+                    n.put("sessionsCount", 0ll);
+                    n.put("connectCount2", 0ll);
                     n.put("byteInfo", false);
                 }
             }
@@ -151,6 +155,7 @@ std::string HttpConnectSession::createJsonString() {
 
                 n.put("index", a.first);
                 n.put("connectCount", a.second->connectCount.load());
+                n.put("sessionsCount", a.second->calcSessionsNumber());
                 n.put("byteDownChange", a.second->byteDownChange);
                 n.put("byteUpChange", a.second->byteUpChange);
                 n.put("byteDownLast", a.second->byteDownLast);
@@ -168,6 +173,7 @@ std::string HttpConnectSession::createJsonString() {
 
                 n.put("index", a.first);
                 n.put("connectCount", a.second->connectCount.load());
+                n.put("sessionsCount", a.second->calcSessionsNumber());
                 n.put("byteDownChange", a.second->byteDownChange);
                 n.put("byteUpChange", a.second->byteUpChange);
                 n.put("byteDownLast", a.second->byteDownLast);
@@ -185,6 +191,7 @@ std::string HttpConnectSession::createJsonString() {
 
                 n.put("index", a.first);
                 n.put("connectCount", a.second->connectCount.load());
+                n.put("sessionsCount", a.second->calcSessionsNumber());
                 n.put("byteDownChange", a.second->byteDownChange);
                 n.put("byteUpChange", a.second->byteUpChange);
                 n.put("byteDownLast", a.second->byteDownLast);
