@@ -18,7 +18,7 @@ void TcpRelaySession::start() {
     clientEndpoint = downstream_socket().remote_endpoint(ec);
     clientEndpointAddrString = clientEndpoint.address().to_string();
     listenEndpoint = downstream_socket().local_endpoint();
-    listenEndpointAddrString = listenEndpoint.address().to_string() +
+    listenEndpointAddrString = listenEndpoint.address().to_string() + ":" +
                                boost::lexical_cast<std::string>(listenEndpoint.port());
 
     std::cout << "TcpRelaySession start()" << std::endl;
