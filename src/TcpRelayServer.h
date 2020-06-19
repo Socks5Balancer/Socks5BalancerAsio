@@ -46,8 +46,10 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
 
     std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo;
 
-    boost::asio::ip::tcp::endpoint endpoint;
+    boost::asio::ip::tcp::endpoint clientEndpoint;
     std::string clientEndpointAddrString;
+    boost::asio::ip::tcp::endpoint listenEndpoint;
+    std::string listenEndpointAddrString;
 
     enum {
         max_data_length = 8192

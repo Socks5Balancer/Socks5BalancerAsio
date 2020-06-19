@@ -74,34 +74,50 @@ public:
 
     std::map<std::string, std::shared_ptr<Info>> &getClientIndex();
 
+    std::map<std::string, std::shared_ptr<Info>> &getListenIndex();
+
 public:
     void addSession(size_t index, std::weak_ptr<TcpRelaySession> s);
 
     void addSessionClient(std::string addr, std::weak_ptr<TcpRelaySession> s);
 
+    void addSessionListen(std::string addr, std::weak_ptr<TcpRelaySession> s);
+
     std::shared_ptr<Info> getInfo(size_t index);
 
     std::shared_ptr<Info> getInfoClient(std::string addr);
+
+    std::shared_ptr<Info> getInfoListen(std::string addr);
 
     void removeExpiredSession(size_t index);
 
     void removeExpiredSessionClient(std::string addr);
 
+    void removeExpiredSessionListen(std::string addr);
+
     void addByteUp(size_t index, size_t b);
 
     void addByteUpClient(std::string addr, size_t b);
+
+    void addByteUpListen(std::string addr, size_t b);
 
     void addByteDown(size_t index, size_t b);
 
     void addByteDownClient(std::string addr, size_t b);
 
+    void addByteDownListen(std::string addr, size_t b);
+
     void connectCountAdd(size_t index);
 
     void connectCountAddClient(std::string addr);
 
+    void connectCountAddListen(std::string addr);
+
     void connectCountSub(size_t index);
 
     void connectCountSubClient(std::string addr);
+
+    void connectCountSubListen(std::string addr);
 
     void calcByteAll();
 
@@ -111,8 +127,9 @@ public:
 
     void closeAllSessionClient(std::string addr);
 
-};
+    void closeAllSessionListen(std::string addr);
 
+};
 
 
 #endif //SOCKS5BALANCERASIO_TCPRELAYSTATISTICSINFO_H

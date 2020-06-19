@@ -13,8 +13,10 @@ boost::asio::ip::tcp::socket &TcpRelaySession::upstream_socket() {
 
 void TcpRelaySession::start() {
     boost::system::error_code ec;
-    endpoint = downstream_socket().remote_endpoint(ec);
-    clientEndpointAddrString = endpoint.address().to_string();
+    clientEndpoint = downstream_socket().remote_endpoint(ec);
+    clientEndpointAddrString = clientEndpoint.address().to_string();
+    listenEndpoint = downstream_socket().local_endpoint();
+    listenEndpointAddrString = listenEndpoint.address().to_string();
 
     std::cout << "TcpRelaySession start()" << std::endl;
     try_connect_upstream();
@@ -78,12 +80,14 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                     if (pSI) {
                         pSI->addSession(nowServer->index, weak_from_this());
                         pSI->addSessionClient(clientEndpointAddrString, weak_from_this());
+                        pSI->addSessionListen(listenEndpointAddrString, weak_from_this());
                         pSI->lastConnectServerIndex.store(nowServer->index);
                         pSI->connectCountAdd(nowServer->index);
                         pSI->connectCountAddClient(clientEndpointAddrString);
+                        pSI->connectCountAddListen(listenEndpointAddrString);
                     }
 
-                    // TODO impl : insert first pack analyzer on there
+                    // impl : insert first pack analyzer on there
                     if (!firstPackAnalyzer) {
                         firstPackAnalyzer = std::make_shared<FirstPackAnalyzer>(
                                 shared_from_this(),
@@ -110,12 +114,6 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         // wrong
                         close(error);
                     }
-
-//                    // Setup async read from remote server (upstream)
-//                    do_upstream_read();
-//
-//                    // Setup async read from client (downstream)
-//                    do_downstream_read();
 
                 } else {
                     std::cerr << "do_connect_upstream error:" << error.message() << "\n";
@@ -217,6 +215,7 @@ void TcpRelaySession::close(boost::system::error_code error) {
             if (pSI) {
                 pSI->connectCountSub(nowServer->index);
                 pSI->connectCountSubClient(clientEndpointAddrString);
+                pSI->connectCountSubListen(listenEndpointAddrString);
             }
         }
     }
@@ -233,6 +232,7 @@ void TcpRelaySession::addUp2Statistics(size_t bytes_transferred_) {
     if (pSI) {
         pSI->addByteUp(nowServer->index, bytes_transferred_);
         pSI->addByteUpClient(clientEndpointAddrString, bytes_transferred_);
+        pSI->addByteUpListen(listenEndpointAddrString, bytes_transferred_);
     }
 }
 
@@ -241,6 +241,7 @@ void TcpRelaySession::addDown2Statistics(size_t bytes_transferred_) {
     if (pSI) {
         pSI->addByteDown(nowServer->index, bytes_transferred_);
         pSI->addByteDownClient(clientEndpointAddrString, bytes_transferred_);
+        pSI->addByteDownListen(listenEndpointAddrString, bytes_transferred_);
     }
 }
 
@@ -307,10 +308,14 @@ void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
                 if (!error) {
                     std::cout << "async_accept accept." << "\n";
                     boost::system::error_code ec;
-                    auto endpoint = session->downstream_socket().remote_endpoint(ec);
+                    auto clientEndpoint = session->downstream_socket().remote_endpoint(ec);
+                    auto listenEndpoint = session->downstream_socket().local_endpoint();
                     if (!ec) {
                         std::cout << "incoming connection from : "
-                                  << endpoint.address() << ":" << endpoint.port() << "\n";
+                                  << clientEndpoint.address() << ":" << clientEndpoint.port()
+                                  << "  on : "
+                                  << listenEndpoint.address() << ":" << listenEndpoint.port()
+                                  << "\n";
 
                         upstreamPool->updateLastConnectComeTime();
                         session->start();
