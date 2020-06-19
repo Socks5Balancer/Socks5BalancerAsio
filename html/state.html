@@ -472,7 +472,7 @@
     }
 
     function tryGetBackendConfigFromServer() {
-        fetch('/backend', {
+        fetch('backend', {
             credentials: 'omit'
         }).then(function (T) {
             if (T.ok) {
