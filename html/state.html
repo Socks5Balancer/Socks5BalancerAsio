@@ -245,6 +245,11 @@
     <table style="border: black 3px dashed;">
         <thead>
         <tr>
+            <th colspan="5" style="text-align: center;">
+                Client Connect Info
+            </th>
+        </tr>
+        <tr>
             <th>Host</th>
             <th>data</th>
             <th>speedMax</th>
@@ -285,32 +290,85 @@
         </tfoot>
     </table>
     <br/>
+
+    <table style="border: black 3px dashed;">
+        <thead>
+        <tr>
+            <th colspan="5" style="text-align: center;">
+                Listen Port Info
+            </th>
+        </tr>
+        <tr>
+            <th>Host</th>
+            <th>data</th>
+            <th>speedMax</th>
+            <th>speed</th>
+            <th>running</th>
+            <!--        <th></th>-->
+        </tr>
+        </thead>
+        <tbody>
+
+        <tr v-for="u in ListenIndex">
+            <td>{{u.index}}</td>
+            <td>{{formatData(u)}}</td>
+            <td>{{formatSpeedMax(u)}}</td>
+            <td>{{formatSpeed(u)}}</td>
+            <td>{{u.connectCount}}</td>
+            <!--            <td></td>-->
+        </tr>
+
+        </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="5">
+                <span class="table-info-cell">
+                ↑ {{dataCount2String(reduceField(ListenIndex, 'byteUpLast'))}}
+                ↓ {{dataCount2String(reduceField(ListenIndex, 'byteDownLast'))}}
+                </span>
+                <span class="table-info-cell">
+                ↑Max {{speed2String(reduceField(ListenIndex, 'byteUpChangeMax'))}}
+                ↓Max {{speed2String(reduceField(ListenIndex, 'byteDownChangeMax'))}}
+                </span>
+                <span class="table-info-cell">
+                ↑ {{speed2String(reduceField(ListenIndex, 'byteUpChange'))}}
+                ↓ {{speed2String(reduceField(ListenIndex, 'byteDownChange'))}}
+                </span>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+    <br/>
     ---------------------------------------------------------------------------------------------
     <br/>
     <h5>Fast Issue Resolve</h5>
     <ul>
-        <li>Web page Open very Sloooow :&emsp;<a href="javascript:void(0)"
-                                                 v-on:click="sendCommand('/op?endAllConnect=1')">
-            Force Close All Connect
-        </a></li>
-        <li>Seems like Server State not update :&emsp;<a href="javascript:void(0)"
-                                                         v-on:click="sendCommand('/op?forceCheckAllServer=1')">
-            Force Check All Now
-        </a></li>
-        <li>I Want To Disable All Server :&emsp;<a href="javascript:void(0)"
-                                                   v-on:click="sendCommand('/op?disableAllServer=1')">
-            Disable All Server
-        </a></li>
-        <li>I Want To Enable All Server :&emsp;<a href="javascript:void(0)"
-                                                  v-on:click="sendCommand('/op?enableAllServer=1')">
-            Enable All Server
-        </a></li>
+        <li>Web page Open very Sloooow :&emsp;
+            <a href="javascript:void(0)"
+               v-on:click="sendCommand('/op?endAllConnect=1')">
+                Force Close All Connect
+            </a></li>
+        <li>Seems like Server State not update :&emsp;
+            <a href="javascript:void(0)"
+               v-on:click="sendCommand('/op?forceCheckAllServer=1')">
+                Force Check All Now
+            </a></li>
+        <li>I Want To Disable All Server :&emsp;
+            <a href="javascript:void(0)"
+               v-on:click="sendCommand('/op?disableAllServer=1')">
+                Disable All Server
+            </a></li>
+        <li>I Want To Enable All Server :&emsp;
+            <a href="javascript:void(0)"
+               v-on:click="sendCommand('/op?enableAllServer=1')">
+                Enable All Server
+            </a></li>
     </ul>
     <br/>
     ---------------------------------------------------------------------------------------------
     <br/>
     <pre>
-{{ JSON.stringify(upstreamPool, null, 2) }}
+{{ JSON.stringify(ServerJsonInfo, null, 2) }}
 </pre>
 </div>
 
@@ -420,6 +478,7 @@
         el: '#body',
         data: {
             test: 11244,
+            ServerJsonInfo: {},
             upstreamPool: [],
             //monitorCenter: refMonitorCenter(),
             //formatTime: (m: moment.Moment | undefined) => {
@@ -467,9 +526,7 @@
                 setSearchParams('backend', s);
             },
         },
-        computed:{
-
-        },
+        computed: {},
         methods: {
             formatSpeedMax: formatSpeedMax,
             formatSpeed: formatSpeed,
@@ -494,6 +551,7 @@
                         _.isArray(T.pool.upstream) &&
                         _.isObject(T.config)
                     ) {
+                        app.ServerJsonInfo = T;
                         app.lastUseUpstreamIndex = T.pool.getLastUseUpstreamIndex;
                         if (_.isArray(T.pool.upstream)) {
                             app.upstreamPool = T.pool.upstream;
@@ -536,6 +594,14 @@
                             });
                         } else {
                             app.ClientIndex = [];
+                        }
+                        if (_.isArray(T.ListenIndex)) {
+                            app.ListenIndex = T.ListenIndex.map(N => {
+                                N.byteInfo = 'true';
+                                return N;
+                            });
+                        } else {
+                            app.ListenIndex = [];
                         }
 
                         app.lastConnectComeTime = T.pool.lastConnectComeTime;

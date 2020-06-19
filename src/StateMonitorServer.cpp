@@ -179,6 +179,23 @@ std::string HttpConnectSession::createJsonString() {
             }
             root.add_child("ClientIndex", pC);
 
+            boost::property_tree::ptree pL;
+            for (const auto &a: info->getListenIndex()) {
+                boost::property_tree::ptree n;
+
+                n.put("index", a.first);
+                n.put("connectCount", a.second->connectCount.load());
+                n.put("byteDownChange", a.second->byteDownChange);
+                n.put("byteUpChange", a.second->byteUpChange);
+                n.put("byteDownLast", a.second->byteDownLast);
+                n.put("byteUpLast", a.second->byteUpLast);
+                n.put("byteUpChangeMax", a.second->byteUpChangeMax);
+                n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+
+                pL.push_back(std::make_pair("", n));
+            }
+            root.add_child("ListenIndex", pL);
+
         }
     }
     root.put("startTime", printUpstreamTimePoint(startTime));
