@@ -1,6 +1,8 @@
 
 #include "TcpRelayServer.h"
 
+#include <boost/lexical_cast.hpp>
+
 boost::asio::ip::tcp::socket &TcpRelaySession::downstream_socket() {
     // Client socket
     return downstream_socket_;
@@ -16,7 +18,8 @@ void TcpRelaySession::start() {
     clientEndpoint = downstream_socket().remote_endpoint(ec);
     clientEndpointAddrString = clientEndpoint.address().to_string();
     listenEndpoint = downstream_socket().local_endpoint();
-    listenEndpointAddrString = listenEndpoint.address().to_string();
+    listenEndpointAddrString = listenEndpoint.address().to_string() +
+                               boost::lexical_cast<std::string>(listenEndpoint.port());
 
     std::cout << "TcpRelaySession start()" << std::endl;
     try_connect_upstream();
