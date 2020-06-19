@@ -471,9 +471,55 @@
         window.history.pushState(null, null, '?' + newQ.toString());
     }
 
-    var defaultBackend = "127.0.0.1:5010";
+    function tryGetBackendConfigFromServer() {
+        fetch('/backend', {
+            credentials: 'omit'
+        }).then(function (T) {
+            if (T.ok) {
+                return T.json();
+            }
+            return Promise.reject(T);
+        }).then(function (T) {
+            var s = getSearchParams('backend');
+            console.log('getSearchParams(\'backend\'):', s);
+            if (s) {
+                setSearchParams('backend', s);
+                return;
+            } else {
+                console.log('tryGetBackendConfigFromServer T:', T);
+                var host = _.get(T, 'host', defaultBackendHost);
+                var port = _.get(T, 'port', defaultBackendPort);
+                if (!(_.isString(host) && host.length > 0)) {
+                    host = document.location.hostname;
+                }
+                if (_.isString(port)) {
+                    port = _.parseInt(port);
+                }
+                if (!(port > 0 && port < 65536)) {
+                    port = defaultBackendPort;
+                }
+                console.log('tryGetBackendConfigFromServer [host, port]:', [host, port]);
+                setSearchParams('backend', host + ':' + port);
+                return;
+            }
+        }).catch(function (e) {
+            console.warn(e);
+            var s = getSearchParams('backend');
+            if (s) {
+                setSearchParams('backend', s);
+            } else {
+                setSearchParams('backend', defaultBackendHost + ':' + defaultBackendPort);
+            }
+        }).then(function () {
+            app.flush();
+        })
+    }
+
+    var defaultBackendHost = "127.0.0.1";
+    var defaultBackendPort = 5010;
 
     moment.locale('zh-cn');
+
     var app = new Vue({
         el: '#body',
         data: {
@@ -519,8 +565,8 @@
                 if (s) {
                     return s;
                 } else {
-                    setSearchParams('backend', defaultBackend);
-                    return defaultBackend;
+                    // setSearchParams('backend', defaultBackendHost + ':' + defaultBackendPort);
+                    return defaultBackendHost + ':' + defaultBackendPort;
                 }
             },
             set backend(s) {
@@ -642,7 +688,7 @@
             },
         }
     });
-    app.flush();
+    tryGetBackendConfigFromServer();
 </script>
 </body>
 </html>
