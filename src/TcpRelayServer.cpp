@@ -97,6 +97,8 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                 downstream_socket_,
                                 upstream_socket_,
                                 [self = weak_from_this()]() {
+                                    // TODO impl: insert protocol analysis on here
+
                                     // start relay
                                     if (auto ptr = self.lock()) {
                                         // Setup async read from remote server (upstream)

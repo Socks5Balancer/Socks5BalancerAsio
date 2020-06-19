@@ -64,6 +64,8 @@ void FirstPackAnalyzer::start() {
 void FirstPackAnalyzer::do_prepare_whenComplete() {
     auto ptr = tcpRelaySession.lock();
     if (ptr) {
+        // TODO impl: insert protocol analysis start on here
+
         // send remain data
         do_prepare_complete_downstream_write();
         do_prepare_complete_upstream_write();
