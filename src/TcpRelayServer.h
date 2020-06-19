@@ -84,6 +84,7 @@ public:
 
     ~TcpRelaySession() {
 //        std::cout << "~TcpRelaySession()" << std::endl;
+        close();
     }
 
     boost::asio::ip::tcp::socket &downstream_socket();
@@ -168,7 +169,7 @@ public:
     void stop();
 
 private:
-    void async_accept(boost::asio::ip::tcp::acceptor& sa);
+    void async_accept(boost::asio::ip::tcp::acceptor &sa);
 
     void removeExpiredSession();
 
