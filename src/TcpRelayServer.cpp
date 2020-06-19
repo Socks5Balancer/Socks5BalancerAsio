@@ -77,10 +77,10 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                     auto pSI = statisticsInfo.lock();
                     if (pSI) {
                         pSI->addSession(nowServer->index, weak_from_this());
-                        pSI->addSession(clientEndpointAddrString, weak_from_this());
+                        pSI->addSessionClient(clientEndpointAddrString, weak_from_this());
                         pSI->lastConnectServerIndex.store(nowServer->index);
                         pSI->connectCountAdd(nowServer->index);
-                        pSI->connectCountAdd(clientEndpointAddrString);
+                        pSI->connectCountAddClient(clientEndpointAddrString);
                     }
 
                     // TODO impl : insert first pack analyzer on there
@@ -216,7 +216,7 @@ void TcpRelaySession::close(boost::system::error_code error) {
             auto pSI = statisticsInfo.lock();
             if (pSI) {
                 pSI->connectCountSub(nowServer->index);
-                pSI->connectCountSub(clientEndpointAddrString);
+                pSI->connectCountSubClient(clientEndpointAddrString);
             }
         }
     }
@@ -232,7 +232,7 @@ void TcpRelaySession::addUp2Statistics(size_t bytes_transferred_) {
     auto pSI = statisticsInfo.lock();
     if (pSI) {
         pSI->addByteUp(nowServer->index, bytes_transferred_);
-        pSI->addByteUp(clientEndpointAddrString, bytes_transferred_);
+        pSI->addByteUpClient(clientEndpointAddrString, bytes_transferred_);
     }
 }
 
@@ -240,7 +240,7 @@ void TcpRelaySession::addDown2Statistics(size_t bytes_transferred_) {
     auto pSI = statisticsInfo.lock();
     if (pSI) {
         pSI->addByteDown(nowServer->index, bytes_transferred_);
-        pSI->addByteDown(clientEndpointAddrString, bytes_transferred_);
+        pSI->addByteDownClient(clientEndpointAddrString, bytes_transferred_);
     }
 }
 
@@ -380,193 +380,4 @@ void TcpRelayServer::do_speedCalcTimer() {
         do_speedCalcTimer();
     };
     speedCalcTimer->async_wait(c);
-}
-
-void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
-    auto it = sessions.begin();
-    while (it != sessions.end()) {
-        if ((*it).expired()) {
-            it = sessions.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-void TcpRelayStatisticsInfo::Info::closeAllSession() {
-    auto it = sessions.begin();
-    while (it != sessions.end()) {
-        auto p = (*it).lock();
-        if (p) {
-            p->forceClose();
-            ++it;
-        } else {
-            it = sessions.erase(it);
-        }
-    }
-}
-
-void TcpRelayStatisticsInfo::Info::calcByte() {
-    size_t newByteUp = byteUp.load();
-    size_t newByteDown = byteDown.load();
-    byteUpChange = newByteUp - byteUpLast;
-    byteDownChange = newByteDown - byteDownLast;
-    byteUpLast = newByteUp;
-    byteDownLast = newByteDown;
-    if (byteUpChange > byteUpChangeMax) {
-        byteUpChangeMax = byteUpChange;
-    }
-    if (byteDownChange > byteDownChangeMax) {
-        byteDownChangeMax = byteDownChange;
-    }
-}
-
-void TcpRelayStatisticsInfo::Info::connectCountAdd() {
-    ++connectCount;
-}
-
-void TcpRelayStatisticsInfo::Info::connectCountSub() {
-    --connectCount;
-}
-
-void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySession> s) {
-    if (upstreamIndex.find(index) == upstreamIndex.end()) {
-        upstreamIndex.try_emplace(index, std::make_shared<Info>());
-    }
-    upstreamIndex.at(index)->sessions.push_back(s);
-}
-
-void TcpRelayStatisticsInfo::addSession(std::string addr, std::weak_ptr<TcpRelaySession> s) {
-    if (clientIndex.find(addr) == clientIndex.end()) {
-        clientIndex.try_emplace(addr, std::make_shared<Info>());
-    }
-    clientIndex.at(addr)->sessions.push_back(s);
-}
-
-std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(size_t index) {
-    auto n = upstreamIndex.find(index);
-    if (n != upstreamIndex.end()) {
-        return n->second;
-    } else {
-        return {};
-    }
-}
-
-std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(std::string addr) {
-    auto n = clientIndex.find(addr);
-    if (n != clientIndex.end()) {
-        return n->second;
-    } else {
-        return {};
-    }
-}
-
-void TcpRelayStatisticsInfo::removeExpiredSession(size_t index) {
-    auto p = getInfo(index);
-    if (p) {
-        p->removeExpiredSession();
-    }
-}
-
-void TcpRelayStatisticsInfo::removeExpiredSession(std::string addr) {
-    auto p = getInfo(addr);
-    if (p) {
-        p->removeExpiredSession();
-    }
-}
-
-void TcpRelayStatisticsInfo::addByteUp(size_t index, size_t b) {
-    auto p = getInfo(index);
-    if (p) {
-        p->byteUp += b;
-    }
-}
-
-void TcpRelayStatisticsInfo::addByteUp(std::string addr, size_t b) {
-    auto p = getInfo(addr);
-    if (p) {
-        p->byteUp += b;
-    }
-}
-
-void TcpRelayStatisticsInfo::addByteDown(size_t index, size_t b) {
-    auto p = getInfo(index);
-    if (p) {
-        p->byteDown += b;
-    }
-}
-
-void TcpRelayStatisticsInfo::addByteDown(std::string addr, size_t b) {
-    auto p = getInfo(addr);
-    if (p) {
-        p->byteDown += b;
-    }
-}
-
-void TcpRelayStatisticsInfo::calcByteAll() {
-    for (auto &a: upstreamIndex) {
-        a.second->calcByte();
-    }
-    for (auto &a: clientIndex) {
-        a.second->calcByte();
-    }
-}
-
-void TcpRelayStatisticsInfo::removeExpiredSessionAll() {
-    for (auto &a: upstreamIndex) {
-        a.second->removeExpiredSession();
-    }
-    for (auto &a: clientIndex) {
-        a.second->removeExpiredSession();
-    }
-}
-
-void TcpRelayStatisticsInfo::closeAllSession(size_t index) {
-    auto p = getInfo(index);
-    if (p) {
-        p->closeAllSession();
-    }
-}
-
-void TcpRelayStatisticsInfo::closeAllSession(std::string addr) {
-    auto p = getInfo(addr);
-    if (p) {
-        p->closeAllSession();
-    }
-}
-
-void TcpRelayStatisticsInfo::connectCountAdd(size_t index) {
-    auto p = getInfo(index);
-    if (p) {
-        p->connectCountAdd();
-    }
-}
-
-void TcpRelayStatisticsInfo::connectCountAdd(std::string addr) {
-    auto p = getInfo(addr);
-    if (p) {
-        p->connectCountAdd();
-    }
-}
-
-void TcpRelayStatisticsInfo::connectCountSub(size_t index) {
-    auto p = getInfo(index);
-    if (p) {
-        p->connectCountSub();
-    }
-}
-
-void TcpRelayStatisticsInfo::connectCountSub(std::string addr) {
-    auto p = getInfo(addr);
-    if (p) {
-        p->connectCountSub();
-    }
-}
-
-std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getUpstreamIndex() {
-    return upstreamIndex;
-}
-
-std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getClientIndex() {
-    return clientIndex;
 }

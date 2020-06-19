@@ -55,7 +55,9 @@ add_executable(${ProjectMainName}
         src/TcpTest.cpp
         src/TcpTest.h
         src/FirstPackAnalyzer.cpp
-        src/FirstPackAnalyzer.h)
+        src/FirstPackAnalyzer.h
+        src/TcpRelayStatisticsInfo.cpp
+        src/TcpRelayStatisticsInfo.h)
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
