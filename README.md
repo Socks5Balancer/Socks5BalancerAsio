@@ -27,6 +27,33 @@ BTW: the simple Monitor html in the `./html` folder write with html5 and css wit
 
 ---
 
+## Use Monitor Page On Nginx
+
+if you want,  
+you can setup main server on a server then serve the monitor html page on a nginx server like me.  
+
+you can config nginx to serve a json string on path `./backend` like follow ,
+ and then the monitor page will load it to config the backend (if the backend not special on url search params).
+
+NOTE: the `host` is not require, it can lost or be a empty string like follow, but the `port` must special.
+
+```
+        location ~ ^/backend {
+            default_type application/json;
+            return 200 '{"host":"","port":6660}';
+        }
+        location / {
+            root   /usr/share/nginx/S5BA;
+            index  index.html index.html state.html;
+        }
+```
+
+when page start,  
+the monitor page will get the backend config from the the url search params,   
+otherwise, try to get the backend config from page server path `backend` .
+
+---
+
 ## porting reason
 
 when i run the origin `Socks5Balancer` on a qemu of archlinux vm with 2G disk / 500MB memory / 2 Core continue for 24x7 ,  
