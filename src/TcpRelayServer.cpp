@@ -206,15 +206,21 @@ void TcpRelaySession::close(boost::system::error_code error) {
     }
 
     if (downstream_socket_.is_open()) {
-        downstream_socket_.shutdown(boost::asio::socket_base::shutdown_both);
-        downstream_socket_.cancel();
-        downstream_socket_.close();
+        boost::system::error_code ec;
+        downstream_socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
+        ec.clear();
+        downstream_socket_.cancel(ec);
+        ec.clear();
+        downstream_socket_.close(ec);
     }
 
     if (upstream_socket_.is_open()) {
-        upstream_socket_.shutdown(boost::asio::socket_base::shutdown_both);
-        upstream_socket_.cancel();
-        upstream_socket_.close();
+        boost::system::error_code ec;
+        upstream_socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
+        ec.clear();
+        upstream_socket_.cancel(ec);
+        ec.clear();
+        upstream_socket_.close(ec);
     }
 
     if (!isDeCont) {
