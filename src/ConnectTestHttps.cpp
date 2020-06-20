@@ -20,7 +20,7 @@
 
 ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
                                                  const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
-                                                 const std::string &targetHost, int targetPort,
+                                                 const std::string &targetHost, uint16_t targetPort,
                                                  const std::string &targetPath, int httpVersion,
                                                  const std::string &socks5Host, const std::string &socks5Port) :
         resolver_(executor),
@@ -238,7 +238,7 @@ void ConnectTestHttpsSession::do_socks5_connect_write() {
             do_shutdown();
             return fail(ec, "socks5_connect_write (targetHost.size() > 253)");
         }
-        data_send->push_back(targetHost.size());
+        data_send->push_back(static_cast<uint8_t>(targetHost.size()));
         data_send->insert(data_send->end(), targetHost.begin(), targetHost.end());
     } else if (addr.is_v4()) {
         data_send->push_back(0x01); // ATYP
@@ -455,7 +455,7 @@ ConnectTestHttps::ConnectTestHttps(boost::asio::executor ex) :
 
 std::shared_ptr<ConnectTestHttpsSession>
 ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &socks5Port,
-                             const std::string &targetHost, int targetPort, const std::string &targetPath,
+                             const std::string &targetHost, uint16_t targetPort, const std::string &targetPath,
                              int httpVersion) {
     if (!cleanTimer) {
         cleanTimer = std::make_shared<boost::asio::steady_timer>(executor, std::chrono::seconds{5});

@@ -10,6 +10,8 @@ if (MSVC)
     add_definitions(-DMSVC)
     add_definitions(-D_WIN32_WINNT=0x0A00)
     add_compile_options(/bigobj)
+
+    add_definitions(/W4)
 else ()
     add_definitions(-Wall -Wextra)
 endif ()

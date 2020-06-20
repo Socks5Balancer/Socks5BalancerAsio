@@ -228,6 +228,7 @@ void FirstPackAnalyzer::do_read_client_first_http_header() {
                 [this, self = shared_from_this(), ptr](
                         const boost::system::error_code &error,
                         const size_t &bytes_transferred) {
+                    boost::ignore_unused(bytes_transferred);
                     if (!error) {
                         std::cout << "do_read_client_first_http_header" << std::endl;
                         do_analysis_client_first_http_header();
@@ -448,7 +449,7 @@ void FirstPackAnalyzer::do_socks5_connect_write() {
             if (host.size() > 253) {
                 return fail(ec, "socks5_connect_write (targetHost.size() > 253)");
             }
-            data_send->push_back(host.size());
+            data_send->push_back(static_cast<uint8_t>(host.size()));
             data_send->insert(data_send->end(), host.begin(), host.end());
         } else if (addr.is_v4()) {
             data_send->push_back(0x01); // ATYP

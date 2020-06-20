@@ -70,7 +70,7 @@ public:
             boost::asio::executor executor,
             const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
             const std::string &targetHost,
-            int targetPort,
+            uint16_t targetPort,
             const std::string &targetPath,
             int httpVersion,
             const std::string &socks5Host,
@@ -150,7 +150,7 @@ public:
             const std::string &socks5Host,
             const std::string &socks5Port,
             const std::string &targetHost,
-            int targetPort,
+            uint16_t targetPort,
             const std::string &targetPath,
             int httpVersion = 11
     );

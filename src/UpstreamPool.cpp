@@ -345,7 +345,8 @@ void UpstreamPool::do_AdditionTimer_impl() {
     }
     std::cout << "do_AdditionTimer_impl()" << std::endl;
     auto ct = std::make_shared<boost::asio::steady_timer>(ex, _configLoader->config.additionCheckPeriod * 3);
-    ct->async_wait([this, self = shared_from_this(), ct](const boost::system::error_code &e) {
+    ct->async_wait([this, self = shared_from_this(), ct](const boost::system::error_code &ex) {
+        boost::ignore_unused(ex);
         isAdditionTimerRunning.store(false);
     });
 
