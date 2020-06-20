@@ -58,6 +58,8 @@ void FirstPackAnalyzer::start() {
         do_read_client_first_3_byte();
         // debug
 //        do_prepare_whenComplete();
+    } else {
+        badParentPtr();
     }
 }
 
@@ -69,6 +71,8 @@ void FirstPackAnalyzer::do_prepare_whenComplete() {
         // send remain data
         do_prepare_complete_downstream_write();
         do_prepare_complete_upstream_write();
+    } else {
+        badParentPtr();
     }
 }
 
@@ -84,10 +88,7 @@ void FirstPackAnalyzer::do_whenComplete() {
 }
 
 void FirstPackAnalyzer::do_whenError(boost::system::error_code error) {
-    auto ptr = tcpRelaySession.lock();
-    if (ptr) {
-        whenError(error);
-    }
+    whenError(error);
 }
 
 void FirstPackAnalyzer::do_prepare_complete_downstream_write() {
@@ -107,6 +108,8 @@ void FirstPackAnalyzer::do_prepare_complete_downstream_write() {
                         do_whenError(error);
                     }
                 });
+    } else {
+        badParentPtr();
     }
 }
 
@@ -127,6 +130,8 @@ void FirstPackAnalyzer::do_prepare_complete_upstream_write() {
                         do_whenError(error);
                     }
                 });
+    } else {
+        badParentPtr();
     }
 }
 
@@ -207,6 +212,8 @@ void FirstPackAnalyzer::do_read_client_first_3_byte() {
                         do_whenError(error);
                     }
                 });
+    } else {
+        badParentPtr();
     }
 }
 
@@ -228,6 +235,8 @@ void FirstPackAnalyzer::do_read_client_first_http_header() {
                         do_whenError(error);
                     }
                 });
+    } else {
+        badParentPtr();
     }
 }
 
@@ -293,6 +302,8 @@ void FirstPackAnalyzer::do_analysis_client_first_http_header() {
             std::cout << "do_analysis_client_first_http_header not find" << std::endl;
             do_read_client_first_http_header();
         }
+    } else {
+        badParentPtr();
     }
 }
 
@@ -327,6 +338,8 @@ void FirstPackAnalyzer::do_send_Connection_Established() {
         );
 
 
+    } else {
+        badParentPtr();
     }
 }
 
@@ -366,6 +379,8 @@ void FirstPackAnalyzer::do_socks5_handshake_write() {
                     do_socks5_handshake_read();
                 }
         );
+    } else {
+        badParentPtr();
     }
 }
 
@@ -403,6 +418,8 @@ void FirstPackAnalyzer::do_socks5_handshake_read() {
                             // std::cout << "do_socks5_handshake_read()" << std::endl;
                             do_socks5_connect_write();
                         }));
+    } else {
+        badParentPtr();
     }
 }
 
@@ -467,6 +484,8 @@ void FirstPackAnalyzer::do_socks5_connect_write() {
                             do_socks5_connect_read();
                         })
         );
+    } else {
+        badParentPtr();
     }
 }
 
@@ -528,6 +547,8 @@ void FirstPackAnalyzer::do_socks5_connect_read() {
                             do_prepare_whenComplete();
                         }));
 
+    } else {
+        badParentPtr();
     }
 }
 
@@ -538,7 +559,13 @@ void FirstPackAnalyzer::fail(boost::system::error_code ec, const std::string &wh
         ss << what << ": [" << ec.message() << "] . ";
         r = ss.str();
     }
-    std::cerr << r << "\n";
+    std::cerr << r << std::endl;
 
     do_whenError(ec);
+}
+
+void FirstPackAnalyzer::badParentPtr() {
+    if (0 != beforeComplete) {
+        do_whenError({});
+    }
 }

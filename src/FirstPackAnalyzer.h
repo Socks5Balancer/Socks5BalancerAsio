@@ -114,6 +114,8 @@ private:
 
 private:
     void fail(boost::system::error_code ec, const std::string &what);
+
+    void badParentPtr();
 };
 
 
