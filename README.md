@@ -14,18 +14,77 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 ![Monitor Screen](https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/monitor-screen.png)
 
 ## Struct Info
-now the main server write with pure c++ (c++11/17) , powered by Boost.Asio/Boost.Beast .  
-and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) .  
+now the main server write with pure c++ (c++11/17) , powered by Boost.Asio/Boost.Beast . 
+and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) . 
 
-if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config.  
+if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config. 
 then, it will get server info json from main server , and control it with a `/op?xxx` path on same place. 
 
-if you think the simple Monitor html looks so ugly, you can re-write it with any other tools,  
-only need to follow the data process way on the simple Monitor html.  
-BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date.  
+if you think the simple Monitor html looks so ugly, you can re-write it with any other tools, 
+only need to follow the data process way on the simple Monitor html. 
+
+BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date. 
+
 <small>(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)</small>
 
 ---
+
+## now to build & dev
+
+### Dependencies
+
+**CMake** >= 3.16  
+**Boost** >= 1.70  recommend  1.73  
+**OpenSSL** >= 1.1.0 recommend 1.1.1h  
+**MSVC** or **GCC** , required C++17 support  
+
+#### windows
+
+isntall VS2019
+
+if you dont want build Boost and OpenSSL by yourself , download Prebuild version from follow :
+
+Boost Prebuild : 
+- https://sourceforge.net/projects/boost/files/boost-binaries/
+
+OpenSSL Prebuild : 
+- https://wiki.openssl.org/index.php/Binaries
+- https://kb.firedaemon.com/support/solutions/articles/4000121705
+
+#### ArchLinux
+
+```
+pacman -S base-devel --needed
+pacman -S boost
+pacman -S openssl
+pacman -S cmake
+```
+
+### Build
+
+#### windows
+
+```
+cmake -DBOOST_INCLUDEDIR=<path_to>/boost_1_73_0 -DOPENSSL_ROOT_DIR=<path_to>\openssl-1.1.1h\x64
+```
+
+then build it
+
+
+#### ArchLinux
+
+```
+cd ./Socks5BalancerAsio
+cmake .
+make
+```
+
+then all ok
+
+### Dev
+
+Recommend use **Clion**
+
 
 ## Use Monitor Page On Nginx
 
@@ -65,5 +124,7 @@ so i write this, hope it can work more faster and more stable.
 - [x] http proxy To socks5 proxy
 - [x] http/socks5 on same port (mixed-port mode)
 - [ ] analysis socks5 protocol and communicate protocol type
-- [ ] monitor connect info
+- [ ] monitor per connect info
 - [ ] backend latency analysis 
+- [ ] port aggregation mode(multi-listen only mode)
+- [ ] direct provide Monitor Page (embedding nginx)
