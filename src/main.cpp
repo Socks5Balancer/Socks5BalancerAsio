@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <boost/asio.hpp>
+#include <boost/program_options.hpp>
 #include <memory>
 #include <exception>
 #include "TcpRelayServer.h"
@@ -27,8 +28,51 @@
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
+int main(int argc, const char *argv[]) {
+
+    std::string config_file;
+    boost::program_options::options_description desc("options");
+    desc.add_options()
+            ("config,c", boost::program_options::value<std::string>(&config_file)->
+                    default_value(R"(config.json)")->
+                    value_name("CONFIG"), "specify config file")
+            ("help,h", "print help message")
+            ("version,v", "print version and build info");
+    boost::program_options::positional_options_description pd;
+    pd.add("config", 1);
+    boost::program_options::variables_map vMap;
+    boost::program_options::store(
+            boost::program_options::command_line_parser(argc, argv)
+                    .options(desc)
+                    .positional(pd)
+                    .run(), vMap);
+    boost::program_options::notify(vMap);
+    if (vMap.count("help")) {
+        std::cout << "usage: " << argv[0] << " [[-c] CONFIG]" << "\n" << std::endl;
+
+        std::cout << "    Socks5BalancerAsio  Copyright (C) <2020>  <Jeremie>\n"
+                  << "    This program comes with ABSOLUTELY NO WARRANTY; \n"
+                  << "    This is free software, and you are welcome to redistribute it\n"
+                  << "    under certain conditions; \n"
+                  << "         GNU GENERAL PUBLIC LICENSE , Version 3 "
+                  << "\n" << std::endl;
+
+        std::cout << desc << std::endl;
+        return 0;
+    }
+    if (vMap.count("version")) {
+        std::cout << std::string("Boost ") + BOOST_LIB_VERSION + ", " + OpenSSL_version(OPENSSL_VERSION) << std::endl;
+        std::cout << "OpenSSL Information:" << "\n";
+        if (OpenSSL_version_num() != OPENSSL_VERSION_NUMBER) {
+            std::cout << std::string("\tCompile-time Version: ") + OPENSSL_VERSION_TEXT << "\n";
+        }
+        std::cout << std::string("\tBuild Flags: ") + OpenSSL_version(OPENSSL_CFLAGS) << "\n";
+        std::cout << std::endl;
+        return 0;
+    }
+
+    std::cout << "config_file: " << config_file << std::endl;
+
     try {
         boost::asio::io_context ioc;
         boost::asio::executor ex = boost::asio::make_strand(ioc);
@@ -57,12 +101,15 @@ int main() {
 
     } catch (int) {
         std::cerr << "catch (int) exception" << "\n";
+        return -1;
     }
-//    catch (const std::exception &e) {
-//        std::cerr << "catch std::exception: " << e.what() << "\n";
-//    } catch (...) {
-//        std::cerr << "catch (...) exception" << "\n";
-//    }
+    catch (const std::exception &e) {
+        std::cerr << "catch std::exception: " << e.what() << "\n";
+        return -1;
+    } catch (...) {
+        std::cerr << "catch (...) exception" << "\n";
+        return -1;
+    }
 
     return 0;
 }
