@@ -216,19 +216,8 @@
     <br/>
     lastUseUpstreamIndex: <span class="string-pad">{{ _.parseInt(lastUseUpstreamIndex) + 1 }}</span>
     <br/>
-    <!--    <br/>-->
-    <!--    totalUp: <span class="string-pad">{{ dataCount2String(totalUp) }}</span>-->
-    <!--    <br/>-->
-    <!--    totalDown: <span class="string-pad">{{ dataCount2String(totalDown) }}</span>-->
-    <!--    <br/>-->
-    <!--    totalUpSpeed: <span class="string-pad">{{ speed2String(totalUpSpeed) }}</span>-->
-    <!--    <br/>-->
-    <!--    totalDownSpeed: <span class="string-pad">{{ speed2String(totalDownSpeed) }}</span>-->
-    <!--    <br/>-->
-    <!--    totalUpSpeedMax: <span class="string-pad">{{ speed2String(totalUpSpeedMax) }}</span>-->
-    <!--    <br/>-->
-    <!--    totalDownSpeedMax: <span class="string-pad">{{ speed2String(totalDownSpeedMax) }}</span>-->
-    <!--    <br/>-->
+    Tcp Relay Mode: <span class="string-pad">{{ traditionTcpRelay?'Tradition Mode':'Mixed Mode' }}</span>
+    <br/>
     <br/>
     now time: <span class="string-pad">{{ nowTime }}</span>
     <br/>
@@ -563,6 +552,7 @@
             allConnectCount: 0,
             totalUp: 0,
             disableConnectTest: false,
+            traditionTcpRelay: false,
             totalDown: 0,
             totalUpSpeed: 0,
             totalDownSpeed: 0,
@@ -679,6 +669,9 @@
 
                         if (T.config.disableConnectTest === 'true') {
                             app.disableConnectTest = true;
+                        }
+                        if (T.config.traditionTcpRelay === 'true') {
+                            app.traditionTcpRelay = true;
                         }
                     }
                 }).then(function () {

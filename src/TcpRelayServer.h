@@ -64,13 +64,16 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     size_t retryCount = 0;
     const size_t retryLimit;
 
+    bool traditionTcpRelay;
+
     bool isDeCont = false;
 public:
     TcpRelaySession(
             boost::asio::executor ex,
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo,
-            size_t retryLimit
+            size_t retryLimit,
+            bool traditionTcpRelay
     ) :
             ex(ex),
             downstream_socket_(ex),
@@ -78,7 +81,8 @@ public:
             resolver_(ex),
             upstreamPool(std::move(upstreamPool)),
             statisticsInfo(statisticsInfo),
-            retryLimit(retryLimit) {
+            retryLimit(retryLimit),
+            traditionTcpRelay(traditionTcpRelay) {
 //        std::cout << "TcpRelaySession create" << std::endl;
     }
 
