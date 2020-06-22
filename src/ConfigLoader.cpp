@@ -67,6 +67,8 @@ void ConfigLoader::print() {
 
     std::cout << "config.retryTimes:" << config.retryTimes << "\n";
 
+    std::cout << "config.disableConnectTest:" << config.disableConnectTest << "\n";
+
     std::cout << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
 
     std::cout << "config.connectTimeout:" << config.connectTimeout.count() << "\n";
@@ -131,6 +133,9 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
 
     auto retryTimes = tree.get("retryTimes", static_cast<size_t>(3));
     c.retryTimes = retryTimes;
+
+    auto disableConnectTest = tree.get("disableConnectTest", false);
+    c.disableConnectTest = disableConnectTest;
 
     auto serverChangeTime = tree.get("serverChangeTime", static_cast<long long>(60 * 1000));
     c.serverChangeTime = ConfigTimeDuration{serverChangeTime};

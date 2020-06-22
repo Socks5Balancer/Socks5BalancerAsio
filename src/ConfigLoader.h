@@ -74,6 +74,8 @@ struct Config {
 
     size_t retryTimes;
 
+    bool disableConnectTest;
+
     ConfigTimeDuration connectTimeout;
     ConfigTimeDuration sleepTime;
 

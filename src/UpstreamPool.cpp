@@ -98,12 +98,16 @@ size_t UpstreamPool::getLastUseUpstreamIndex() {
 }
 
 bool UpstreamPool::checkServer(const UpstreamServerRef &u) const {
-    return u
-           && u->lastConnectTime.has_value()
-           && u->lastOnlineTime.has_value()
-           && !u->lastConnectFailed
-           && !u->isOffline
-           && !u->isManualDisable;
+    if (!_configLoader->config.disableConnectTest) {
+        return u
+               && u->lastConnectTime.has_value()
+               && u->lastOnlineTime.has_value()
+               && !u->lastConnectFailed
+               && !u->isOffline
+               && !u->isManualDisable;
+    } else {
+        return true;
+    }
 }
 
 auto UpstreamPool::getNextServer() -> UpstreamServerRef {
@@ -219,6 +223,9 @@ void UpstreamPool::endCheckTimer() {
 }
 
 void UpstreamPool::startAdditionTimer() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     if (!additionTimer) {
         additionTimer = std::make_shared<boost::asio::steady_timer>(
                 ex,
@@ -237,6 +244,9 @@ void UpstreamPool::startCheckTimer() {
     }
     endCheckTimer();
     endAdditionTimer();
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     startAdditionTimer();
 
     tcpCheckerTimer = std::make_shared<CheckerTimerType>(ex, _configLoader->config.tcpCheckStart);
@@ -273,6 +283,9 @@ std::string UpstreamPool::print() {
 }
 
 void UpstreamPool::do_tcpCheckerTimer_impl() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     for (auto &a: _pool) {
         if (!a->isManualDisable) {
             auto p = std::to_string(a->port);
@@ -295,6 +308,9 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
 }
 
 void UpstreamPool::do_tcpCheckerOne_impl(UpstreamServerRef a) {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     auto p = std::to_string(a->port);
     auto t = tcpTest->createTest(a->host, p);
     t->run([t, a]() {
@@ -313,6 +329,9 @@ void UpstreamPool::do_tcpCheckerOne_impl(UpstreamServerRef a) {
 }
 
 void UpstreamPool::do_AdditionTimer() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
         if (e) {
             return;
@@ -339,6 +358,9 @@ void UpstreamPool::do_AdditionTimer() {
 }
 
 void UpstreamPool::do_AdditionTimer_impl() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     bool old = false;
     if (!isAdditionTimerRunning.compare_exchange_strong(old, true)) {
         return;
@@ -355,6 +377,9 @@ void UpstreamPool::do_AdditionTimer_impl() {
 }
 
 void UpstreamPool::do_tcpCheckerTimer() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
         if (e) {
             return;
@@ -373,6 +398,9 @@ void UpstreamPool::do_tcpCheckerTimer() {
 }
 
 void UpstreamPool::do_connectCheckerTimer_impl() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     for (const auto &a: _pool) {
         if (!a->isManualDisable) {
             auto t = connectTestHttps->createTest(
@@ -402,6 +430,9 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
 }
 
 void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     auto t = connectTestHttps->createTest(
             a->host,
             std::to_string(a->port),
@@ -427,6 +458,9 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
 }
 
 void UpstreamPool::do_connectCheckerTimer() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     auto c = [this, self = shared_from_this()](const boost::system::error_code &e) {
         if (e) {
             return;
@@ -444,6 +478,9 @@ void UpstreamPool::do_connectCheckerTimer() {
 }
 
 void UpstreamPool::forceCheckNow() {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     if (!forceCheckerTimer.expired()) {
         return;
     }
@@ -454,6 +491,9 @@ void UpstreamPool::forceCheckNow() {
 }
 
 void UpstreamPool::forceCheckOne(size_t index) {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     if (index >= 0 && index < _pool.size()) {
         auto ref = _pool.at(index);
         boost::asio::post(ex, [this, self = shared_from_this(), ref]() {
@@ -464,6 +504,9 @@ void UpstreamPool::forceCheckOne(size_t index) {
 }
 
 void UpstreamPool::do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceCheckerTimer) {
+    if (_configLoader->config.disableConnectTest) {
+        return;
+    }
     auto c = [this, self = shared_from_this(), _forceCheckerTimer](const boost::system::error_code &e) {
         if (e) {
             return;

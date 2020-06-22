@@ -67,9 +67,15 @@
     <br/>
     <template v-if="!upstreamPool.find(function(u) {
       return u.isWork==='true';
-    })">
+    }) && upstreamPool.length>0">
         <h3 style="color: red">Warning: we don't have Usable Server !!! </h3>
         <br/>
+    </template>
+    <template v-if="upstreamPool.length===0">
+        <h3 style="color: rebeccapurple; padding: 0 1em;">No Server ...</h3>
+    </template>
+    <template v-if="disableConnectTest">
+        <div style="color: orangered; padding-top: 1em;">Now Running On [DisableConnectTest] Mode.</div>
     </template>
     ---------------------------------------------------------------------------------------------
     <br/>
@@ -556,6 +562,7 @@
             newRule: "",
             allConnectCount: 0,
             totalUp: 0,
+            disableConnectTest: false,
             totalDown: 0,
             totalUpSpeed: 0,
             totalDownSpeed: 0,
@@ -669,6 +676,10 @@
                         app.allConnectCount = _.reduce(T.pool.upstream, function (acc, T) {
                             return acc + _.parseInt(T.connectCount);
                         }, 0);
+
+                        if (T.config.disableConnectTest === 'true') {
+                            app.disableConnectTest = true;
+                        }
                     }
                 }).then(function () {
                     console.log(app);

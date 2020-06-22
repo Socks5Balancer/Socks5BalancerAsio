@@ -37,6 +37,7 @@ std::string HttpConnectSession::createJsonString() {
         config.put("stateServerHost", c.stateServerHost);
         config.put("stateServerPort", c.stateServerPort);
         config.put("retryTimes", c.retryTimes);
+        config.put("disableConnectTest", c.disableConnectTest);
         config.put("serverChangeTime", c.serverChangeTime.count());
         config.put("connectTimeout", c.connectTimeout.count());
         config.put("tcpCheckPeriod", c.tcpCheckPeriod.count());
