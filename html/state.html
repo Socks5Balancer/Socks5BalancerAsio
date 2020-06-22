@@ -32,6 +32,10 @@
             margin: 0.25em 0.5em;
             padding: 0.2em 0;
         }
+
+        .opacity_01 {
+            opacity: 0.1;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
@@ -107,7 +111,7 @@
                 <span style="color: green" v-else-if="u.lastConnectFailed==='false'">True</span>
                 <span style="color: red" v-else>False</span>
             </td>
-            <td>{{u.connectCount}} / {{u.connectCount2}} / {{u.sessionsCount}}</td>
+            <td>{{u.sessionsCount}} <span class="opacity_01">/ {{u.connectCount}} / {{u.connectCount2}}</span></td>
             <td>{{u.lastOnlineTime}}</td>
             <td>{{u.lastConnectTime}}</td>
             <td>
@@ -265,7 +269,7 @@
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
-            <td>{{u.connectCount}} / {{u.sessionsCount}}</td>
+            <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
             <!--            <td></td>-->
         </tr>
 
@@ -314,7 +318,7 @@
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
-            <td>{{u.connectCount}} / {{u.sessionsCount}}</td>
+            <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
             <!--            <td></td>-->
         </tr>
 
