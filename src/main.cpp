@@ -82,7 +82,7 @@ int main(int argc, const char *argv[]) {
         boost::asio::executor ex = boost::asio::make_strand(ioc);
 
         auto configLoader = std::make_shared<ConfigLoader>();
-        configLoader->load(R"(config.json)");
+        configLoader->load(config_file);
         configLoader->print();
 
         auto tcpTest = std::make_shared<TcpTest>(ex);
