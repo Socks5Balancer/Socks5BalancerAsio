@@ -28,6 +28,9 @@
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
 
+#ifndef DEFAULT_CONFIG
+#define DEFAULT_CONFIG R"(config.json)"
+#endif // DEFAULT_CONFIG
 
 int main(int argc, const char *argv[]) {
 
@@ -35,7 +38,7 @@ int main(int argc, const char *argv[]) {
     boost::program_options::options_description desc("options");
     desc.add_options()
             ("config,c", boost::program_options::value<std::string>(&config_file)->
-                    default_value(R"(config.json)")->
+                    default_value(DEFAULT_CONFIG)->
                     value_name("CONFIG"), "specify config file")
             ("help,h", "print help message")
             ("version,v", "print version and build info");
@@ -79,7 +82,7 @@ int main(int argc, const char *argv[]) {
         boost::asio::executor ex = boost::asio::make_strand(ioc);
 
         auto configLoader = std::make_shared<ConfigLoader>();
-        configLoader->load(R"(config-test.json)");
+        configLoader->load(R"(config.json)");
         configLoader->print();
 
         auto tcpTest = std::make_shared<TcpTest>(ex);
