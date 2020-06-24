@@ -73,6 +73,8 @@ public:
     // to avoid circle ref
     void release();
 
+    void stop();
+
 private:
 
     void
@@ -107,6 +109,8 @@ public:
             const std::string socks5Host,
             const std::string socks5Port
     );
+
+    void stop();
 
 private:
     void do_cleanTimer();

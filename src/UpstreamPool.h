@@ -143,6 +143,8 @@ public:
 
     std::string print();
 
+    void stop();
+
     void forceCheckNow();
 
     void forceCheckOne(size_t index);

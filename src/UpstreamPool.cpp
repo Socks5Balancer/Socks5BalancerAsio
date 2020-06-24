@@ -206,18 +206,21 @@ auto UpstreamPool::getServerBasedOnAddress() -> UpstreamServerRef {
 
 void UpstreamPool::endAdditionTimer() {
     if (additionTimer) {
-        additionTimer->cancel();
+        boost::system::error_code ec;
+        additionTimer->cancel(ec);
         additionTimer.reset();
     }
 }
 
 void UpstreamPool::endCheckTimer() {
     if (tcpCheckerTimer) {
-        tcpCheckerTimer->cancel();
+        boost::system::error_code ec;
+        tcpCheckerTimer->cancel(ec);
         tcpCheckerTimer.reset();
     }
     if (connectCheckerTimer) {
-        connectCheckerTimer->cancel();
+        boost::system::error_code ec;
+        connectCheckerTimer->cancel(ec);
         connectCheckerTimer.reset();
     }
 }
@@ -280,6 +283,16 @@ std::string UpstreamPool::print() {
            << "]" << "\n";
     }
     return ss.str();
+}
+
+void UpstreamPool::stop() {
+    endAdditionTimer();
+    endCheckTimer();
+    if (auto ptr = forceCheckerTimer.lock()) {
+        boost::system::error_code ec;
+        ptr->cancel(ec);
+        ptr.reset();
+    }
 }
 
 void UpstreamPool::do_tcpCheckerTimer_impl() {

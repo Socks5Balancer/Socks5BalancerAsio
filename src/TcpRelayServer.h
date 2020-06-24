@@ -143,6 +143,8 @@ private:
 
 public:
     void forceClose();
+
+    void stop();
 };
 
 class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {

@@ -255,6 +255,18 @@ void TcpRelaySession::forceClose() {
     });
 }
 
+void TcpRelaySession::stop() {
+    boost::system::error_code ec;
+    upstream_socket_.cancel(ec);
+    ec.clear();
+    downstream_socket_.cancel(ec);
+    ec.clear();
+    upstream_socket_.close(ec);
+    ec.clear();
+    downstream_socket_.close(ec);
+    ec.clear();
+}
+
 void TcpRelaySession::addUp2Statistics(size_t bytes_transferred_) {
     auto pSI = statisticsInfo.lock();
     if (pSI) {
@@ -314,6 +326,11 @@ void TcpRelayServer::stop() {
     for (auto &a: socket_acceptors) {
         boost::system::error_code ec;
         a.cancel(ec);
+    }
+    for (auto &a: sessions) {
+        if (auto ptr = a.lock()) {
+            ptr->stop();
+        }
     }
 }
 

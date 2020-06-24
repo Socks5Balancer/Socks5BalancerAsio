@@ -28,6 +28,7 @@
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
 
+
 int main(int argc, const char *argv[]) {
 
     std::string config_file;
@@ -96,6 +97,41 @@ int main(int argc, const char *argv[]) {
         upstreamPool->startCheckTimer();
 
         stateMonitor->start();
+
+        boost::asio::signal_set sig(ioc);
+        sig.add(SIGINT);
+        sig.add(SIGTERM);
+//#ifndef _WIN32
+//        sig.add(SIGHUP);
+//            sig.add(SIGUSR1);
+//#endif // _WIN32
+        sig.async_wait([&](const boost::system::error_code error, int signum) {
+            if (error) {
+                return;
+            }
+            std::cerr << "got signal: " << signum << std::endl;
+            switch (signum) {
+                case SIGINT:
+                case SIGTERM: {
+                    tcpRelay->stop();
+                    upstreamPool->stop();
+                    tcpTest->stop();
+                    connectTestHttps->stop();
+                    ioc.stop();
+                }
+                    break;
+//#ifndef _WIN32
+//                    case SIGHUP:
+//                        restart = true;
+//                        service.stop();
+//                        break;
+//                    case SIGUSR1:
+//                        service.reload_cert();
+//                        signal_async_wait(sig, service, restart);
+//                        break;
+//#endif // _WIN32
+            }
+        });
 
         ioc.run();
 

@@ -65,6 +65,13 @@ void ConnectTestHttpsSession::release() {
     _isComplete = true;
 }
 
+void ConnectTestHttpsSession::stop() {
+    boost::system::error_code ec;
+    stream_.shutdown(ec);
+    resolver_.cancel();
+    release();
+}
+
 void ConnectTestHttpsSession::fail(boost::system::error_code ec, const std::string &what) {
     std::string r;
     {
@@ -497,4 +504,25 @@ void ConnectTestHttps::do_cleanTimer() {
         do_cleanTimer();
     };
     cleanTimer->async_wait(c);
+}
+
+void ConnectTestHttps::stop() {
+    if (cleanTimer) {
+        boost::system::error_code ec;
+        cleanTimer->cancel(ec);
+        cleanTimer.reset();
+    }
+    for (auto &a: sessions) {
+        a->stop();
+    }
+    {
+        auto it = sessions.begin();
+        while (it != sessions.end()) {
+            if (!(*it) || (*it)->isComplete()) {
+                it = sessions.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
 }

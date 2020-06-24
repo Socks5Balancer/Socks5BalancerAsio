@@ -95,6 +95,7 @@ public:
 
     // to avoid circle ref
     void release();
+    void stop();
 
 private:
 
@@ -155,6 +156,7 @@ public:
             int httpVersion = 11
     );
 
+    void stop();
 private:
     void do_cleanTimer();
 };

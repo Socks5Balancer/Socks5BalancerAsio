@@ -105,6 +105,13 @@ void TcpTestSession::release() {
     _isComplete = true;
 }
 
+void TcpTestSession::stop() {
+    resolver_.cancel();
+    stream_.cancel();
+    stream_.close();
+    release();
+}
+
 void TcpTestSession::run(std::function<void()> onOk, std::function<void(std::string)> onErr) {
     callback = std::make_unique<CallbackContainer>();
     callback->successfulCallback = std::move(onOk);
@@ -151,4 +158,26 @@ std::shared_ptr<TcpTestSession> TcpTest::createTest(std::string socks5Host, std:
     );
     sessions.push_back(s->shared_from_this());
     return s;
+}
+
+
+void TcpTest::stop() {
+    if (cleanTimer) {
+        boost::system::error_code ec;
+        cleanTimer->cancel(ec);
+        cleanTimer.reset();
+    }
+    for (auto &a: sessions) {
+        a->stop();
+    }
+    {
+        auto it = sessions.begin();
+        while (it != sessions.end()) {
+            if (!(*it) || (*it)->isComplete()) {
+                it = sessions.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
 }
