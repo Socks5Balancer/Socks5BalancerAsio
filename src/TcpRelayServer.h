@@ -31,6 +31,7 @@
 #include <map>
 #include <atomic>
 #include "UpstreamPool.h"
+#include "ConnectionTracker.h"
 #include "FirstPackAnalyzer.h"
 #include "TcpRelayStatisticsInfo.h"
 
@@ -58,6 +59,7 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     unsigned char upstream_data_[max_data_length];
 
     std::shared_ptr<FirstPackAnalyzer> firstPackAnalyzer;
+    std::shared_ptr<ConnectionTracker> connectionTracker;
 
     UpstreamServerRef nowServer;
 
@@ -65,6 +67,7 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     const size_t retryLimit;
 
     bool traditionTcpRelay;
+    bool disableConnectionTracker;
 
     bool isDeCont = false;
 public:
@@ -73,7 +76,8 @@ public:
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo,
             size_t retryLimit,
-            bool traditionTcpRelay
+            bool traditionTcpRelay,
+            bool disableConnectionTracker
     ) :
             ex(ex),
             downstream_socket_(ex),
@@ -82,7 +86,8 @@ public:
             upstreamPool(std::move(upstreamPool)),
             statisticsInfo(statisticsInfo),
             retryLimit(retryLimit),
-            traditionTcpRelay(traditionTcpRelay) {
+            traditionTcpRelay(traditionTcpRelay),
+            disableConnectionTracker(disableConnectionTracker) {
 //        std::cout << "TcpRelaySession create" << std::endl;
     }
 
@@ -101,6 +106,8 @@ public:
     void addUp2Statistics(size_t bytes_transferred_);
 
     void addDown2Statistics(size_t bytes_transferred_);
+
+    std::shared_ptr<ConnectionTracker> getConnectionTracker();
 
 private:
 

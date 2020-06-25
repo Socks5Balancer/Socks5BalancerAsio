@@ -29,6 +29,7 @@
 #include <string>
 #include <functional>
 #include <utility>
+#include "ConnectType.h"
 
 // see https://imququ.com/post/web-proxy.html
 
@@ -61,7 +62,7 @@ public:
 
     size_t beforeComplete = 2;
 
-    bool isConnect = false;
+    ConnectType connectType = ConnectType::unknown;
 
     std::string host;
     uint16_t port;

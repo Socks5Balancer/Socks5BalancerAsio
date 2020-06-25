@@ -75,6 +75,7 @@ struct Config {
     size_t retryTimes;
 
     bool disableConnectTest;
+    bool disableConnectionTracker;
     bool traditionTcpRelay;
 
     ConfigTimeDuration connectTimeout;

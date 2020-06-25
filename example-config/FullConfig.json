@@ -15,6 +15,7 @@
   "stateServerHost": "127.0.0.1",
   "stateServerPort": 5010,
   "disableConnectTest": false,
+  "disableConnectionTracker": false,
   "traditionTcpRelay": false,
   "multiListen": [
     {

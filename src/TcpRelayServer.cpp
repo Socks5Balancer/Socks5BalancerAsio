@@ -25,6 +25,26 @@ void TcpRelaySession::start() {
     try_connect_upstream();
 }
 
+std::shared_ptr<ConnectionTracker> TcpRelaySession::getConnectionTracker() {
+    if (disableConnectionTracker) {
+        return {};
+    }
+    if (!connectionTracker) {
+        if (!firstPackAnalyzer) {
+            connectionTracker = std::make_shared<ConnectionTracker>(
+                    weak_from_this()
+            );
+        } else {
+            // read state from firstPackAnalyzer
+            connectionTracker = std::make_shared<ConnectionTracker>(
+                    weak_from_this(),
+                    firstPackAnalyzer->connectType
+            );
+        }
+    }
+    return connectionTracker;
+}
+
 void TcpRelaySession::try_connect_upstream() {
     if (retryCount <= retryLimit) {
         ++retryCount;
@@ -105,10 +125,11 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                     downstream_socket_,
                                     upstream_socket_,
                                     [self = weak_from_this()]() {
-                                        // TODO impl: insert protocol analysis on here
-
                                         // start relay
                                         if (auto ptr = self.lock()) {
+                                            // impl: insert protocol analysis on here
+                                            auto ct = ptr->getConnectionTracker();
+
                                             // Setup async read from remote server (upstream)
                                             ptr->do_upstream_read();
 
@@ -150,6 +171,11 @@ void TcpRelaySession::do_upstream_read() {
             [this, self = shared_from_this()](const boost::system::error_code &error,
                                               const size_t &bytes_transferred) {
                 if (!error) {
+                    auto ct = getConnectionTracker();
+                    if (ct) {
+                        ct->relayGotoDown(upstream_data_, bytes_transferred);
+                    }
+
                     // Read from remote server complete
                     // write it to server
                     do_downstream_write(bytes_transferred);
@@ -183,6 +209,11 @@ void TcpRelaySession::do_downstream_read() {
             [this, self = shared_from_this()](const boost::system::error_code &error,
                                               const size_t &bytes_transferred) {
                 if (!error) {
+                    auto ct = getConnectionTracker();
+                    if (ct) {
+                        ct->relayGotoUp(downstream_data_, bytes_transferred);
+                    }
+
                     // Read from client complete
                     // write it to server
                     do_upstream_write(bytes_transferred);
@@ -340,7 +371,8 @@ void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
             upstreamPool,
             statisticsInfo->weak_from_this(),
             configLoader->config.retryTimes,
-            configLoader->config.traditionTcpRelay
+            configLoader->config.traditionTcpRelay,
+            configLoader->config.disableConnectionTracker
     );
     sessions.push_back(session->weak_from_this());
     sa.async_accept(

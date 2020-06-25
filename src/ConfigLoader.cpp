@@ -68,6 +68,7 @@ void ConfigLoader::print() {
     std::cout << "config.retryTimes:" << config.retryTimes << "\n";
 
     std::cout << "config.disableConnectTest:" << config.disableConnectTest << "\n";
+    std::cout << "config.disableConnectionTracker:" << config.disableConnectionTracker << "\n";
     std::cout << "config.traditionTcpRelay:" << config.traditionTcpRelay << "\n";
 
     std::cout << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
@@ -137,6 +138,8 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
 
     auto disableConnectTest = tree.get("disableConnectTest", false);
     c.disableConnectTest = disableConnectTest;
+    auto disableConnectionTracker = tree.get("disableConnectionTracker", false);
+    c.disableConnectionTracker = disableConnectionTracker;
     auto traditionTcpRelay = tree.get("traditionTcpRelay", false);
     c.traditionTcpRelay = traditionTcpRelay;
 

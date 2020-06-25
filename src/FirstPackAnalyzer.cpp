@@ -18,6 +18,7 @@
 
 #include "FirstPackAnalyzer.h"
 #include "TcpRelayServer.h"
+#include "ConnectionTracker.h"
 #include <regex>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -66,7 +67,12 @@ void FirstPackAnalyzer::start() {
 void FirstPackAnalyzer::do_prepare_whenComplete() {
     auto ptr = tcpRelaySession.lock();
     if (ptr) {
-        // TODO impl: insert protocol analysis start on here
+        // impl: insert protocol analysis start on here
+        auto ct = ptr->getConnectionTracker();
+        if (ct) {
+            ct->relayGotoDown(upstream_buf_);
+            ct->relayGotoUp(downstream_buf_);
+        }
 
         // send remain data
         do_prepare_complete_downstream_write();
@@ -155,6 +161,7 @@ void FirstPackAnalyzer::do_read_client_first_3_byte() {
                             d[2] == 0x00) {
                             // is socks5
                             std::cout << "is socks5" << std::endl;
+                            connectType = ConnectType::socks5;
                             // relay normal
                             do_prepare_whenComplete();
                         } else if ((d[0] == 'C' || d[0] == 'c') &&
@@ -163,7 +170,7 @@ void FirstPackAnalyzer::do_read_client_first_3_byte() {
                             // is http Connect
                             std::cout << "is http Connect" << std::endl;
                             // analysis target server and create socks5 handshake
-                            isConnect = true;
+                            connectType = ConnectType::httpConnect;
                             do_analysis_client_first_http_header();
                         } else {
                             // is other protocol
@@ -174,34 +181,41 @@ void FirstPackAnalyzer::do_read_client_first_3_byte() {
                                 case 'p':
                                     // POST, PUT, PATCH
                                     std::cout << "is POST, PUT, PATCH" << std::endl;
+                                    connectType = ConnectType::httpOther;
                                     break;
                                 case 'G':
                                 case 'g':
                                     std::cout << "is GET" << std::endl;
                                     // GET
+                                    connectType = ConnectType::httpOther;
                                     break;
                                 case 'H':
                                 case 'h':
                                     std::cout << "is HEAD" << std::endl;
                                     // HEAD
+                                    connectType = ConnectType::httpOther;
                                     break;
                                 case 'D':
                                 case 'd':
                                     std::cout << "is DELETE" << std::endl;
                                     // DELETE
+                                    connectType = ConnectType::httpOther;
                                     break;
                                 case 'O':
                                 case 'o':
                                     std::cout << "is OPTIONS" << std::endl;
                                     // OPTIONS
+                                    connectType = ConnectType::httpOther;
                                     break;
                                 case 'T':
                                 case 't':
                                     std::cout << "is TRACE" << std::endl;
                                     // TRACE
+                                    connectType = ConnectType::httpOther;
                                     break;
                                 default:
                                     std::cout << "is default..." << std::endl;
+                                    connectType = ConnectType::unknown;
                                     break;
                             }
                             // debug
@@ -278,7 +292,7 @@ void FirstPackAnalyzer::do_analysis_client_first_http_header() {
                     // is connect
                     std::cout << "do_analysis_client_first_http_header is connect trim" << std::endl;
 
-                    isConnect = true;
+                    connectType = ConnectType::httpConnect;
 
                     // remove connect request
                     downstream_buf_.consume(it + 4);
