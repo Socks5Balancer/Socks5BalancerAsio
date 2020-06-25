@@ -37,8 +37,8 @@ it must encode with `UTF-8 no BOM`
 
 ```json5
 {
-  "listenHost": "127.0.0.1",                // the listen host, default is 127.0.0.1
-  "listenPort": 5000,                       // the listen port, default is 5000
+  "listenHost": "127.0.0.1",                // the main listen host, default is 127.0.0.1
+  "listenPort": 5000,                       // the main listen port, default is 5000
   // (if all backend down at same time, the new connect will wast `retryTimes*connectTimeout` time on it. )
   "retryTimes": 3,                          // when new connect coming, how many backend we try to connect. default is 3
   "connectTimeout": 2000,                   // when try to connect backend, how long the backend connect timeout means it's dead. default is 2000ms (2s)
@@ -56,8 +56,23 @@ it must encode with `UTF-8 no BOM`
   "serverChangeTime": 5000,                 // the config of Load Balance Rule `change_by_time`. default is 5000ms (5s)
   "stateServerHost": "127.0.0.1",           // the simple state monitor server host. default is 127.0.0.1
   "stateServerPort": 5010,                  //  the simple state monitor server port. default is 5010
-  //  the `momentLocale` is moment format. now only build with en & zh-cn for best size. if you need more language, can enable on `webpack-prod.config.js` -> `MomentLocalesPlugin`
-  "momentLocale": "en",                     // the time localization config. now it can be `en` or `zh-cn`. default is `en`
+  "disableConnectTest": false,              // disable the two connect test, default is false
+  "disableConnectionTracker": false,        // disable connect analysis, default is false
+  "traditionTcpRelay": false,               // disable mixed-port mode, default is false
+  "multiListen": [                          // the addition listen ports, will work same as main listen port, default is empty
+    {
+      "host": "127.0.0.1",
+      "port": 6600
+    },
+    {
+      "host": "127.0.0.1",
+      "port": 6601
+    },
+    {
+      "host": "127.0.0.1",
+      "port": 6602
+    }
+  ],
   "upstream": [                             // the backend server array.  default is empty. (now only support socks5 proxy server)
     {
       "name": "Server Name A",              // the backend server name string, you can use any string on this
@@ -75,11 +90,7 @@ it must encode with `UTF-8 no BOM`
       "port": 3002,
       "disable": 1                          // if set the "disable" as NOT Falsy (Falsy means 0,false,null,undefined..),  this server will disable by default
     }
-  ],
-  "internalBehavior": {                     // some inner config , if you dont known how it work, you dont need care it.
-    "connectResetMeansOffline": true,       // if detect the connect be reset, Think of that backend as Offline. default is true
-    "statisticalTimerPeriod": 1000          // the backend statistical period, if your server have low CPU, you can reduce it. default is 1000ms (1s)
-  }
+  ]
 }
 ```
 
