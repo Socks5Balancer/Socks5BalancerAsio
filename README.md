@@ -199,7 +199,7 @@ only need to follow the data process way on the simple Monitor html.
 
 BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date. 
 
-<small>(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)</small>
+_(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)_
 
 
 ## Use Monitor Page On Nginx
@@ -230,7 +230,7 @@ otherwise, try to get the backend config from page server path `backend` .
 
 ---
 ## Struct Info
-now the main server write with pure c++ (c++11/17) , powered by Boost.Asio/Boost.Beast . 
+now the main server write with pure c++ (c++17) , powered by Boost.Asio/Boost.Beast . 
 and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) . 
 
 if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config. 
@@ -241,7 +241,7 @@ only need to follow the data process way on the simple Monitor html.
 
 BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date. 
 
-<small>(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)</small>
+_(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)_
 
 ---
 
@@ -256,7 +256,7 @@ BTW: the simple Monitor html in the `./html` folder write with html5 and css wit
 
 #### windows
 
-isntall VS2019
+install VS2019
 
 if you dont want build Boost and OpenSSL by yourself , download Prebuild version from follow :
 
