@@ -56,6 +56,7 @@ it must encode with `UTF-8 no BOM`
   "serverChangeTime": 5000,                 // the config of Load Balance Rule `change_by_time`. default is 5000ms (5s)
   "stateServerHost": "127.0.0.1",           // the simple state monitor server host. default is 127.0.0.1
   "stateServerPort": 5010,                  //  the simple state monitor server port. default is 5010
+  // if follow 3 config all are `true`, will run in plain mode, like a pure tcp relay
   "disableConnectTest": false,              // disable the two connect test, default is false
   "disableConnectionTracker": false,        // disable connect analysis, default is false
   "traditionTcpRelay": false,               // disable mixed-port mode, default is false
@@ -73,7 +74,8 @@ it must encode with `UTF-8 no BOM`
       "port": 6602
     }
   ],
-  "upstream": [                             // the backend server array.  default is empty. (now only support socks5 proxy server)
+  "upstream": [                             // the backend server array.  default is empty.
+    //  (now only support socks5 proxy server with full function, but it can be any type tcp backend if use traditionTcpRelay=true disableConnectTest=true disableConnectionTracker=true)
     {
       "name": "Server Name A",              // the backend server name string, you can use any string on this
       "host": "127.0.0.1",                  // the backend server host
@@ -113,6 +115,16 @@ the minimal config template :
 ```
 
 you can find other minimal config template on the `example-config` dir
+
+**Note:** if you want use this to balance any tcp protocol backend that not socks5 , 
+you can set ```
+  "disableConnectTest": true,
+  "disableConnectionTracker": true,
+  "traditionTcpRelay": true ``` ,
+then it will run as a pure tcp relay or pure tcp balance or multi port bundle.
+but in that case, the `upstreamSelectRule` must be `random` or `loop`,
+any other rule will not work as expected because of the backend measure are be disabled.
+
 
 ## how to run it ?
 
