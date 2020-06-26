@@ -98,16 +98,16 @@ size_t UpstreamPool::getLastUseUpstreamIndex() {
 }
 
 bool UpstreamPool::checkServer(const UpstreamServerRef &u) const {
-    if (!_configLoader->config.disableConnectTest) {
+    if (_configLoader->config.disableConnectTest) {
         return u
-               && u->lastConnectTime.has_value()
-               && u->lastOnlineTime.has_value()
-               && !u->lastConnectFailed
-               && !u->isOffline
                && !u->isManualDisable;
-    } else {
-        return true;
     }
+    return u
+           && u->lastConnectTime.has_value()
+           && u->lastOnlineTime.has_value()
+           && !u->lastConnectFailed
+           && !u->isOffline
+           && !u->isManualDisable;
 }
 
 auto UpstreamPool::getNextServer() -> UpstreamServerRef {
