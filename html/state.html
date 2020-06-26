@@ -86,15 +86,15 @@
             <th>Host:Port</th>
             <th>name</th>
             <th>online</th>
-            <th>work</th>
+            <th v-if="!disableConnectTest">work</th>
             <th>run</th>
             <th>lastTCPCheckTime</th>
-            <th>lastConnectCheckTime</th>
+            <th v-if="!disableConnectTest">lastConnectCheckTime</th>
             <th>ManualDisable</th>
             <th>Usable</th>
             <th>Close Connect</th>
             <th>Select</th>
-            <th>Check</th>
+            <th v-if="!disableConnectTest">Check</th>
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
@@ -112,14 +112,14 @@
                 <span style="color: green" v-else-if="u.isOffline==='false'">True</span>
                 <span style="color: red" v-else>False</span>
             </td>
-            <td>
+            <td v-if="!disableConnectTest">
                 <span style="color: gray" v-if="u.lastConnectTime==='<empty>'">Unknown</span>
                 <span style="color: green" v-else-if="u.lastConnectFailed==='false'">True</span>
                 <span style="color: red" v-else>False</span>
             </td>
             <td>{{u.sessionsCount}} <span class="opacity_01">/ {{u.connectCount}} / {{u.connectCount2}}</span></td>
             <td>{{u.lastOnlineTime}}</td>
-            <td>{{u.lastConnectTime}}</td>
+            <td v-if="!disableConnectTest">{{u.lastConnectTime}}</td>
             <td>
                 <template v-if="u.isManualDisable==='true'">
                     <span style="color: red">Disabled</span>
@@ -156,7 +156,7 @@
                     Use Now
                 </a>
             </td>
-            <td>
+            <td v-if="!disableConnectTest">
                 <a href="javascript:void(0)"
                    v-on:click="sendCommand('/op?forceCheckServer=' + _.parseInt(u.index))"
                 >
@@ -172,7 +172,7 @@
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="15">
+            <td colspan="15" v-bind:colspan="15+(disableConnectTest?-2:0)">
                 <a href="javascript:void(0)"
                    v-on:click="sendCommand('/op?cleanAllCheckState=1')"
                    style="margin-right: 1em;"
@@ -186,6 +186,7 @@
                     Force Close All Connect
                 </a>
                 <a href="javascript:void(0)"
+                   v-if="!disableConnectTest"
                    v-on:click="sendCommand('/op?forceCheckAllServer=1')"
                    style="margin-right: 1em;"
                 >
@@ -347,7 +348,7 @@
                v-on:click="sendCommand('/op?endAllConnect=1')">
                 Force Close All Connect
             </a></li>
-        <li>Seems like Server State not update :&emsp;
+        <li v-if="!disableConnectTest">Seems like Server State not update :&emsp;
             <a href="javascript:void(0)"
                v-on:click="sendCommand('/op?forceCheckAllServer=1')">
                 Force Check All Now
