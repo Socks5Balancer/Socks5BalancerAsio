@@ -71,8 +71,15 @@
         <h3 style="color: red">Warning: we don't have Usable Server !!! </h3>
         <br/>
     </template>
-    <template v-if="upstreamPool.length===0">
+    <template v-if="upstreamPool.length===0&&InternetState.isOk">
         <h3 style="color: rebeccapurple; padding: 0 1em;">No Server ...</h3>
+    </template>
+    <template v-if="!InternetState.isOk">
+        <h3 style="color: palevioletred; padding: 0 1em;">No Data Come From Server.</h3>
+        <div style="color: orange;"
+             v-if="!!InternetState.error">
+            {{InternetState.error.message}}
+        </div>
     </template>
     <template v-if="disableConnectTest">
         <div style="color: orangered; padding-top: 1em;">Now Running On [DisableConnectTest] Mode.</div>
@@ -574,6 +581,10 @@
             set backend(s) {
                 setSearchParams('backend', s);
             },
+            InternetState: {
+                isOk: false,
+                error: undefined,
+            }
         },
         computed: {},
         methods: {
@@ -674,11 +685,16 @@
                         if (T.config.traditionTcpRelay === 'true') {
                             app.traditionTcpRelay = true;
                         }
+
+                        app.InternetState.isOk = true;
+                        app.InternetState.error = undefined;
                     }
                 }).then(function () {
                     console.log(app);
                 }).catch(function (e) {
                     console.error(e);
+                    app.InternetState.isOk = false;
+                    app.InternetState.error = e;
                 });
             },
             sendCommand: function (cmd) {
