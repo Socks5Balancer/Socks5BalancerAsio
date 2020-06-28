@@ -62,7 +62,9 @@ add_executable(${ProjectMainName}
         src/TcpRelayStatisticsInfo.h
         src/ConnectionTracker.cpp
         src/ConnectionTracker.h
-        src/ConnectType.h)
+        src/ConnectType.h
+        src/EmbedWebServer.cpp
+        src/EmbedWebServer.h)
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
