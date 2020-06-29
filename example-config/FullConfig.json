@@ -48,5 +48,14 @@
       "port": 3002,
       "disable": 1
     }
-  ]
+  ],
+  "EmbedWebServerConfig": {
+    "enable": true,
+    "host": "",
+    "port": 5002,
+    "root_path": "./html/",
+    "index_file_of_root": "state.html",
+    "backendHost": "",
+    "backendPort": 0
+  }
 }

@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <boost/asio.hpp>
+#include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <memory>
 #include <exception>
@@ -27,6 +28,7 @@
 #include "ConfigLoader.h"
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
+#include "EmbedWebServer.h"
 
 #ifndef DEFAULT_CONFIG
 #define DEFAULT_CONFIG R"(config.json)"
@@ -100,6 +102,23 @@ int main(int argc, const char *argv[]) {
         upstreamPool->startCheckTimer();
 
         stateMonitor->start();
+
+        std::shared_ptr<EmbedWebServer> embedWebServer;
+        if (configLoader->config.embedWebServerConfig.enable) {
+            boost::asio::ip::tcp::endpoint endpoint{
+                    boost::asio::ip::make_address(configLoader->config.embedWebServerConfig.host),
+                    configLoader->config.embedWebServerConfig.port
+            };
+            const auto &embedWebServerConfig = configLoader->config.embedWebServerConfig;
+            embedWebServer = std::make_shared<EmbedWebServer>(
+                    ioc,
+                    endpoint,
+                    std::make_shared<std::string>(embedWebServerConfig.root_path),
+                    std::make_shared<std::string>(embedWebServerConfig.index_file_of_root),
+                    std::make_shared<std::string>(embedWebServerConfig.backend_json_string)
+            );
+            embedWebServer->run();
+        }
 
         boost::asio::signal_set sig(ioc);
         sig.add(SIGINT);

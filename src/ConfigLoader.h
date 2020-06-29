@@ -47,6 +47,19 @@ struct MultiListen {
     uint16_t port;
 };
 
+struct EmbedWebServerConfig {
+    bool enable = false;
+    std::string host;
+    uint16_t port;
+    std::string root_path;
+    std::string index_file_of_root;
+    std::string backendHost;
+    uint16_t backendPort;
+
+    // calc
+    std::string backend_json_string;
+};
+
 enum class RuleEnum {
     loop,
     random,
@@ -77,6 +90,8 @@ struct Config {
     bool disableConnectTest;
     bool disableConnectionTracker;
     bool traditionTcpRelay;
+
+    EmbedWebServerConfig embedWebServerConfig;
 
     ConfigTimeDuration connectTimeout;
     ConfigTimeDuration sleepTime;

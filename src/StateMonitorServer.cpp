@@ -58,6 +58,20 @@ std::string HttpConnectSession::createJsonString() {
         }
         config.add_child("upstream", pUS);
 
+        const auto &ews = c.embedWebServerConfig;
+        boost::property_tree::ptree pEWS;
+        {
+            pEWS.put("enable", ews.enable);
+            pEWS.put("host", ews.host);
+            pEWS.put("port", ews.port);
+            pEWS.put("backendHost", ews.backendHost);
+            pEWS.put("backendPort", ews.backendPort);
+            pEWS.put("root_path", ews.root_path);
+            pEWS.put("index_file_of_root", ews.index_file_of_root);
+            pEWS.put("backend_json_string", ews.backend_json_string);
+        }
+        config.add_child("EmbedWebServerConfig", pEWS);
+
         root.add_child("config", config);
 
         root.put("nowRule", ruleEnum2string(configLoader->config.upstreamSelectRule));

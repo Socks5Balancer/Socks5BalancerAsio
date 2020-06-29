@@ -18,6 +18,7 @@
 
 #include "EmbedWebServer.h"
 
+#include <filesystem>
 
 // Return a reasonable mime type based on the extension of a file.
 boost::beast::string_view
@@ -85,14 +86,15 @@ path_cat(
 // caller to pass a generic lambda for receiving the response.
 template<
         class Body,
-        class Allocator,
+        class Allocator=std::allocator<char>,
         class Send
 >
 void
 handle_request(
         boost::beast::string_view doc_root,
         boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> &&req,
-        Send &&send) {
+        Send &&send,
+        std::shared_ptr<std::string const> index_file_of_root) {
     // Returns a bad request response
     auto const bad_request =
             [&req](boost::beast::string_view why) {
@@ -146,10 +148,38 @@ handle_request(
         req.target().find("..") != boost::beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
+    // ------------------------ path check --------------------
+//    {
+//        std::filesystem::path root_path{doc_root.begin(), doc_root.end()};
+//        root_path = std::filesystem::canonical(root_path);
+//
+//        std::filesystem::path file_path = root_path;
+//        std::string rString = req.target().to_string();
+//        if (!rString.empty()) {
+//            if (rString.front() == '/') {
+//                rString.erase(rString.begin());
+//            }
+//        }
+//        if (rString.empty()) {
+//            rString = ".";
+//        }
+//        file_path.append(req.target().to_string());
+//        // from https://stackoverflow.com/a/51436012/3548568
+//        std::string relCheckString = std::filesystem::relative(file_path, root_path).generic_string();
+//        if (relCheckString.find("..") != std::string::npos) {
+//            return send(bad_request("Illegal request-target 2"));
+//        }
+//    }
+    // ------------------------ path check --------------------
+
+    std::string reqString = req.target().to_string();
+    if (reqString.find("?") != std::string::npos) {
+        reqString = reqString.substr(0, reqString.find("?"));
+    }
     // Build the path to the requested file
-    std::string path = path_cat(doc_root, req.target());
-    if (req.target().back() == '/')
-        path.append("index.html");
+    std::string path = path_cat(doc_root, reqString);
+    if (reqString.back() == '/')
+        path.append(*index_file_of_root);
 
     // Attempt to open the file
     boost::beast::error_code ec;
@@ -263,8 +293,25 @@ void EmbedWebServerSession::on_read(boost::beast::error_code ec, std::size_t byt
     if (ec)
         return fail(ec, "read");
 
+
+    std::cout << "req_.target():" << req_.target() << std::endl;
+    if (req_.method() == boost::beast::http::verb::get) {
+        // answer backend json
+        if (boost::beast::string_view{req_.target()}.to_string() == std::string{"/backend"}) {
+            boost::beast::http::response<boost::beast::http::string_body> res{
+                    boost::beast::http::status::ok,
+                    req_.version()};
+            res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+            res.set(boost::beast::http::field::content_type, "text/json");
+            res.keep_alive(req_.keep_alive());
+            res.body() = std::string(*backend_json_string);
+            res.prepare_payload();
+            return lambda_(std::move(res));
+        }
+    }
+
     // Send the response
-    handle_request(*doc_root_, std::move(req_), lambda_);
+    handle_request(*doc_root_, std::move(req_), lambda_, index_file_of_root);
 }
 
 void EmbedWebServerSession::on_write(bool close, boost::beast::error_code ec, std::size_t bytes_transferred) {
@@ -295,8 +342,14 @@ void EmbedWebServerSession::do_close() {
 }
 
 EmbedWebServer::EmbedWebServer(boost::asio::io_context &ioc, boost::asio::ip::tcp::endpoint endpoint,
-                               const std::shared_ptr<const std::string> &doc_root)
-        : ioc_(ioc), acceptor_(boost::asio::make_strand(ioc)), doc_root_(doc_root) {
+                               const std::shared_ptr<const std::string> &doc_root,
+                               std::shared_ptr<std::string const> const &index_file_of_root,
+                               std::shared_ptr<std::string const> const &backend_json_string)
+        : ioc_(ioc),
+          acceptor_(boost::asio::make_strand(ioc)),
+          doc_root_(doc_root),
+          index_file_of_root(index_file_of_root),
+          backend_json_string(backend_json_string) {
     boost::beast::error_code ec;
 
     // Open the acceptor
@@ -345,7 +398,9 @@ void EmbedWebServer::on_accept(boost::beast::error_code ec, boost::asio::ip::tcp
         // Create the session and run it
         std::make_shared<EmbedWebServerSession>(
                 std::move(socket),
-                doc_root_
+                doc_root_,
+                index_file_of_root,
+                backend_json_string
         )->run();
     }
 

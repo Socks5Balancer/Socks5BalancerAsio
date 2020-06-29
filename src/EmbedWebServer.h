@@ -53,6 +53,8 @@ class EmbedWebServerSession : public std::enable_shared_from_this<EmbedWebServer
     boost::beast::tcp_stream stream_;
     boost::beast::flat_buffer buffer_;
     std::shared_ptr<std::string const> doc_root_;
+    std::shared_ptr<std::string const> index_file_of_root;
+    std::shared_ptr<std::string const> backend_json_string;
     boost::beast::http::request<boost::beast::http::string_body> req_;
     std::shared_ptr<void> res_;
     send_lambda lambda_;
@@ -61,8 +63,14 @@ public:
     // Take ownership of the stream
     EmbedWebServerSession(
             boost::asio::ip::tcp::socket &&socket,
-            std::shared_ptr<std::string const> const &doc_root)
-            : stream_(std::move(socket)), doc_root_(doc_root), lambda_(*this) {
+            std::shared_ptr<std::string const> const &doc_root,
+            std::shared_ptr<std::string const> const &index_file_of_root,
+            std::shared_ptr<std::string const> const &backend_json_string)
+            : stream_(std::move(socket)),
+              doc_root_(doc_root),
+              index_file_of_root(index_file_of_root),
+              backend_json_string(backend_json_string),
+              lambda_(*this) {
     }
 
     // Start the asynchronous operation
@@ -94,12 +102,17 @@ class EmbedWebServer : public std::enable_shared_from_this<EmbedWebServer> {
     boost::asio::io_context &ioc_;
     boost::asio::ip::tcp::acceptor acceptor_;
     std::shared_ptr<std::string const> doc_root_;
+    std::shared_ptr<std::string const> index_file_of_root;
+    std::shared_ptr<std::string const> backend_json_string;
 
 public:
     EmbedWebServer(
             boost::asio::io_context &ioc,
             boost::asio::ip::tcp::endpoint endpoint,
-            std::shared_ptr<std::string const> const &doc_root);
+            std::shared_ptr<std::string const> const &doc_root,
+            std::shared_ptr<std::string const> const &index_file_of_root,
+            std::shared_ptr<std::string const> const &backend_json_string
+    );
 
     // Start accepting incoming connections
     void
