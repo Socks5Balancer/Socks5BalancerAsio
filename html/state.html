@@ -244,6 +244,10 @@
     <span class="string-pad">{{ lastConnectComeTimeAgoString2 }}</span>
     <span class="string-pad">{{ lastConnectComeTimeAgo }} ms</span>
     <br/>
+    isSleeping:
+    <span v-if="lastConnectComeTimeAgo>sleepTime">sleeping</span>
+    <span v-else="">running</span>
+    <br/>
     <br/>
     listen On: <span class="string-pad">{{ listenOn }}</span>
     <br/>
@@ -566,6 +570,7 @@
             totalDownSpeed: 0,
             totalUpSpeedMax: 0,
             totalDownSpeedMax: 0,
+            sleepTime: 0,
             UpstreamIndex: [],
             ClientIndex: [],
             ListenIndex: [],
@@ -631,6 +636,7 @@
                         app.totalUpSpeedMax = reduceField(app.upstreamPool, 'byteUpChangeMax');
                         app.totalDownSpeedMax = reduceField(app.upstreamPool, 'byteDownChangeMax');
 
+                        app.sleepTime = _.parseInt(_.get(T, 'config.sleepTime', '' + Number.MAX_SAFE_INTEGER));
                         app.nowTime = T.nowTime;
 
                         app.runTime = T.runTime;
