@@ -36,12 +36,22 @@ class TcpRelaySession;
 class ConnectionTracker : public std::enable_shared_from_this<ConnectionTracker> {
     std::weak_ptr<TcpRelaySession> tcpRelaySession;
 
+    size_t maxBufSize = 8192 * 10;
+
     // Client --> Proxy --> Remove Server
     boost::asio::streambuf up_data_;
     // Remote Server --> Proxy --> Client
     boost::asio::streambuf down_data_;
 
+    // Client --> Proxy --> Remove Server
+    size_t up_count{0};
+    // Remote Server --> Proxy --> Client
+    size_t down_count{0};
+
     ConnectType connectType;
+
+    std::string host{};
+    uint16_t port{0};
 
     bool isEnd = false;
 public:
@@ -49,9 +59,13 @@ public:
     ConnectionTracker() = delete;
 
     ConnectionTracker(std::weak_ptr<TcpRelaySession> tcpRelaySession,
-                      ConnectType connectType = ConnectType::unknown)
+                      ConnectType connectType = ConnectType::unknown,
+                      std::string host = "",
+                      uint16_t port = 0)
             : tcpRelaySession(tcpRelaySession),
-              connectType(connectType) {}
+              connectType(connectType),
+              host(host),
+              port(port) {}
 
     // the data Client --> Proxy --> Remove Server
     void relayGotoUp(const boost::asio::streambuf &buf);
@@ -75,6 +89,17 @@ private:
     void down_data_Update();
 
     void cleanUp();
+
+public:
+    enum class AnalysisResult {
+        needMoreData,
+        ok,
+        wrong
+    };
+
+protected:
+
+    AnalysisResult analysisData(const std::string_view data);
 
 };
 

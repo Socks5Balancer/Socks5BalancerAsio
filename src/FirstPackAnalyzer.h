@@ -64,8 +64,8 @@ public:
 
     ConnectType connectType = ConnectType::unknown;
 
-    std::string host;
-    uint16_t port;
+    std::string host{};
+    uint16_t port{0};
 public:
     FirstPackAnalyzer(
             std::weak_ptr<TcpRelaySession> tcpRelaySession,

@@ -22,6 +22,7 @@
 
 // the data Client --> Proxy --> Remove Server
 void ConnectionTracker::relayGotoUp(const boost::asio::streambuf &buf) {
+    up_count += buf.size();
     if (isEnd) {
         return;
     }
@@ -39,6 +40,7 @@ void ConnectionTracker::relayGotoUp(const boost::asio::streambuf &buf) {
 
 // the data Remote Server --> Proxy --> Client
 void ConnectionTracker::relayGotoDown(const boost::asio::streambuf &buf) {
+    down_count += buf.size();
     if (isEnd) {
         return;
     }
@@ -55,23 +57,67 @@ void ConnectionTracker::relayGotoDown(const boost::asio::streambuf &buf) {
 }
 
 void ConnectionTracker::up_data_Update() {
-    // TODO do analysis on there
+    // do analysis on there
 
+    auto d = reinterpret_cast<const char *>(up_data_.data().data());
+    auto result = analysisData(std::string_view{d, up_data_.data().size()});
 
-    // debug
-    cleanUp();
+    if (AnalysisResult::ok == result
+        || AnalysisResult::wrong == result) {
+        // if ok or error, clean up
+        cleanUp();
+    }
+
+    if (maxBufSize < up_data_.size()) {
+        // if wasted many space, clean up
+        cleanUp();
+    }
+
+//    // debug
+//    cleanUp();
 }
 
 void ConnectionTracker::down_data_Update() {
-    // TODO do analysis on there
+    // do analysis on there
 
+    // now, we dont care down data, simple consume it
+    down_data_.consume(down_data_.size());
 
-    // debug
-    cleanUp();
+//    // debug
+//    cleanUp();
 }
 
 void ConnectionTracker::cleanUp() {
     isEnd = true;
     down_data_.consume(down_data_.size());
     up_data_.consume(up_data_.size());
+}
+
+
+ConnectionTracker::AnalysisResult ConnectionTracker::analysisData(const std::string_view data) {
+    if (data.size() < 3) {
+        return ConnectionTracker::AnalysisResult::needMoreData;
+    }
+
+    switch (connectType) {
+        case ConnectType::httpConnect:
+        case ConnectType::httpOther:
+            if (!host.empty() && port != 0) {
+                // all the base info now we have
+                break;
+            }
+            break;
+        case ConnectType::socks5:
+        case ConnectType::unknown:
+        default:
+            // TODO try to analysis protocol & host & port
+            break;
+    }
+
+    if (!host.empty() && port != 0 && connectType != ConnectType::unknown) {
+
+        // TODO do protocol delay analysis
+    }
+
+    return ConnectionTracker::AnalysisResult::ok;
 }
