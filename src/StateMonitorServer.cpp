@@ -41,6 +41,7 @@ std::string HttpConnectSession::createJsonString() {
         config.put("traditionTcpRelay", c.traditionTcpRelay);
         config.put("serverChangeTime", c.serverChangeTime.count());
         config.put("connectTimeout", c.connectTimeout.count());
+        config.put("sleepTime", c.sleepTime.count());
         config.put("tcpCheckPeriod", c.tcpCheckPeriod.count());
         config.put("tcpCheckStart", c.tcpCheckStart.count());
         config.put("connectCheckPeriod", c.connectCheckPeriod.count());
