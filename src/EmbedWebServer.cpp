@@ -162,10 +162,18 @@ handle_request(
     // ------------------------ path check --------------------
     try {
         std::filesystem::path root_path{doc_root.to_string()};
-        root_path = std::filesystem::canonical(root_path);
+        std::error_code errorCode;
+        root_path = std::filesystem::canonical(root_path, errorCode);
+        if (errorCode) {
+            return send(bad_request("Illegal request-target 2.1"));
+        }
 
         std::filesystem::path file_path{path};
-        file_path = std::filesystem::canonical(file_path);
+        errorCode.clear();
+        file_path = std::filesystem::canonical(file_path, errorCode);
+        if (errorCode) {
+            return send(bad_request("Illegal request-target 2.2"));
+        }
 
         // from https://stackoverflow.com/a/51436012/3548568
         std::string relCheckString = std::filesystem::relative(file_path, root_path).generic_string();
@@ -173,8 +181,12 @@ handle_request(
             return send(bad_request("Illegal request-target 2"));
         }
 
-        if (std::filesystem::is_symlink(std::filesystem::symlink_status(file_path))) {
+        errorCode.clear();
+        if (std::filesystem::is_symlink(std::filesystem::symlink_status(file_path, errorCode))) {
             return send(bad_request("Illegal request-target 3"));
+        }
+        if (errorCode) {
+            return send(bad_request("Illegal request-target 2.3"));
         }
     } catch (const std::exception &e) {
         return send(bad_request("Illegal request-target 4"));
