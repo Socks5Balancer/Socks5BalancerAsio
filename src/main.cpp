@@ -119,7 +119,8 @@ int main(int argc, const char *argv[]) {
                     endpoint,
                     std::make_shared<std::string>(embedWebServerConfig.root_path),
                     std::make_shared<std::string>(embedWebServerConfig.index_file_of_root),
-                    std::make_shared<std::string>(embedWebServerConfig.backend_json_string)
+                    std::make_shared<std::string>(embedWebServerConfig.backend_json_string),
+                    std::make_shared<std::string>(embedWebServerConfig.allowFileExtList)
             );
             embedWebServer->start();
         }

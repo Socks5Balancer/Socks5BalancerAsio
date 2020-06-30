@@ -19,6 +19,7 @@
 #include "EmbedWebServer.h"
 
 #include <filesystem>
+#include <boost/algorithm/string.hpp>
 
 // Return a reasonable mime type based on the extension of a file.
 boost::beast::string_view
@@ -94,7 +95,8 @@ handle_request(
         boost::beast::string_view doc_root,
         boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> &&req,
         Send &&send,
-        std::shared_ptr<std::string const> index_file_of_root) {
+        std::shared_ptr<std::string const> index_file_of_root,
+        const std::vector<std::string> allowFileExtList) {
     // Returns a bad request response
     auto const bad_request =
             [&req](boost::beast::string_view why) {
@@ -187,6 +189,21 @@ handle_request(
         }
         if (errorCode) {
             return send(bad_request("Illegal request-target 2.3"));
+        }
+
+        auto ext = file_path.extension().string();
+        if (ext.front() == '.') {
+            ext.erase(ext.begin());
+        }
+        bool isAllow = false;
+        for (const auto &a:allowFileExtList) {
+            if (ext == a) {
+                isAllow = true;
+                break;
+            }
+        }
+        if (!isAllow) {
+            return send(bad_request("Illegal request-target 2.4"));
         }
     } catch (const std::exception &e) {
         return send(bad_request("Illegal request-target 4"));
@@ -323,7 +340,7 @@ void EmbedWebServerSession::on_read(boost::beast::error_code ec, std::size_t byt
     }
 
     // Send the response
-    handle_request(*doc_root_, std::move(req_), lambda_, index_file_of_root);
+    handle_request(*doc_root_, std::move(req_), lambda_, index_file_of_root, allowFileExtList);
 }
 
 void EmbedWebServerSession::on_write(bool close, boost::beast::error_code ec, std::size_t bytes_transferred) {
@@ -356,12 +373,20 @@ void EmbedWebServerSession::do_close() {
 EmbedWebServer::EmbedWebServer(boost::asio::io_context &ioc, boost::asio::ip::tcp::endpoint endpoint,
                                const std::shared_ptr<const std::string> &doc_root,
                                std::shared_ptr<std::string const> const &index_file_of_root,
-                               std::shared_ptr<std::string const> const &backend_json_string)
+                               std::shared_ptr<std::string const> const &backend_json_string,
+                               std::shared_ptr<std::string const> const &_allowFileExtList)
         : ioc_(ioc),
           acceptor_(boost::asio::make_strand(ioc)),
           doc_root_(doc_root),
           index_file_of_root(index_file_of_root),
           backend_json_string(backend_json_string) {
+
+    if (_allowFileExtList) {
+        std::vector<std::string> extList;
+        boost::split(extList, *_allowFileExtList, boost::is_any_of(" "));
+        allowFileExtList = extList;
+    }
+
     boost::beast::error_code ec;
 
     // Open the acceptor
@@ -412,7 +437,8 @@ void EmbedWebServer::on_accept(boost::beast::error_code ec, boost::asio::ip::tcp
                 std::move(socket),
                 doc_root_,
                 index_file_of_root,
-                backend_json_string
+                backend_json_string,
+                allowFileExtList
         )->run();
     }
 

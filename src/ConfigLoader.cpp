@@ -211,6 +211,7 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
     c.embedWebServerConfig.backendPort = 0;
     c.embedWebServerConfig.root_path = "./html/";
     c.embedWebServerConfig.index_file_of_root = "state.html";
+    c.embedWebServerConfig.allowFileExtList = "htm html js json jpg jpeg png bmp gif ico svg";
     if (tree.get_child_optional("EmbedWebServerConfig")) {
         auto pts = tree.get_child("EmbedWebServerConfig");
         auto &embedWebServerConfig = c.embedWebServerConfig;
@@ -223,6 +224,8 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
             embedWebServerConfig.root_path = pts.get("root_path", embedWebServerConfig.root_path);
             embedWebServerConfig.index_file_of_root = pts.get("index_file_of_root",
                                                               embedWebServerConfig.index_file_of_root);
+            embedWebServerConfig.allowFileExtList = pts.get("allowFileExtList", embedWebServerConfig.allowFileExtList);
+
         }
     }
 

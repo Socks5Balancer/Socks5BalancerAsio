@@ -55,6 +55,7 @@ class EmbedWebServerSession : public std::enable_shared_from_this<EmbedWebServer
     std::shared_ptr<std::string const> doc_root_;
     std::shared_ptr<std::string const> index_file_of_root;
     std::shared_ptr<std::string const> backend_json_string;
+    std::vector<std::string> allowFileExtList;
     boost::beast::http::request<boost::beast::http::string_body> req_;
     std::shared_ptr<void> res_;
     send_lambda lambda_;
@@ -65,11 +66,13 @@ public:
             boost::asio::ip::tcp::socket &&socket,
             std::shared_ptr<std::string const> const &doc_root,
             std::shared_ptr<std::string const> const &index_file_of_root,
-            std::shared_ptr<std::string const> const &backend_json_string)
+            std::shared_ptr<std::string const> const &backend_json_string,
+            std::vector<std::string> const &allowFileExtList)
             : stream_(std::move(socket)),
               doc_root_(doc_root),
               index_file_of_root(index_file_of_root),
               backend_json_string(backend_json_string),
+              allowFileExtList(allowFileExtList),
               lambda_(*this) {
     }
 
@@ -104,6 +107,7 @@ class EmbedWebServer : public std::enable_shared_from_this<EmbedWebServer> {
     std::shared_ptr<std::string const> doc_root_;
     std::shared_ptr<std::string const> index_file_of_root;
     std::shared_ptr<std::string const> backend_json_string;
+    std::vector<std::string> allowFileExtList;
 
 public:
     EmbedWebServer(
@@ -111,7 +115,8 @@ public:
             boost::asio::ip::tcp::endpoint endpoint,
             std::shared_ptr<std::string const> const &doc_root,
             std::shared_ptr<std::string const> const &index_file_of_root,
-            std::shared_ptr<std::string const> const &backend_json_string
+            std::shared_ptr<std::string const> const &backend_json_string,
+            std::shared_ptr<std::string const> const &allowFileExtList
     );
 
     // Start accepting incoming connections

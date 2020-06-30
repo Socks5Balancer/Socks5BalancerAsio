@@ -105,7 +105,9 @@ it must encode with `UTF-8 no BOM`
     "index_file_of_root": "state.html",     // the `index` file of "/" path, it special how to provide the root page. default is "state.html".
                                             //     Carefully!!!, it must is a relative path as `root_path`.
     "backendHost": "",                      // special the stateServerHost, it use to construct the backend json string. default is empty string, will auto fill by stateServerHost
-    "backendPort": 0                        // special the stateServerPort, it use to construct the backend json string. default is 0, will auto fill by stateServerPort
+    "backendPort": 0,                       // special the stateServerPort, it use to construct the backend json string. default is 0, will auto fill by stateServerPort
+    "allowFileExtList": "htm html js json jpg jpeg png bmp gif ico svg"
+                                            // the allow file ext list can be access, split by ' ' (empty space)
   }
 }
 ```

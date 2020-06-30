@@ -56,6 +56,8 @@ struct EmbedWebServerConfig {
     std::string backendHost;
     uint16_t backendPort;
 
+    std::string allowFileExtList;
+
     // calc
     std::string backend_json_string;
 };

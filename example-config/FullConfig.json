@@ -56,6 +56,7 @@
     "root_path": "./html/",
     "index_file_of_root": "state.html",
     "backendHost": "",
-    "backendPort": 0
+    "backendPort": 0,
+    "allowFileExtList": "htm html js json jpg jpeg png bmp gif ico svg"
   }
 }
