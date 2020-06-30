@@ -51,7 +51,7 @@
   ],
   "EmbedWebServerConfig": {
     "enable": true,
-    "host": "",
+    "host": "127.0.0.1",
     "port": 5002,
     "root_path": "./html/",
     "index_file_of_root": "state.html",

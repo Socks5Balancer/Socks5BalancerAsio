@@ -149,28 +149,6 @@ handle_request(
         return send(bad_request("Illegal request-target"));
 
     // ------------------------ path check --------------------
-//    {
-//        std::filesystem::path root_path{doc_root.begin(), doc_root.end()};
-//        root_path = std::filesystem::canonical(root_path);
-//
-//        std::filesystem::path file_path = root_path;
-//        std::string rString = req.target().to_string();
-//        if (!rString.empty()) {
-//            if (rString.front() == '/') {
-//                rString.erase(rString.begin());
-//            }
-//        }
-//        if (rString.empty()) {
-//            rString = ".";
-//        }
-//        file_path.append(req.target().to_string());
-//        // from https://stackoverflow.com/a/51436012/3548568
-//        std::string relCheckString = std::filesystem::relative(file_path, root_path).generic_string();
-//        if (relCheckString.find("..") != std::string::npos) {
-//            return send(bad_request("Illegal request-target 2"));
-//        }
-//    }
-    // ------------------------ path check --------------------
 
     std::string reqString = req.target().to_string();
     if (reqString.find("?") != std::string::npos) {
@@ -180,6 +158,28 @@ handle_request(
     std::string path = path_cat(doc_root, reqString);
     if (reqString.back() == '/')
         path.append(*index_file_of_root);
+
+    // ------------------------ path check --------------------
+    try {
+        std::filesystem::path root_path{doc_root.to_string()};
+        root_path = std::filesystem::canonical(root_path);
+
+        std::filesystem::path file_path{path};
+        file_path = std::filesystem::canonical(file_path);
+
+        // from https://stackoverflow.com/a/51436012/3548568
+        std::string relCheckString = std::filesystem::relative(file_path, root_path).generic_string();
+        if (relCheckString.find("..") != std::string::npos) {
+            return send(bad_request("Illegal request-target 2"));
+        }
+
+        if (std::filesystem::is_symlink(std::filesystem::symlink_status(file_path))) {
+            return send(bad_request("Illegal request-target 3"));
+        }
+    } catch (const std::exception &e) {
+        return send(bad_request("Illegal request-target 4"));
+    }
+    // ------------------------ path check --------------------
 
     // Attempt to open the file
     boost::beast::error_code ec;

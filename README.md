@@ -93,7 +93,19 @@ it must encode with `UTF-8 no BOM`
       "port": 3002,
       "disable": 1                          // if set the "disable" as NOT Falsy (Falsy means 0,false,null,undefined..),  this server will disable by default
     }
-  ]
+  ],
+  "EmbedWebServerConfig": {                 // the embedding web server, it work as a static file provider
+    "enable": false,                        // is enable . default is false
+    "host": "127.0.0.1",                    // the embedding web server listen host. default is 127.0.0.1
+    "port": 5002,                           // the embedding web server listen port. default is 5002
+    "root_path": "./html/",                 // the embedding web server file provider root path. default is "./html/"
+                                            //     all file access will be limit on this directory.
+                                            //     Warning!!! make sure dont have any sensitive file or symlink on this dir.
+    "index_file_of_root": "state.html",     // the `index` file of "/" path, it special how to provide the root page. default is "state.html".
+                                            //     Carefully!!!, it must is a relative path as `root_path`.
+    "backendHost": "",                      // special the stateServerHost, it use to construct the backend json string. default is empty string, will auto fill by stateServerHost
+    "backendPort": 0                        // special the stateServerPort, it use to construct the backend json string. default is 0, will auto fill by stateServerPort
+  }
 }
 ```
 
@@ -200,6 +212,18 @@ only need to follow the data process way on the simple Monitor html.
 BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date. 
 
 _(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)_
+
+
+## Use Monitor Page On EmbedWebServer
+
+if you dont want to install a addition web server , and you use the web page on save env, you can use the EmbedWebServer.
+ 
+the EmbedWebServer only do two action:    
+
+1. provide `backend json` on path `/backend`. 
+2. be a static file provider like nginx
+
+you can config it in the config file of `EmbedWebServerConfig` segment.
 
 
 ## Use Monitor Page On Nginx
