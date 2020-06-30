@@ -121,7 +121,7 @@ int main(int argc, const char *argv[]) {
                     std::make_shared<std::string>(embedWebServerConfig.index_file_of_root),
                     std::make_shared<std::string>(embedWebServerConfig.backend_json_string)
             );
-            embedWebServer->run();
+            embedWebServer->start();
         }
 
         boost::asio::signal_set sig(ioc);

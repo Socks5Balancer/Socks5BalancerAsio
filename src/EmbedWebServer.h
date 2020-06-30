@@ -116,7 +116,7 @@ public:
 
     // Start accepting incoming connections
     void
-    run() {
+    start() {
         do_accept();
     }
 
