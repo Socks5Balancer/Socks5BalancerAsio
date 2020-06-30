@@ -19,10 +19,18 @@ endif ()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
+if (NOT_USE_BOOST_THEAD)
+    set(BOOST_THEAD_MODULE "")
+else ()
+    set(BOOST_THEAD_MODULE "thread")
+    add_definitions(-DUSE_BOOST_THEAD)
+endif ()
+
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.70.0 REQUIRED COMPONENTS system filesystem program_options REQUIRED)
+find_package(Boost 1.70.0 REQUIRED COMPONENTS system filesystem program_options ${BOOST_THEAD_MODULE} REQUIRED)
+
 
 message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")

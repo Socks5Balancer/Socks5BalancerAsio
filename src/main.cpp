@@ -30,6 +30,10 @@
 #include "ConnectTestHttps.h"
 #include "EmbedWebServer.h"
 
+#ifdef USE_BOOST_THEAD
+#include <boost/thread.hpp>
+#endif // USE_BOOST_THEAD
+
 #ifndef DEFAULT_CONFIG
 #define DEFAULT_CONFIG R"(config.json)"
 #endif // DEFAULT_CONFIG
@@ -155,7 +159,40 @@ int main(int argc, const char *argv[]) {
             }
         });
 
+
+#ifdef USE_BOOST_THEAD
+        const auto processor_count = boost::thread::hardware_concurrency();
+        std::cout << "processor_count:" << processor_count << std::endl;
+        if (processor_count > 2) {
+            boost::thread_group tg;
+            for (unsigned i = 0; i < processor_count; ++i) {
+                tg.create_thread([&ioc, &tg]() {
+                    try {
+                        ioc.run();
+                    } catch (int) {
+                        tg.interrupt_all();
+                        std::cerr << "catch (int) exception" << "\n";
+                        return -1;
+                    }
+                    catch (const std::exception &e) {
+                        tg.interrupt_all();
+                        std::cerr << "catch std::exception: " << e.what() << "\n";
+                        return -1;
+                    } catch (...) {
+                        tg.interrupt_all();
+                        std::cerr << "catch (...) exception" << "\n";
+                        return -1;
+                    }
+                    return 0;
+                });
+            }
+            tg.join_all();
+        } else {
+            ioc.run();
+        }
+#else // USE_BOOST_THEAD
         ioc.run();
+#endif // USE_BOOST_THEAD
 
     } catch (int) {
         std::cerr << "catch (int) exception" << "\n";
