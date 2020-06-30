@@ -101,6 +101,7 @@ it must encode with `UTF-8 no BOM`
     "root_path": "./html/",                 // the embedding web server file provider root path. default is "./html/"
                                             //     all file access will be limit on this directory.
                                             //     Warning!!! make sure dont have any sensitive file or symlink on this dir.
+                                            //     Notice: now the server will not decode url, so it will cannot find file that file name contained non-ascii characters or other need be encode strings
     "index_file_of_root": "state.html",     // the `index` file of "/" path, it special how to provide the root page. default is "state.html".
                                             //     Carefully!!!, it must is a relative path as `root_path`.
     "backendHost": "",                      // special the stateServerHost, it use to construct the backend json string. default is empty string, will auto fill by stateServerHost
