@@ -32,6 +32,7 @@
 #include <chrono>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include "ConfigRuleEnum.h"
 
 using ConfigTimeDuration = std::chrono::milliseconds;
 
@@ -60,13 +61,6 @@ struct EmbedWebServerConfig {
 
     // calc
     std::string backend_json_string;
-};
-
-enum class RuleEnum {
-    loop,
-    random,
-    one_by_one,
-    change_by_time,
 };
 
 struct Config {

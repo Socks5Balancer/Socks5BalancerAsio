@@ -31,6 +31,9 @@ RuleEnum string2RuleEnum(std::string s) {
     if ("change_by_time" == s) {
         return RuleEnum::change_by_time;
     }
+    if ("inherit" == s) {
+        return RuleEnum::inherit;
+    }
     return RuleEnum::random;
 }
 
@@ -44,6 +47,8 @@ std::string ruleEnum2string(RuleEnum r) {
             return "one_by_one";
         case RuleEnum::change_by_time:
             return "change_by_time";
+        case RuleEnum::inherit:
+            return "inherit";
         default:
             return "random";
     }
@@ -54,6 +59,7 @@ std::vector<std::string> RuleEnumList{
         "random",
         "one_by_one",
         "change_by_time",
+        "inherit",
 };
 
 void ConfigLoader::print() {
