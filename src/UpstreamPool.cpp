@@ -114,15 +114,16 @@ auto UpstreamPool::getNextServer(size_t &_lastUseUpstreamIndex) -> UpstreamServe
     if (_pool.empty()) {
         return UpstreamServerRef{};
     }
+    auto __lastUseUpstreamIndex = _lastUseUpstreamIndex;
     while (true) {
-        ++lastUseUpstreamIndex;
-        if (lastUseUpstreamIndex >= _pool.size()) {
-            lastUseUpstreamIndex = 0;
+        ++_lastUseUpstreamIndex;
+        if (_lastUseUpstreamIndex >= _pool.size()) {
+            _lastUseUpstreamIndex = 0;
         }
-        if (checkServer(_pool[lastUseUpstreamIndex])) {
-            return _pool[lastUseUpstreamIndex]->shared_from_this();
+        if (checkServer(_pool[_lastUseUpstreamIndex])) {
+            return _pool[_lastUseUpstreamIndex]->shared_from_this();
         }
-        if (_lastUseUpstreamIndex == lastUseUpstreamIndex) {
+        if (__lastUseUpstreamIndex == _lastUseUpstreamIndex) {
             // cannot find
             return UpstreamServerRef{};
         }
@@ -133,18 +134,19 @@ auto UpstreamPool::tryGetLastServer(size_t &_lastUseUpstreamIndex) -> UpstreamSe
     if (_pool.empty()) {
         return UpstreamServerRef{};
     }
+    auto __lastUseUpstreamIndex = _lastUseUpstreamIndex;
     while (true) {
-        if (lastUseUpstreamIndex >= _pool.size()) {
-            lastUseUpstreamIndex = 0;
+        if (_lastUseUpstreamIndex >= _pool.size()) {
+            _lastUseUpstreamIndex = 0;
         }
-        if (checkServer(_pool[lastUseUpstreamIndex])) {
-            return _pool[lastUseUpstreamIndex]->shared_from_this();
+        if (checkServer(_pool[_lastUseUpstreamIndex])) {
+            return _pool[_lastUseUpstreamIndex]->shared_from_this();
         }
-        ++lastUseUpstreamIndex;
-        if (lastUseUpstreamIndex >= _pool.size()) {
-            lastUseUpstreamIndex = 0;
+        ++_lastUseUpstreamIndex;
+        if (_lastUseUpstreamIndex >= _pool.size()) {
+            _lastUseUpstreamIndex = 0;
         }
-        if (_lastUseUpstreamIndex == lastUseUpstreamIndex) {
+        if (__lastUseUpstreamIndex == _lastUseUpstreamIndex) {
             // cannot find
             return UpstreamServerRef{};
         }
@@ -207,6 +209,7 @@ auto UpstreamPool::getServerByHint(
                 std::uniform_int_distribution<size_t> distribution(0, rs.size() - 1);
                 size_t i = distribution(randomGenerator);
                 s = rs[i];
+                _lastUseUpstreamIndex = s->index;
             } else {
                 s.reset();
             }

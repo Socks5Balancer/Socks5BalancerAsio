@@ -50,7 +50,7 @@ std::shared_ptr<ConnectionTracker> TcpRelaySession::getConnectionTracker() {
 void TcpRelaySession::try_connect_upstream() {
     if (retryCount <= retryLimit) {
         ++retryCount;
-        UpstreamServerRef s;
+        UpstreamServerRef s{};
         auto pSI = statisticsInfo.lock();
         if (pSI) {
             // try get by client
