@@ -278,17 +278,20 @@
 
         <tr v-for="u in ClientIndex">
             <td>{{u.index}}</td>
-            <td>{{u.lastUseUpstreamIndex}}</td>
+            <td>{{u.lastUseUpstreamIndex+1}}</td>
             <td>
                 <select name="newRule" v-model="u.lastUseUpstreamIndex"
                         v-on:change="sendCommand(
                         '/op?_targetMode=client'
-                        + '&forceNowUseServer=' + u.lastUseUpstreamIndex
+                        + '&forceNowUseServer=' + (u.lastUseUpstreamIndex)
                         + '&_target=' + u.index)"
                 >
                     <template v-for="it in upstreamPool">
-                        <option v-if="it.index===u.index" v-bind:value="it.index" selected>{{ it.index }}</option>
-                        <option v-else v-bind:value="it.index">{{ it.index }}</option>
+                        <option v-if="it.index===u.lastUseUpstreamIndex"
+                                v-bind:value="it.index" selected>
+                            {{ it.index+1 }}
+                        </option>
+                        <option v-else v-bind:value="it.index">{{ it.index+1 }}</option>
                     </template>
                 </select>
             </td>
@@ -368,17 +371,20 @@
 
         <tr v-for="u in ListenIndex">
             <td>{{u.index}}</td>
-            <td>{{u.lastUseUpstreamIndex}}</td>
+            <td>{{u.lastUseUpstreamIndex+1}}</td>
             <td>
                 <select name="newRule" v-model="u.lastUseUpstreamIndex"
                         v-on:change="sendCommand(
-                        '/op?_targetMode=client'
-                        + '&forceNowUseServer=' + u.lastUseUpstreamIndex
+                        '/op?_targetMode=listen'
+                        + '&forceNowUseServer=' + (u.lastUseUpstreamIndex)
                         + '&_target=' + u.index)"
                 >
                     <template v-for="it in upstreamPool">
-                        <option v-if="it.index===u.index" v-bind:value="it.index" selected>{{ it.index }}</option>
-                        <option v-else v-bind:value="it.index">{{ it.index }}</option>
+                        <option v-if="it.index===u.lastUseUpstreamIndex"
+                                v-bind:value="it.index" selected>
+                            {{ it.index+1 }}
+                        </option>
+                        <option v-else v-bind:value="it.index">{{ it.index+1 }}</option>
                     </template>
                 </select>
             </td>
@@ -743,6 +749,7 @@
                         if (_.isArray(T.ClientIndex)) {
                             app.ClientIndex = T.ClientIndex.map(N => {
                                 N.byteInfo = 'true';
+                                N.lastUseUpstreamIndex = _.parseInt(N.lastUseUpstreamIndex);
                                 return N;
                             });
                         } else {
@@ -751,6 +758,7 @@
                         if (_.isArray(T.ListenIndex)) {
                             app.ListenIndex = T.ListenIndex.map(N => {
                                 N.byteInfo = 'true';
+                                N.lastUseUpstreamIndex = _.parseInt(N.lastUseUpstreamIndex);
                                 return N;
                             });
                         } else {
