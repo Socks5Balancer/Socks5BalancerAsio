@@ -100,6 +100,9 @@ public:
 
     boost::asio::ip::tcp::socket &upstream_socket();
 
+    UpstreamServerRef getNowServer() {
+        return nowServer;
+    }
 
     void start();
 
