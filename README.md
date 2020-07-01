@@ -24,6 +24,7 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 1. connection from front end will not connect to dead backend
 1. have 2 check way to check a backend is dead or alive
 1. if a backend revive from dead, it will be auto enable
+1. can config rule per client-ip / per listener
 
 ## the Rule of Load Balance now support
 1. `loop` \: every connect will round robin on all live backend
