@@ -118,15 +118,20 @@ public:
 
 protected:
 
-    auto getNextServer() -> UpstreamServerRef;
+    auto getNextServer(size_t &_lastUseUpstreamIndex) -> UpstreamServerRef;
 
-    auto tryGetLastServer() -> UpstreamServerRef;
+    auto tryGetLastServer(size_t &_lastUseUpstreamIndex) -> UpstreamServerRef;
 
     auto filterValidServer() -> std::vector<UpstreamServerRef>;
 
 public:
-    auto getServerBasedOnAddress() -> UpstreamServerRef;
+    auto getServerGlobal() -> UpstreamServerRef;
 
+    auto getServerByHint(
+            const RuleEnum &_upstreamSelectRule,
+            size_t &_lastUseUpstreamIndex,
+            bool dontFallbackToGlobal = false
+    ) -> UpstreamServerRef;
 
 private:
     using CheckerTimerType = boost::asio::steady_timer;

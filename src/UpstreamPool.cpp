@@ -110,8 +110,7 @@ bool UpstreamPool::checkServer(const UpstreamServerRef &u) const {
            && !u->isManualDisable;
 }
 
-auto UpstreamPool::getNextServer() -> UpstreamServerRef {
-    const auto _lastUseUpstreamIndex = lastUseUpstreamIndex;
+auto UpstreamPool::getNextServer(size_t &_lastUseUpstreamIndex) -> UpstreamServerRef {
     if (_pool.empty()) {
         return UpstreamServerRef{};
     }
@@ -130,8 +129,7 @@ auto UpstreamPool::getNextServer() -> UpstreamServerRef {
     }
 }
 
-auto UpstreamPool::tryGetLastServer() -> UpstreamServerRef {
-    const auto _lastUseUpstreamIndex = lastUseUpstreamIndex;
+auto UpstreamPool::tryGetLastServer(size_t &_lastUseUpstreamIndex) -> UpstreamServerRef {
     if (_pool.empty()) {
         return UpstreamServerRef{};
     }
@@ -163,31 +161,45 @@ auto UpstreamPool::filterValidServer() -> std::vector<UpstreamServerRef> {
     return r;
 }
 
-auto UpstreamPool::getServerBasedOnAddress() -> UpstreamServerRef {
-    const auto upstreamSelectRule = _configLoader->config.upstreamSelectRule;
+auto UpstreamPool::getServerByHint(
+        const RuleEnum &_upstreamSelectRule,
+        size_t &_lastUseUpstreamIndex,
+        bool dontFallbackToGlobal) -> UpstreamServerRef {
+
+    RuleEnum __upstreamSelectRule = _upstreamSelectRule;
+
+    if (__upstreamSelectRule == RuleEnum::inherit) {
+        // if not special rule, get it by global rule or simple fail it
+        if (!dontFallbackToGlobal) {
+            return {};
+        } else {
+            __upstreamSelectRule = _configLoader->config.upstreamSelectRule;
+        }
+    }
 
     UpstreamServerRef s{};
-    switch (upstreamSelectRule) {
+    switch (__upstreamSelectRule) {
         case RuleEnum::loop:
-            s = getNextServer();
-            std::cout << "getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+            s = getNextServer(_lastUseUpstreamIndex);
+            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
             return s;
         case RuleEnum::one_by_one:
-            s = tryGetLastServer();
-            std::cout << "getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+            s = tryGetLastServer(_lastUseUpstreamIndex);
+            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
             return s;
         case RuleEnum::change_by_time: {
             UpstreamTimePoint t = UpstreamTimePointNow();
             const auto &d = _configLoader->config.serverChangeTime;
             if ((t - lastChangeUpstreamTime) > d) {
-                s = getNextServer();
+                s = getNextServer(_lastUseUpstreamIndex);
                 lastChangeUpstreamTime = UpstreamTimePointNow();
             } else {
-                s = tryGetLastServer();
+                s = tryGetLastServer(_lastUseUpstreamIndex);
             }
-            std::cout << "getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
             return s;
         }
+        case RuleEnum::inherit:
         case RuleEnum::random:
         default: {
             auto rs = filterValidServer();
@@ -198,10 +210,16 @@ auto UpstreamPool::getServerBasedOnAddress() -> UpstreamServerRef {
             } else {
                 s.reset();
             }
-            std::cout << "getServerBasedOnAddress:" << (s ? s->print() : "nullptr") << "\n";
+            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
             return s;
         }
     }
+}
+
+auto UpstreamPool::getServerGlobal() -> UpstreamServerRef {
+    const auto &_upstreamSelectRule = _configLoader->config.upstreamSelectRule;
+    auto &_lastUseUpstreamIndex = lastUseUpstreamIndex;
+    return getServerByHint(_upstreamSelectRule, _lastUseUpstreamIndex, true);
 }
 
 void UpstreamPool::endAdditionTimer() {
