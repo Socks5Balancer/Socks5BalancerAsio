@@ -72,7 +72,8 @@ add_executable(${ProjectMainName}
         src/ConnectionTracker.h
         src/ConnectType.h
         src/EmbedWebServer.cpp
-        src/EmbedWebServer.h)
+        src/EmbedWebServer.h
+        src/ConfigRuleEnum.h)
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
