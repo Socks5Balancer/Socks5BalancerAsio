@@ -50,7 +50,7 @@
     <br/>
     <form action="/op" method="get" target="_self">
         <select name="newRule" v-model="newRule">
-            <template v-for="u in UpstreamSelectRuleList">
+            <template v-for="u in UpstreamSelectRuleList.filter(T=>T!=='inherit')">
                 <option v-if="u===rule" v-bind:value="u" selected>{{ u }}</option>
                 <option v-else v-bind:value="u">{{ u }}</option>
             </template>
@@ -256,16 +256,20 @@
     <table style="border: black 3px dashed;">
         <thead>
         <tr>
-            <th colspan="5" style="text-align: center;">
+            <th colspan="9" style="text-align: center;">
                 Client Connect Info
             </th>
         </tr>
         <tr>
             <th>Host</th>
+            <th>lastServer</th>
+            <th>newServer</th>
+            <th>nowRule</th>
+            <th>newRule</th>
+            <th>running</th>
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
-            <th>running</th>
             <!--        <th></th>-->
         </tr>
         </thead>
@@ -273,17 +277,42 @@
 
         <tr v-for="u in ClientIndex">
             <td>{{u.index}}</td>
+            <td>{{u.lastUseUpstreamIndex}}</td>
+            <td>
+                <select name="newRule" v-model="u.lastUseUpstreamIndex"
+                        v-on:change="sendCommand(
+                        '/op?_targetMode=client'
+                        + '&forceNowUseServer=' + u.lastUseUpstreamIndex
+                        + '&_target=' + u.index)"
+                >
+                    <template v-for="it in upstreamPool">
+                        <option v-if="it.index===u.index" v-bind:value="it.index" selected>{{ it.index }}</option>
+                        <option v-else v-bind:value="it.index">{{ it.index }}</option>
+                    </template>
+                </select>
+            </td>
+            <td>{{u.rule}}</td>
+            <td>
+                <select name="newRule" v-model="u.rule"
+                        v-on:change="sendCommand('/op?_targetMode=client&newRule=' + u.rule+'&_target=' + u.index)"
+                >
+                    <template v-for="it in UpstreamSelectRuleList">
+                        <option v-if="it===u.rule" v-bind:value="it" selected>{{ it }}</option>
+                        <option v-else v-bind:value="it">{{ it }}</option>
+                    </template>
+                </select>
+            </td>
+            <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
-            <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
             <!--            <td></td>-->
         </tr>
 
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="5">
+            <td colspan="9">
                 <span class="table-info-cell">
                 ↑ {{dataCount2String(reduceField(ClientIndex, 'byteUpLast'))}}
                 ↓ {{dataCount2String(reduceField(ClientIndex, 'byteDownLast'))}}
@@ -305,16 +334,20 @@
     <table style="border: black 3px dashed;">
         <thead>
         <tr>
-            <th colspan="5" style="text-align: center;">
+            <th colspan="9" style="text-align: center;">
                 Listen Port Info
             </th>
         </tr>
         <tr>
             <th>Host</th>
+            <th>lastServer</th>
+            <th>newServer</th>
+            <th>nowRule</th>
+            <th>newRule</th>
+            <th>running</th>
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
-            <th>running</th>
             <!--        <th></th>-->
         </tr>
         </thead>
@@ -322,17 +355,42 @@
 
         <tr v-for="u in ListenIndex">
             <td>{{u.index}}</td>
+            <td>{{u.lastUseUpstreamIndex}}</td>
+            <td>
+                <select name="newRule" v-model="u.lastUseUpstreamIndex"
+                        v-on:change="sendCommand(
+                        '/op?_targetMode=client'
+                        + '&forceNowUseServer=' + u.lastUseUpstreamIndex
+                        + '&_target=' + u.index)"
+                >
+                    <template v-for="it in upstreamPool">
+                        <option v-if="it.index===u.index" v-bind:value="it.index" selected>{{ it.index }}</option>
+                        <option v-else v-bind:value="it.index">{{ it.index }}</option>
+                    </template>
+                </select>
+            </td>
+            <td>{{u.rule}}</td>
+            <td>
+                <select name="newRule" v-model="u.rule"
+                        v-on:change="sendCommand('/op?_targetMode=listen&newRule=' + u.rule+'&_target=' + u.index)"
+                >
+                    <template v-for="it in UpstreamSelectRuleList">
+                        <option v-if="it===u.rule" v-bind:value="it" selected>{{ it }}</option>
+                        <option v-else v-bind:value="it">{{ it }}</option>
+                    </template>
+                </select>
+            </td>
+            <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
-            <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
             <!--            <td></td>-->
         </tr>
 
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="5">
+            <td colspan="9">
                 <span class="table-info-cell">
                 ↑ {{dataCount2String(reduceField(ListenIndex, 'byteUpLast'))}}
                 ↓ {{dataCount2String(reduceField(ListenIndex, 'byteDownLast'))}}
@@ -623,6 +681,10 @@
                         } else {
                             app.upstreamPool = [];
                         }
+                        app.upstreamPool = app.upstreamPool.map(N => {
+                            N.index = _.parseInt(N.index);
+                            return N;
+                        })
                         app.UpstreamSelectRuleList = T.RuleEnumList;
                         app.rule = T.nowRule;
                         app.newRule = T.nowRule;
@@ -648,6 +710,7 @@
                         if (_.isArray(T.UpstreamIndex)) {
                             app.UpstreamIndex = T.UpstreamIndex.map(N => {
                                 N.byteInfo = 'true';
+                                N.index = _.parseInt(N.index);
                                 return N;
                             });
                         } else {

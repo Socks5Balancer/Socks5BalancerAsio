@@ -75,21 +75,39 @@ void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySess
     if (upstreamIndex.find(index) == upstreamIndex.end()) {
         upstreamIndex.try_emplace(index, std::make_shared<Info>());
     }
-    upstreamIndex.at(index)->sessions.push_back(s);
+    auto n = upstreamIndex.at(index);
+    n->sessions.push_back(s);
+    if (auto ptr = s.lock()) {
+        if (auto ns = ptr->getNowServer()) {
+            n->lastUseUpstreamIndex = ns->index;
+        }
+    }
 }
 
 void TcpRelayStatisticsInfo::addSessionClient(std::string addr, std::weak_ptr<TcpRelaySession> s) {
     if (clientIndex.find(addr) == clientIndex.end()) {
         clientIndex.try_emplace(addr, std::make_shared<Info>());
     }
-    clientIndex.at(addr)->sessions.push_back(s);
+    auto n = clientIndex.at(addr);
+    n->sessions.push_back(s);
+    if (auto ptr = s.lock()) {
+        if (auto ns = ptr->getNowServer()) {
+            n->lastUseUpstreamIndex = ns->index;
+        }
+    }
 }
 
 void TcpRelayStatisticsInfo::addSessionListen(std::string addr, std::weak_ptr<TcpRelaySession> s) {
     if (listenIndex.find(addr) == listenIndex.end()) {
         listenIndex.try_emplace(addr, std::make_shared<Info>());
     }
-    listenIndex.at(addr)->sessions.push_back(s);
+    auto n = listenIndex.at(addr);
+    n->sessions.push_back(s);
+    if (auto ptr = s.lock()) {
+        if (auto ns = ptr->getNowServer()) {
+            n->lastUseUpstreamIndex = ns->index;
+        }
+    }
 }
 
 std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(size_t index) {

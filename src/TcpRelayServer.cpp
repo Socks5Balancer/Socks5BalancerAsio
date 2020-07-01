@@ -50,7 +50,26 @@ std::shared_ptr<ConnectionTracker> TcpRelaySession::getConnectionTracker() {
 void TcpRelaySession::try_connect_upstream() {
     if (retryCount <= retryLimit) {
         ++retryCount;
-        auto s = upstreamPool->getServerBasedOnAddress();
+        UpstreamServerRef s;
+        auto pSI = statisticsInfo.lock();
+        if (pSI) {
+            // try get by client
+            auto ic = pSI->getInfoClient(clientEndpointAddrString);
+            if (ic) {
+                s = upstreamPool->getServerByHint(ic->rule, ic->lastUseUpstreamIndex);
+            }
+            if (!s) {
+                // try get by listen
+                auto il = pSI->getInfoListen(clientEndpointAddrString);
+                if (il) {
+                    s = upstreamPool->getServerByHint(il->rule, il->lastUseUpstreamIndex);
+                }
+            }
+        }
+        if (!s) {
+            // fallback to get by global rule
+            s = upstreamPool->getServerGlobal();
+        }
         if (s) {
             std::cout << "TcpRelaySession try_connect_upstream()"
                       << " " << s->host << ":" << s->port << std::endl;

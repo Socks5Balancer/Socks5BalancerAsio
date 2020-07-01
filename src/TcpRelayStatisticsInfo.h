@@ -30,7 +30,7 @@
 #include <list>
 #include <map>
 #include <atomic>
-
+#include "ConfigRuleEnum.h"
 
 class TcpRelaySession;
 
@@ -49,6 +49,9 @@ public:
         size_t byteDownChangeMax = 0;
 
         std::atomic_size_t connectCount{0};
+
+        RuleEnum rule = RuleEnum::inherit;
+        size_t lastUseUpstreamIndex = 0;
 
         void removeExpiredSession();
 

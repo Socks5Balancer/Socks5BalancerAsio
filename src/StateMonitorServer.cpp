@@ -179,6 +179,8 @@ std::string HttpConnectSession::createJsonString() {
                 n.put("byteUpLast", a.second->byteUpLast);
                 n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                 n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+                n.put("rule", ruleEnum2string(a.second->rule));
+                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
 
                 pS.push_back(std::make_pair("", n));
             }
@@ -197,6 +199,8 @@ std::string HttpConnectSession::createJsonString() {
                 n.put("byteUpLast", a.second->byteUpLast);
                 n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                 n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+                n.put("rule", ruleEnum2string(a.second->rule));
+                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
 
                 pC.push_back(std::make_pair("", n));
             }
@@ -215,6 +219,8 @@ std::string HttpConnectSession::createJsonString() {
                 n.put("byteUpLast", a.second->byteUpLast);
                 n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                 n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+                n.put("rule", ruleEnum2string(a.second->rule));
+                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
 
                 pL.push_back(std::make_pair("", n));
             }
@@ -338,7 +344,27 @@ void HttpConnectSession::create_response() {
             std::cout << std::endl;
 
             if (!queryPairs.empty()) {
-                const auto &q = queryPairs.at(0);
+                decltype(queryPairs)::value_type q = queryPairs.at(0);
+                for (auto &a: queryPairs) {
+                    if (a.first.front() != '_') {
+                        q = a;
+                    }
+                }
+
+                // find target
+                auto targetMode = std::find_if(
+                        queryPairs.begin(), queryPairs.end(),
+                        [](const decltype(queryPairs)::value_type &t) {
+                            return t.first == "_targetMode";
+                        }
+                );
+                auto target = std::find_if(
+                        queryPairs.begin(), queryPairs.end(),
+                        [](const decltype(queryPairs)::value_type &t) {
+                            return t.first == "_target";
+                        }
+                );
+
                 try {
                     if (q.first == "enable") {
                         auto index = boost::lexical_cast<size_t>(q.second);
@@ -352,8 +378,34 @@ void HttpConnectSession::create_response() {
                         }
                     } else if (q.first == "forceNowUseServer") {
                         auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
-                            upstreamPool->forceSetLastUseUpstreamIndex(index);
+                        if (queryPairs.size() == 1) {
+                            // global
+                            if (index >= 0 && index < upstreamPool->pool().size()) {
+                                upstreamPool->forceSetLastUseUpstreamIndex(index);
+                            }
+                        }
+                        if (queryPairs.size() > 2) {
+                            auto ptr = tcpRelayServer.lock();
+                            if (targetMode != queryPairs.end()
+                                && target != queryPairs.end()
+                                && ptr) {
+                                auto t = targetMode->second;
+                                if ("client" == t) {
+                                    if (ptr->getStatisticsInfo()) {
+                                        auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
+                                        if (info) {
+                                            info->lastUseUpstreamIndex = index;
+                                        }
+                                    }
+                                } else if ("listen" == t) {
+                                    if (ptr->getStatisticsInfo()) {
+                                        auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
+                                        if (info) {
+                                            info->lastUseUpstreamIndex = index;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     } else if (q.first == "forceCheckServer") {
                         auto index = boost::lexical_cast<size_t>(q.second);
@@ -416,7 +468,33 @@ void HttpConnectSession::create_response() {
                             }
                         }
                         if (n.has_value()) {
-                            configLoader->config.upstreamSelectRule = string2RuleEnum(n.value());
+                            if (queryPairs.size() == 1) {
+                                // global
+                                configLoader->config.upstreamSelectRule = string2RuleEnum(n.value());
+                            }
+                            if (queryPairs.size() > 2) {
+                                auto ptr = tcpRelayServer.lock();
+                                if (targetMode != queryPairs.end()
+                                    && target != queryPairs.end()
+                                    && ptr) {
+                                    auto t = targetMode->second;
+                                    if ("client" == t) {
+                                        if (ptr->getStatisticsInfo()) {
+                                            auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
+                                            if (info) {
+                                                info->rule = string2RuleEnum(n.value());
+                                            }
+                                        }
+                                    } else if ("listen" == t) {
+                                        if (ptr->getStatisticsInfo()) {
+                                            auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
+                                            if (info) {
+                                                info->rule = string2RuleEnum(n.value());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             response_.result(boost::beast::http::status::bad_request);
                             response_.set(boost::beast::http::field::content_type, "text/plain");
