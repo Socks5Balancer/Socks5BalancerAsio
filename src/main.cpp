@@ -31,7 +31,9 @@
 #include "EmbedWebServer.h"
 
 #ifdef USE_BOOST_THEAD
+
 #include <boost/thread.hpp>
+
 #endif // USE_BOOST_THEAD
 
 #ifndef DEFAULT_CONFIG
@@ -162,11 +164,14 @@ int main(int argc, const char *argv[]) {
 
 
 #ifdef USE_BOOST_THEAD
-        const auto processor_count = boost::thread::hardware_concurrency();
+        size_t processor_count = boost::thread::hardware_concurrency();
+        std::cout << "processor_count:" << processor_count << std::endl;
+        std::cout << "config.threadNum:" << configLoader->config.threadNum << std::endl;
+        processor_count = std::min(processor_count, configLoader->config.threadNum);
         std::cout << "processor_count:" << processor_count << std::endl;
         if (processor_count > 2) {
             boost::thread_group tg;
-            for (unsigned i = 0; i < processor_count; ++i) {
+            for (unsigned i = 0; i < processor_count - 1; ++i) {
                 tg.create_thread([&ioc, &tg]() {
                     try {
                         ioc.run();

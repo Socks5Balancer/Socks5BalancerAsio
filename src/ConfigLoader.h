@@ -97,6 +97,8 @@ struct Config {
     ConfigTimeDuration connectCheckPeriod;
     ConfigTimeDuration connectCheckStart;
     ConfigTimeDuration additionCheckPeriod;
+
+    size_t threadNum = 0;
 };
 
 RuleEnum string2RuleEnum(std::string s);

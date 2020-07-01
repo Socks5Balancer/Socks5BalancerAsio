@@ -83,6 +83,8 @@ void ConfigLoader::print() {
 
     std::cout << "config.sleepTime:" << config.sleepTime.count() << "\n";
 
+    std::cout << "config.threadNum:" << config.threadNum << "\n";
+
     std::cout << "config.tcpCheckPeriod:" << config.tcpCheckPeriod.count() << "\n";
     std::cout << "config.tcpCheckStart:" << config.tcpCheckStart.count() << "\n";
 
@@ -152,6 +154,9 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
 
     auto upstreamSelectRule = tree.get("upstreamSelectRule", std::string{"random"});
     c.upstreamSelectRule = string2RuleEnum(upstreamSelectRule);
+
+    auto threadNum = tree.get("threadNum", static_cast<size_t>(0));
+    c.threadNum = threadNum;
 
     auto retryTimes = tree.get("retryTimes", static_cast<size_t>(3));
     c.retryTimes = retryTimes;

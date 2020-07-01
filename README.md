@@ -55,6 +55,9 @@ it must encode with `UTF-8 no BOM`
   "additionCheckPeriod": 10000,             // how many time we check the all backend dead and force check then. default is 10000ms (10s)
   "upstreamSelectRule": "random",           // the Load Balance Rule. default is `random`
   "sleepTime": 1800000,                     // how many time we need to sleep after last connect. default is 1800000ms (1800s or 30min)
+  "threadNum": 0,                           // multi-thread num, >3 means use multi thread mode. default is 0 (means not use multi-thread).
+                                            //    NOTES: the `thread_real_use = system_thread_num - 1` , if system_thread_num <2 or this config <2 , will use single thread.
+                                            //    NOTES: it use boost_thread group, if build with `NOT_USE_BOOST_THEAD` , multi-thread will always disable
   "serverChangeTime": 5000,                 // the config of Load Balance Rule `change_by_time`. default is 5000ms (5s)
   "stateServerHost": "127.0.0.1",           // the simple state monitor server host. default is 127.0.0.1
   "stateServerPort": 5010,                  //  the simple state monitor server port. default is 5010

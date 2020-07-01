@@ -11,6 +11,7 @@
   "additionCheckPeriod": 10000,
   "upstreamSelectRule": "loop",
   "sleepTime": 1800000,
+  "threadNum": 0,
   "serverChangeTime": 5000,
   "stateServerHost": "127.0.0.1",
   "stateServerPort": 5010,
