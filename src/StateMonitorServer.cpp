@@ -452,11 +452,37 @@ void HttpConnectSession::create_response() {
                             }
                         }
                     } else if (q.first == "endAllConnect") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index == 1) {
-                            auto p = tcpRelayServer.lock();
-                            if (p) {
-                                p->closeAllSession();
+                        if (queryPairs.size() == 1) {
+                            // global
+                            auto index = boost::lexical_cast<size_t>(q.second);
+                            if (index == 1) {
+                                auto p = tcpRelayServer.lock();
+                                if (p) {
+                                    p->closeAllSession();
+                                }
+                            }
+                        }
+                        if (queryPairs.size() > 2) {
+                            auto ptr = tcpRelayServer.lock();
+                            if (targetMode != queryPairs.end()
+                                && target != queryPairs.end()
+                                && ptr) {
+                                auto t = targetMode->second;
+                                if ("client" == t) {
+                                    if (ptr->getStatisticsInfo()) {
+                                        auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
+                                        if (info) {
+                                            info->closeAllSession();
+                                        }
+                                    }
+                                } else if ("listen" == t) {
+                                    if (ptr->getStatisticsInfo()) {
+                                        auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
+                                        if (info) {
+                                            info->closeAllSession();
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else if (q.first == "newRule") {

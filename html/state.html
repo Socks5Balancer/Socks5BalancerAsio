@@ -256,7 +256,7 @@
     <table style="border: black 3px dashed;">
         <thead>
         <tr>
-            <th colspan="9" style="text-align: center;">
+            <th colspan="10" style="text-align: center;">
                 Client Connect Info
             </th>
         </tr>
@@ -267,6 +267,7 @@
             <th>nowRule</th>
             <th>newRule</th>
             <th>running</th>
+            <th>closeConnect</th>
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
@@ -303,6 +304,17 @@
                 </select>
             </td>
             <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
+            <td>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand(
+                   '/op?_targetMode=client'
+                   + '&endAllConnect=0'
+                   + '&_target=' + u.index)"
+                   style="margin-right: 1em;"
+                >
+                    CloseConnect
+                </a>
+            </td>
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
@@ -312,7 +324,7 @@
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="9">
+            <td colspan="10">
                 <span class="table-info-cell">
                 ↑ {{dataCount2String(reduceField(ClientIndex, 'byteUpLast'))}}
                 ↓ {{dataCount2String(reduceField(ClientIndex, 'byteDownLast'))}}
@@ -334,7 +346,7 @@
     <table style="border: black 3px dashed;">
         <thead>
         <tr>
-            <th colspan="9" style="text-align: center;">
+            <th colspan="10" style="text-align: center;">
                 Listen Port Info
             </th>
         </tr>
@@ -345,6 +357,7 @@
             <th>nowRule</th>
             <th>newRule</th>
             <th>running</th>
+            <th>closeConnect</th>
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
@@ -381,6 +394,17 @@
                 </select>
             </td>
             <td>{{u.sessionsCount}} / <span class="opacity_01">{{u.connectCount}}</span></td>
+            <td>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand(
+                   '/op?_targetMode=client'
+                   + '&endAllConnect=0'
+                   + '&_target=' + u.index)"
+                   style="margin-right: 1em;"
+                >
+                    CloseConnect
+                </a>
+            </td>
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
@@ -390,7 +414,7 @@
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="9">
+            <td colspan="10">
                 <span class="table-info-cell">
                 ↑ {{dataCount2String(reduceField(ListenIndex, 'byteUpLast'))}}
                 ↓ {{dataCount2String(reduceField(ListenIndex, 'byteDownLast'))}}
