@@ -466,9 +466,12 @@
     <br/>
     ---------------------------------------------------------------------------------------------
     <br/>
-    <pre>
-{{ JSON.stringify(ServerJsonInfo, null, 2) }}
-</pre>
+    <div>
+        <button v-on:click="ServerJsonInfo_Show=!ServerJsonInfo_Show">
+            click to show detail
+        </button>
+        <pre v-show="ServerJsonInfo_Show">{{ JSON.stringify(ServerJsonInfo, null, 2) }}</pre>
+    </div>
 </div>
 
 <script>
@@ -622,6 +625,7 @@
     var app = new Vue({
         el: '#body',
         data: {
+            ServerJsonInfo_Show: false,
             test: 11244,
             ServerJsonInfo: {},
             upstreamPool: [],
