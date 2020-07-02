@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Socks5BalancerAsio PerState</title>
+    <style type="text/css">
+        th {
+            border: black 0 dashed;
+            border-left-width: 1px;
+            border-bottom: lightslategrey 1px solid;
+        }
+
+        td {
+            border: lightslategrey 1px solid;
+            border-right-width: 0;
+            border-top-width: 0;
+        }
+
+        tr:hover {
+            background-color: lightblue;
+        }
+
+        tfoot > tr:hover {
+            background-color: inherit;
+        }
+
+        .string-pad {
+            margin: 0 0.5em 0 0.5em;
+        }
+
+        .table-info-cell {
+            border: blueviolet 2px solid;
+            margin: 0.25em 0.5em;
+            padding: 0.2em 0;
+        }
+
+        .opacity_01 {
+            opacity: 0.1;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.26.0/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.26.0/locale/zh-cn.js"></script>
+</head>
+<body>
+<div id="body">
+
+    ---------------------------------------------------------------------------------------------
+    <br/>
+    <div>
+        <button v-on:click="ServerJsonInfo_Show=!ServerJsonInfo_Show">
+            click to show detail
+        </button>
+        <pre v-show="ServerJsonInfo_Show">{{ JSON.stringify(ServerJsonInfo, null, 2) }}</pre>
+    </div>
+</div>
+
+<script>
+
+    function getSearchParams(key) {
+        var q = (new URL(document.location)).searchParams;
+        return q.get(key);
+    }
+
+    function setSearchParams(key, value) {
+        var newQ = (new URL(document.location)).searchParams;
+        newQ.set(key, value);
+        window.history.pushState(null, null, '?' + newQ.toString());
+    }
+
+    function tryGetBackendConfigFromServer() {
+        fetch('backend', {
+            credentials: 'omit'
+        }).then(function (T) {
+            if (T.ok) {
+                return T.json();
+            }
+            return Promise.reject(T);
+        }).then(function (T) {
+            var s = getSearchParams('backend');
+            console.log('getSearchParams(\'backend\'):', s);
+            if (s) {
+                setSearchParams('backend', s);
+                return;
+            } else {
+                console.log('tryGetBackendConfigFromServer T:', T);
+                var host = _.get(T, 'host', defaultBackendHost);
+                var port = _.get(T, 'port', defaultBackendPort);
+                if (!(_.isString(host) && host.length > 0)) {
+                    host = document.location.hostname;
+                }
+                if (_.isString(port)) {
+                    port = _.parseInt(port);
+                }
+                if (!(port > 0 && port < 65536)) {
+                    port = defaultBackendPort;
+                }
+                console.log('tryGetBackendConfigFromServer [host, port]:', [host, port]);
+                setSearchParams('backend', host + ':' + port);
+                return;
+            }
+        }).catch(function (e) {
+            console.warn(e);
+            var s = getSearchParams('backend');
+            if (s) {
+                setSearchParams('backend', s);
+            } else {
+                setSearchParams('backend', defaultBackendHost + ':' + defaultBackendPort);
+            }
+        }).then(function () {
+            app.flush();
+        })
+    }
+
+    var defaultBackendHost = "127.0.0.1";
+    var defaultBackendPort = 5010;
+
+    moment.locale('zh-cn');
+
+
+    var app = new Vue({
+        el: '#body',
+        data: {
+            ServerJsonInfo_Show: false,
+            get backend() {
+                var s = getSearchParams('backend');
+                if (s) {
+                    return s;
+                } else {
+                    // setSearchParams('backend', defaultBackendHost + ':' + defaultBackendPort);
+                    return defaultBackendHost + ':' + defaultBackendPort;
+                }
+            },
+            set backend(s) {
+                setSearchParams('backend', s);
+            },
+            InternetState: {
+                isOk: false,
+                error: undefined,
+            },
+            BaseInfo: {},
+            UpstreamPool: [],
+            UpstreamIndex: [],
+            ClientIndex: [],
+            ListenIndex: [],
+        },
+        computed: {},
+        methods: {
+            flush: function () {
+                const targetMode = getSearchParams('targetMode');
+                let qPath = '';
+                switch (targetMode) {
+                    case 'client':
+                        qPath = 'clientInfo';
+                        break;
+                    case 'listen':
+                        qPath = 'listenInfo';
+                        break;
+                    default:
+                        app.InternetState.isOk = false;
+                        app.InternetState.error = undefined;
+                        return;
+                }
+                const target = getSearchParams('target');
+                fetch('http://' + app.backend + '/' + qPath + '?targetMode=' + targetMode + '&target=' + target, {
+                    credentials: 'omit'
+                }).then(function (T) {
+                    if (T.ok) {
+                        return T.json();
+                    }
+                    return Promise.reject(T);
+                }).then(function (T) {
+                    console.log(T);
+                    if (
+                        _.has(T, 'UpstreamPool') &&
+                        _.has(T, 'UpstreamIndex') &&
+                        (targetMode !== 'client' || _.has(T, 'ClientIndex')) &&
+                        (targetMode !== 'listen' || _.has(T, 'ListenIndex')) &&
+                        _.has(T, 'BaseInfo') &&
+                        _.isObject(T.BaseInfo) &&
+                        _.isArray(T.UpstreamIndex) &&
+                        _.isArray(T.UpstreamPool)
+                    ) {
+                        app.ServerJsonInfo = T;
+
+                        app.BaseInfo = T.BaseInfo;
+                        app.UpstreamPool = T.UpstreamPool;
+                        app.UpstreamIndex = T.UpstreamIndex;
+                        app.ClientIndex = _.isArray(T.ClientIndex) ? T.ClientIndex : [];
+                        app.ListenIndex = _.isArray(T.ListenIndex) ? T.ListenIndex : [];
+
+
+                        app.InternetState.isOk = true;
+                        app.InternetState.error = undefined;
+                    }
+                }).then(function () {
+                    console.log(app);
+                }).catch(function (e) {
+                    console.error(e);
+                    app.InternetState.isOk = false;
+                    app.InternetState.error = e;
+                });
+            },
+            sendCommand: function (cmd) {
+                fetch('http://' + app.backend + cmd, {
+                    credentials: 'omit'
+                }).then(function (T) {
+                    if (T.ok) {
+                        return T;
+                    }
+                    return Promise.reject(T);
+                }).catch(function (e) {
+                    console.error(e);
+                }).then(function () {
+                    app.flush();
+                });
+            },
+        }
+    });
+    tryGetBackendConfigFromServer();
+</script>
+</body>
+</html>

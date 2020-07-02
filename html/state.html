@@ -256,7 +256,7 @@
     <table style="border: black 3px dashed;">
         <thead>
         <tr>
-            <th colspan="10" style="text-align: center;">
+            <th colspan="11" style="text-align: center;">
                 Client Connect Info
             </th>
         </tr>
@@ -271,6 +271,7 @@
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
+            <th>detail</th>
             <!--        <th></th>-->
         </tr>
         </thead>
@@ -321,13 +322,18 @@
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
+            <td>
+                <a target="_blank"
+                   v-bind:href="'perState.html?backend='+backend+'&targetMode=client&target='+u.index"
+                >detail</a>
+            </td>
             <!--            <td></td>-->
         </tr>
 
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="10">
+            <td colspan="11">
                 <span class="table-info-cell">
                 ↑ {{dataCount2String(reduceField(ClientIndex, 'byteUpLast'))}}
                 ↓ {{dataCount2String(reduceField(ClientIndex, 'byteDownLast'))}}
@@ -349,7 +355,7 @@
     <table style="border: black 3px dashed;">
         <thead>
         <tr>
-            <th colspan="10" style="text-align: center;">
+            <th colspan="11" style="text-align: center;">
                 Listen Port Info
             </th>
         </tr>
@@ -364,6 +370,7 @@
             <th>data</th>
             <th>speedMax</th>
             <th>speed</th>
+            <th>detail</th>
             <!--        <th></th>-->
         </tr>
         </thead>
@@ -414,13 +421,18 @@
             <td>{{formatData(u)}}</td>
             <td>{{formatSpeedMax(u)}}</td>
             <td>{{formatSpeed(u)}}</td>
+            <td>
+                <a target="_blank"
+                   v-bind:href="'perState.html?backend='+backend+'&targetMode=listen&target='+u.index"
+                >detail</a>
+            </td>
             <!--            <td></td>-->
         </tr>
 
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="10">
+            <td colspan="11">
                 <span class="table-info-cell">
                 ↑ {{dataCount2String(reduceField(ListenIndex, 'byteUpLast'))}}
                 ↓ {{dataCount2String(reduceField(ListenIndex, 'byteDownLast'))}}
