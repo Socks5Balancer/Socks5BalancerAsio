@@ -612,6 +612,8 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
 
                     if ("client" == targetMode->second) {
                         if (auto in = info->getInfoClient(target->second)) {
+                            valid = true;
+
                             boost::property_tree::ptree pC;
                             for (const auto &wp: in->sessions) {
                                 if (auto a = wp.lock()) {
@@ -623,7 +625,6 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                                     n.put("ClientEndpoint", a->getClientEndpointAddrString());
                                     n.put("ListenEnd", a->getListenEndpointAddrString());
 
-                                    valid = true;
                                     pC.push_back(std::make_pair("", n));
                                 }
                             }
@@ -647,6 +648,8 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
 
                     if ("listen" == targetMode->second) {
                         if (auto in = info->getInfoListen(target->second)) {
+                            valid = true;
+
                             boost::property_tree::ptree pL;
                             for (const auto &wp: in->sessions) {
                                 if (auto a = wp.lock()) {
@@ -658,7 +661,6 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                                     n.put("ClientEndpoint", a->getClientEndpointAddrString());
                                     n.put("ListenEnd", a->getListenEndpointAddrString());
 
-                                    valid = true;
                                     pL.push_back(std::make_pair("", n));
                                 }
                             }
