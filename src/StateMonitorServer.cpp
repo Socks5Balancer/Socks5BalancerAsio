@@ -287,6 +287,430 @@ void HttpConnectSession::process_request() {
     write_response();
 }
 
+void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs) {
+    response_.result(boost::beast::http::status::ok);
+
+    if (!queryPairs.empty()) {
+//        // find first not key that not start with '_', otherwise first item
+//        auto qIt = std::find_if(
+//                queryPairs.begin(), queryPairs.end(),
+//                [](const QueryPairsType::value_type &a) {
+//                    return a.first.front() != '_';
+//                }
+//        );
+//        if (qIt == queryPairs.end()) {
+//            qIt = queryPairs.begin();
+//        }
+//        HttpConnectSession::QueryPairsType::value_type q = *qIt;
+
+        // find target
+        auto targetMode = queryPairs.find("_targetMode");
+//        auto targetMode = std::find_if(
+//                queryPairs.begin(), queryPairs.end(),
+//                [](const QueryPairsType::value_type &t) {
+//                    return t.first == "_targetMode";
+//                }
+//        );
+        auto target = queryPairs.find("_target");
+//        auto target = std::find_if(
+//                queryPairs.begin(), queryPairs.end(),
+//                [](const QueryPairsType::value_type &t) {
+//                    return t.first == "_target";
+//                }
+//        );
+
+        try {
+            if (queryPairs.count("enable") > 0) {
+                auto q = *queryPairs.find("enable");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index >= 0 && index < upstreamPool->pool().size()) {
+                    upstreamPool->pool().at(index)->isManualDisable = false;
+                }
+            }
+            if (queryPairs.count("disable") > 0) {
+                auto q = *queryPairs.find("disable");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index >= 0 && index < upstreamPool->pool().size()) {
+                    upstreamPool->pool().at(index)->isManualDisable = true;
+                }
+            }
+            if (queryPairs.count("forceNowUseServer") > 0) {
+                auto q = *queryPairs.find("forceNowUseServer");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index >= 0 && index < upstreamPool->pool().size()) {
+                    if (targetMode != queryPairs.end()
+                        && target != queryPairs.end()) {
+                        if (auto ptr = tcpRelayServer.lock()) {
+                            auto t = targetMode->second;
+                            if ("client" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
+                                    if (info) {
+                                        info->lastUseUpstreamIndex = index;
+                                    }
+                                }
+                            } else if ("listen" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
+                                    if (info) {
+                                        info->lastUseUpstreamIndex = index;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // global
+                        upstreamPool->forceSetLastUseUpstreamIndex(index);
+                    }
+                }
+            }
+            if (queryPairs.count("forceCheckServer") > 0) {
+                auto q = *queryPairs.find("forceCheckServer");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index >= 0 && index < upstreamPool->pool().size()) {
+                    upstreamPool->forceCheckOne(index);
+                }
+            }
+            if (queryPairs.count("enableAllServer") > 0) {
+                auto q = *queryPairs.find("enableAllServer");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index == 1) {
+                    for (auto &a: upstreamPool->pool()) {
+                        a->isManualDisable = false;
+                    }
+                }
+            }
+            if (queryPairs.count("disableAllServer") > 0) {
+                auto q = *queryPairs.find("disableAllServer");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index == 1) {
+                    for (auto &a: upstreamPool->pool()) {
+                        a->isManualDisable = true;
+                    }
+                }
+            }
+            if (queryPairs.count("cleanAllCheckState") > 0) {
+                auto q = *queryPairs.find("cleanAllCheckState");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index == 1) {
+                    for (auto &a: upstreamPool->pool()) {
+                        a->isOffline = false;
+                        a->lastConnectFailed = false;
+                        a->lastOnlineTime.reset();
+                        a->lastConnectTime.reset();
+                    }
+                    // recheck
+                    upstreamPool->forceCheckNow();
+                }
+            }
+            if (queryPairs.count("forceCheckAllServer") > 0) {
+                auto q = *queryPairs.find("forceCheckAllServer");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index == 1) {
+                    upstreamPool->forceCheckNow();
+                }
+            }
+            if (queryPairs.count("endConnectOnServer") > 0) {
+                auto q = *queryPairs.find("endConnectOnServer");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (index >= 0 && index < upstreamPool->pool().size()) {
+                    auto p = tcpRelayServer.lock();
+                    if (p) {
+                        p->getStatisticsInfo()->closeAllSession(index);
+                    }
+                }
+            }
+            if (queryPairs.count("endAllConnect") > 0) {
+                auto q = *queryPairs.find("endAllConnect");
+                auto index = boost::lexical_cast<size_t>(q.second);
+                if (targetMode != queryPairs.end()
+                    && target != queryPairs.end()
+                    && index == 0) {
+                    if (auto ptr = tcpRelayServer.lock()) {
+                        auto t = targetMode->second;
+                        if ("client" == t) {
+                            if (ptr->getStatisticsInfo()) {
+                                auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
+                                if (info) {
+                                    info->closeAllSession();
+                                }
+                            }
+                        } else if ("listen" == t) {
+                            if (ptr->getStatisticsInfo()) {
+                                auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
+                                if (info) {
+                                    info->closeAllSession();
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // global
+                    if (index == 1) {
+                        auto p = tcpRelayServer.lock();
+                        if (p) {
+                            p->closeAllSession();
+                        }
+                    }
+                }
+            }
+            if (queryPairs.count("newRule") > 0) {
+                auto q = *queryPairs.find("newRule");
+                std::optional<decltype(RuleEnumList)::value_type> n;
+                for (const auto &a : RuleEnumList) {
+                    if (a == q.second) {
+                        n = a;
+                        break;
+                    }
+                }
+                if (n.has_value()) {
+                    if (targetMode != queryPairs.end()
+                        && target != queryPairs.end()) {
+                        if (auto ptr = tcpRelayServer.lock()) {
+                            auto t = targetMode->second;
+                            if ("client" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
+                                    if (info) {
+                                        info->rule = string2RuleEnum(n.value());
+                                    }
+                                }
+                            } else if ("listen" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
+                                    if (info) {
+                                        info->rule = string2RuleEnum(n.value());
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // global
+                        configLoader->config.upstreamSelectRule = string2RuleEnum(n.value());
+                        if (RuleEnum::inherit == configLoader->config.upstreamSelectRule) {
+                            configLoader->config.upstreamSelectRule = RuleEnum::random;
+                        }
+                    }
+                } else {
+                    response_.result(boost::beast::http::status::bad_request);
+                    response_.set(boost::beast::http::field::content_type, "text/plain");
+                    boost::beast::ostream(response_.body()) << "newRule not in RuleEnumList" << "\r\n";
+                }
+            }
+        } catch (const boost::bad_lexical_cast &e) {
+            std::cout << "boost::bad_lexical_cast:" << e.what() << std::endl;
+            response_.result(boost::beast::http::status::bad_request);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "boost::bad_lexical_cast:" << e.what() << "\r\n";
+        } catch (const std::exception &e) {
+            std::cout << "std::exception:" << e.what() << std::endl;
+            response_.result(boost::beast::http::status::bad_request);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "std::exception:" << e.what() << "\r\n";
+        }
+    }
+}
+
+void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &queryPairs) {
+    response_.result(boost::beast::http::status::ok);
+
+    if (!queryPairs.empty()) {
+        auto targetMode = queryPairs.find("targetMode");
+        auto target = queryPairs.find("target");
+
+        try {
+            if (queryPairs.end() == targetMode || queryPairs.end() == target) {
+                response_.result(boost::beast::http::status::bad_request);
+                response_.set(boost::beast::http::field::content_type, "text/plain");
+                return;
+            }
+
+            if (auto pT = tcpRelayServer.lock()) {
+
+                decltype(std::declval<decltype(pT)::element_type>().getStatisticsInfo()) info;
+                if (pT) {
+                    info = pT->getStatisticsInfo();
+
+                    bool valid = false;
+
+                    boost::property_tree::ptree root;
+
+                    boost::property_tree::ptree pool;
+                    for (const auto &a : upstreamPool->pool()) {
+                        boost::property_tree::ptree n;
+                        n.put("index", a->index);
+                        n.put("name", a->name);
+                        n.put("host", a->host);
+                        n.put("port", a->port);
+                        n.put("isOffline", a->isOffline);
+                        n.put("lastConnectFailed", a->lastConnectFailed);
+                        n.put("isManualDisable", a->isManualDisable);
+                        n.put("disable", a->disable);
+                        n.put("lastConnectCheckResult", a->lastConnectCheckResult);
+                        n.put("connectCount", a->connectCount.load());
+                        n.put("lastOnlineTime", (
+                                a->lastOnlineTime.has_value() ?
+                                printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
+                        n.put("lastConnectTime", (
+                                a->lastConnectTime.has_value() ?
+                                printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
+                        n.put("isWork", upstreamPool->checkServer(a));
+
+                        if (info) {
+                            auto iInfo = info->getInfo(a->index);
+                            if (iInfo) {
+                                n.put("byteDownChange", iInfo->byteDownChange);
+                                n.put("byteUpChange", iInfo->byteUpChange);
+                                n.put("byteDownLast", iInfo->byteDownLast);
+                                n.put("byteUpLast", iInfo->byteUpLast);
+                                n.put("byteUpChangeMax", iInfo->byteUpChangeMax);
+                                n.put("byteDownChangeMax", iInfo->byteDownChangeMax);
+                                n.put("sessionsCount", iInfo->calcSessionsNumber());
+                                n.put("connectCount2", iInfo->connectCount.load());
+                                n.put("byteInfo", true);
+                            } else {
+                                n.put("byteDownChange", 0ll);
+                                n.put("byteUpChange", 0ll);
+                                n.put("byteDownLast", 0ll);
+                                n.put("byteUpLast", 0ll);
+                                n.put("byteUpChangeMax", 0ll);
+                                n.put("byteDownChangeMax", 0ll);
+                                n.put("sessionsCount", 0ll);
+                                n.put("connectCount2", 0ll);
+                                n.put("byteInfo", false);
+                            }
+                        }
+
+                        if (!n.get_child_optional("byteDownChange").has_value()) {
+                            n.put("byteInfo", false);
+                        }
+
+                        pool.push_back(std::make_pair("", n));
+                    }
+                    root.add_child("UpstreamPool", pool);
+
+                    boost::property_tree::ptree pS;
+                    for (const auto &a: info->getUpstreamIndex()) {
+                        boost::property_tree::ptree n;
+
+                        n.put("index", a.first);
+                        n.put("connectCount", a.second->connectCount.load());
+                        n.put("sessionsCount", a.second->calcSessionsNumber());
+                        n.put("byteDownChange", a.second->byteDownChange);
+                        n.put("byteUpChange", a.second->byteUpChange);
+                        n.put("byteDownLast", a.second->byteDownLast);
+                        n.put("byteUpLast", a.second->byteUpLast);
+                        n.put("byteUpChangeMax", a.second->byteUpChangeMax);
+                        n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+                        n.put("rule", ruleEnum2string(a.second->rule));
+                        n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+
+                        pS.push_back(std::make_pair("", n));
+                    }
+                    root.add_child("UpstreamIndex", pS);
+
+
+                    if ("client" == targetMode->second) {
+                        if (auto in = info->getInfoClient(target->second)) {
+                            boost::property_tree::ptree pC;
+                            for (const auto &wp: in->sessions) {
+                                if (auto a = wp.lock()) {
+                                    boost::property_tree::ptree n;
+
+                                    if (auto s = a->getNowServer()) {
+                                        n.put("serverIndex", s->index);
+                                    }
+                                    n.put("ClientEndpoint", a->getClientEndpointAddrString());
+                                    n.put("ListenEnd", a->getListenEndpointAddrString());
+
+                                    valid = true;
+                                    pC.push_back(std::make_pair("", n));
+                                }
+                            }
+                            root.add_child("ClientIndex", pC);
+
+                            boost::property_tree::ptree baseInfo;
+                            baseInfo.put("index", targetMode->second);
+                            baseInfo.put("connectCount", in->connectCount.load());
+                            baseInfo.put("sessionsCount", in->calcSessionsNumber());
+                            baseInfo.put("byteDownChange", in->byteDownChange);
+                            baseInfo.put("byteUpChange", in->byteUpChange);
+                            baseInfo.put("byteDownLast", in->byteDownLast);
+                            baseInfo.put("byteUpLast", in->byteUpLast);
+                            baseInfo.put("byteUpChangeMax", in->byteUpChangeMax);
+                            baseInfo.put("byteDownChangeMax", in->byteDownChangeMax);
+                            baseInfo.put("rule", ruleEnum2string(in->rule));
+                            baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            root.add_child("BaseInfo", baseInfo);
+                        }
+                    }
+
+                    if ("listen" == targetMode->second) {
+                        if (auto in = info->getInfoListen(target->second)) {
+                            boost::property_tree::ptree pL;
+                            for (const auto &wp: in->sessions) {
+                                if (auto a = wp.lock()) {
+                                    boost::property_tree::ptree n;
+
+                                    if (auto s = a->getNowServer()) {
+                                        n.put("serverIndex", s->index);
+                                    }
+                                    n.put("ClientEndpoint", a->getClientEndpointAddrString());
+                                    n.put("ListenEnd", a->getListenEndpointAddrString());
+
+                                    valid = true;
+                                    pL.push_back(std::make_pair("", n));
+                                }
+                            }
+                            root.add_child("ListenIndex", pL);
+
+                            boost::property_tree::ptree baseInfo;
+                            baseInfo.put("index", targetMode->second);
+                            baseInfo.put("connectCount", in->connectCount.load());
+                            baseInfo.put("sessionsCount", in->calcSessionsNumber());
+                            baseInfo.put("byteDownChange", in->byteDownChange);
+                            baseInfo.put("byteUpChange", in->byteUpChange);
+                            baseInfo.put("byteDownLast", in->byteDownLast);
+                            baseInfo.put("byteUpLast", in->byteUpLast);
+                            baseInfo.put("byteUpChangeMax", in->byteUpChangeMax);
+                            baseInfo.put("byteDownChangeMax", in->byteDownChangeMax);
+                            baseInfo.put("rule", ruleEnum2string(in->rule));
+                            baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            root.add_child("BaseInfo", baseInfo);
+                        }
+                    }
+
+                    if (valid) {
+                        std::stringstream ss;
+                        boost::property_tree::write_json(ss, root);
+
+                        response_.result(boost::beast::http::status::ok);
+                        response_.set(boost::beast::http::field::content_type, "text/json");
+                        boost::beast::ostream(response_.body()) << ss.str() << "\n";
+                        return;
+                    }
+                }
+            }
+
+            response_.result(boost::beast::http::status::precondition_required);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "target cannot find or not valid" << "\r\n";
+            return;
+
+        } catch (const boost::bad_lexical_cast &e) {
+            std::cout << "boost::bad_lexical_cast:" << e.what() << std::endl;
+            response_.result(boost::beast::http::status::bad_request);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "boost::bad_lexical_cast:" << e.what() << "\r\n";
+        } catch (const std::exception &e) {
+            std::cout << "std::exception:" << e.what() << std::endl;
+            response_.result(boost::beast::http::status::bad_request);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "std::exception:" << e.what() << "\r\n";
+        }
+    }
+}
+
 void HttpConnectSession::create_response() {
     std::cout << "request_.target():" << request_.target() << std::endl;
 
@@ -309,237 +733,45 @@ void HttpConnectSession::create_response() {
         std::vector<std::string> queryList;
         boost::split(queryList, query, boost::is_any_of("&"));
 
-        std::vector<std::pair<std::string, std::string>> queryPairs;
+        HttpConnectSession::QueryPairsType queryPairs;
         for (const auto &a : queryList) {
             std::vector<std::string> p;
             boost::split(p, a, boost::is_any_of("="));
             if (p.size() == 1) {
-                queryPairs.emplace_back(p.at(0), "");
+                queryPairs.emplace(p.at(0), "");
             }
             if (p.size() == 2) {
-                queryPairs.emplace_back(p.at(0), p.at(1));
+                queryPairs.emplace(p.at(0), p.at(1));
             }
             if (p.size() > 2) {
                 std::stringstream ss;
                 for (size_t i = 1; i != p.size(); ++i) {
                     ss << p.at(i);
                 }
-                queryPairs.emplace_back(p.at(0), ss.str());
+                queryPairs.emplace(p.at(0), ss.str());
             }
         }
 
+        std::cout << "query:" << query << std::endl;
+        std::cout << "queryList:" << "\n";
+        for (const auto &a : queryList) {
+            std::cout << "\t" << a;
+        }
+        std::cout << std::endl;
+        std::cout << "queryPairs:" << "\n";
+        for (const auto &a : queryPairs) {
+            std::cout << "\t" << a.first << " = " << a.second;
+        }
+        std::cout << std::endl;
+
         if (path == "/op") {
-            response_.result(boost::beast::http::status::ok);
-
-            std::cout << "query:" << query << std::endl;
-            std::cout << "queryList:" << "\n";
-            for (const auto &a : queryList) {
-                std::cout << "\t" << a;
-            }
-            std::cout << std::endl;
-            std::cout << "queryPairs:" << "\n";
-            for (const auto &a : queryPairs) {
-                std::cout << "\t" << a.first << " = " << a.second;
-            }
-            std::cout << std::endl;
-
-            if (!queryPairs.empty()) {
-                decltype(queryPairs)::value_type q = queryPairs.at(0);
-                for (auto &a: queryPairs) {
-                    if (a.first.front() != '_') {
-                        q = a;
-                    }
-                }
-
-                // find target
-                auto targetMode = std::find_if(
-                        queryPairs.begin(), queryPairs.end(),
-                        [](const decltype(queryPairs)::value_type &t) {
-                            return t.first == "_targetMode";
-                        }
-                );
-                auto target = std::find_if(
-                        queryPairs.begin(), queryPairs.end(),
-                        [](const decltype(queryPairs)::value_type &t) {
-                            return t.first == "_target";
-                        }
-                );
-
-                try {
-                    if (q.first == "enable") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
-                            upstreamPool->pool().at(index)->isManualDisable = false;
-                        }
-                    } else if (q.first == "disable") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
-                            upstreamPool->pool().at(index)->isManualDisable = true;
-                        }
-                    } else if (q.first == "forceNowUseServer") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (queryPairs.size() == 1) {
-                            // global
-                            if (index >= 0 && index < upstreamPool->pool().size()) {
-                                upstreamPool->forceSetLastUseUpstreamIndex(index);
-                            }
-                        }
-                        if (queryPairs.size() > 2) {
-                            auto ptr = tcpRelayServer.lock();
-                            if (targetMode != queryPairs.end()
-                                && target != queryPairs.end()
-                                && ptr) {
-                                auto t = targetMode->second;
-                                if ("client" == t) {
-                                    if (ptr->getStatisticsInfo()) {
-                                        auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
-                                        if (info) {
-                                            info->lastUseUpstreamIndex = index;
-                                        }
-                                    }
-                                } else if ("listen" == t) {
-                                    if (ptr->getStatisticsInfo()) {
-                                        auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
-                                        if (info) {
-                                            info->lastUseUpstreamIndex = index;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else if (q.first == "forceCheckServer") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
-                            upstreamPool->forceCheckOne(index);
-                        }
-                    } else if (q.first == "enableAllServer") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index == 1) {
-                            for (auto &a: upstreamPool->pool()) {
-                                a->isManualDisable = false;
-                            }
-                        }
-                    } else if (q.first == "disableAllServer") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index == 1) {
-                            for (auto &a: upstreamPool->pool()) {
-                                a->isManualDisable = true;
-                            }
-                        }
-                    } else if (q.first == "cleanAllCheckState") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index == 1) {
-                            for (auto &a: upstreamPool->pool()) {
-                                a->isOffline = false;
-                                a->lastConnectFailed = false;
-                                a->lastOnlineTime.reset();
-                                a->lastConnectTime.reset();
-                            }
-                            // recheck
-                            upstreamPool->forceCheckNow();
-                        }
-                    } else if (q.first == "forceCheckAllServer") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index == 1) {
-                            upstreamPool->forceCheckNow();
-                        }
-                    } else if (q.first == "endConnectOnServer") {
-                        auto index = boost::lexical_cast<size_t>(q.second);
-                        if (index >= 0 && index < upstreamPool->pool().size()) {
-                            auto p = tcpRelayServer.lock();
-                            if (p) {
-                                p->getStatisticsInfo()->closeAllSession(index);
-                            }
-                        }
-                    } else if (q.first == "endAllConnect") {
-                        if (queryPairs.size() == 1) {
-                            // global
-                            auto index = boost::lexical_cast<size_t>(q.second);
-                            if (index == 1) {
-                                auto p = tcpRelayServer.lock();
-                                if (p) {
-                                    p->closeAllSession();
-                                }
-                            }
-                        }
-                        if (queryPairs.size() > 2) {
-                            auto ptr = tcpRelayServer.lock();
-                            if (targetMode != queryPairs.end()
-                                && target != queryPairs.end()
-                                && ptr) {
-                                auto t = targetMode->second;
-                                if ("client" == t) {
-                                    if (ptr->getStatisticsInfo()) {
-                                        auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
-                                        if (info) {
-                                            info->closeAllSession();
-                                        }
-                                    }
-                                } else if ("listen" == t) {
-                                    if (ptr->getStatisticsInfo()) {
-                                        auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
-                                        if (info) {
-                                            info->closeAllSession();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else if (q.first == "newRule") {
-                        std::optional<decltype(RuleEnumList)::value_type> n;
-                        for (const auto &a : RuleEnumList) {
-                            if (a == q.second) {
-                                n = a;
-                                break;
-                            }
-                        }
-                        if (n.has_value()) {
-                            if (queryPairs.size() == 1) {
-                                // global
-                                configLoader->config.upstreamSelectRule = string2RuleEnum(n.value());
-                            }
-                            if (queryPairs.size() > 2) {
-                                auto ptr = tcpRelayServer.lock();
-                                if (targetMode != queryPairs.end()
-                                    && target != queryPairs.end()
-                                    && ptr) {
-                                    auto t = targetMode->second;
-                                    if ("client" == t) {
-                                        if (ptr->getStatisticsInfo()) {
-                                            auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
-                                            if (info) {
-                                                info->rule = string2RuleEnum(n.value());
-                                            }
-                                        }
-                                    } else if ("listen" == t) {
-                                        if (ptr->getStatisticsInfo()) {
-                                            auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
-                                            if (info) {
-                                                info->rule = string2RuleEnum(n.value());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            response_.result(boost::beast::http::status::bad_request);
-                            response_.set(boost::beast::http::field::content_type, "text/plain");
-                            boost::beast::ostream(response_.body()) << "newRule not in RuleEnumList" << "\r\n";
-                        }
-                    }
-                } catch (const boost::bad_lexical_cast &e) {
-                    std::cout << "boost::bad_lexical_cast:" << e.what() << std::endl;
-                    response_.result(boost::beast::http::status::bad_request);
-                    response_.set(boost::beast::http::field::content_type, "text/plain");
-                    boost::beast::ostream(response_.body()) << "boost::bad_lexical_cast:" << e.what() << "\r\n";
-                } catch (const std::exception &e) {
-                    std::cout << "std::exception:" << e.what() << std::endl;
-                    response_.result(boost::beast::http::status::bad_request);
-                    response_.set(boost::beast::http::field::content_type, "text/plain");
-                    boost::beast::ostream(response_.body()) << "std::exception:" << e.what() << "\r\n";
-                }
-            }
-            return;
+            return path_op(queryPairs);
+        }
+        if (path == "/clientInfo") {
+            return path_per_info(queryPairs);
+        }
+        if (path == "/listenInfo") {
+            return path_per_info(queryPairs);
         }
     }
 

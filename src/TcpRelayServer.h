@@ -104,6 +104,14 @@ public:
         return nowServer;
     }
 
+    std::string getClientEndpointAddrString() {
+        return clientEndpointAddrString;
+    }
+
+    std::string getListenEndpointAddrString() {
+        return listenEndpointAddrString;
+    }
+
     void start();
 
     void addUp2Statistics(size_t bytes_transferred_);

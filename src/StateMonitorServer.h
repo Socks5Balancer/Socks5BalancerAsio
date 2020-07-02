@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include <map>
 #include "ConfigLoader.h"
 #include "UpstreamPool.h"
 #include "TcpRelayServer.h"
@@ -92,6 +93,13 @@ protected:
 
     // Check whether we have spent enough time on this connection.
     void check_deadline();
+
+protected:
+    using QueryPairsType = std::multimap<std::string, std::string>;
+
+    void path_op(QueryPairsType &queryPairs);
+
+    void path_per_info(QueryPairsType &queryPairs);
 };
 
 class StateMonitorServer : public std::enable_shared_from_this<StateMonitorServer> {
