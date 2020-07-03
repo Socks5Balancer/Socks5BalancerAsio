@@ -161,12 +161,24 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
     auto retryTimes = tree.get("retryTimes", static_cast<size_t>(3));
     c.retryTimes = retryTimes;
 
+#ifndef FORCE_disableConnectTest
     auto disableConnectTest = tree.get("disableConnectTest", false);
     c.disableConnectTest = disableConnectTest;
+#else
+    c.disableConnectTest = true;
+#endif // FORCE_disableConnectTest
+#ifndef FORCE_disableConnectionTracker
     auto disableConnectionTracker = tree.get("disableConnectionTracker", false);
     c.disableConnectionTracker = disableConnectionTracker;
+#else
+    c.disableConnectionTracker = true;
+#endif // FORCE_disableConnectionTracker
+#ifndef FORCE_traditionTcpRelay
     auto traditionTcpRelay = tree.get("traditionTcpRelay", false);
     c.traditionTcpRelay = traditionTcpRelay;
+#else
+    c.traditionTcpRelay = true;
+#endif // FORCE_traditionTcpRelay
 
     auto serverChangeTime = tree.get("serverChangeTime", static_cast<long long>(60 * 1000));
     c.serverChangeTime = ConfigTimeDuration{serverChangeTime};
@@ -223,6 +235,7 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
     c.embedWebServerConfig.root_path = "./html/";
     c.embedWebServerConfig.index_file_of_root = "state.html";
     c.embedWebServerConfig.allowFileExtList = "htm html js json jpg jpeg png bmp gif ico svg";
+#ifndef DISABLE_EmbedWebServer
     if (tree.get_child_optional("EmbedWebServerConfig")) {
         auto pts = tree.get_child("EmbedWebServerConfig");
         auto &embedWebServerConfig = c.embedWebServerConfig;
@@ -239,6 +252,7 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
 
         }
     }
+#endif // DISABLE_EmbedWebServer
 
 
     c.embedWebServerConfig.backend_json_string = (

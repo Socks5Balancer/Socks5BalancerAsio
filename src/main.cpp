@@ -110,6 +110,7 @@ int main(int argc, const char *argv[]) {
         stateMonitor->start();
 
         std::shared_ptr<EmbedWebServer> embedWebServer;
+#ifndef DISABLE_EmbedWebServer
         if (configLoader->config.embedWebServerConfig.enable) {
             boost::asio::ip::tcp::endpoint endpoint{
                     boost::asio::ip::make_address(configLoader->config.embedWebServerConfig.host),
@@ -126,6 +127,7 @@ int main(int argc, const char *argv[]) {
             );
             embedWebServer->start();
         }
+#endif // DISABLE_EmbedWebServer
 
         boost::asio::signal_set sig(ioc);
         sig.add(SIGINT);
