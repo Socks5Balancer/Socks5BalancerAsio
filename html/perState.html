@@ -37,6 +37,15 @@
         .opacity_01 {
             opacity: 0.1;
         }
+
+        .text-light {
+            font-weight: normal;
+            font-style: italic;
+        }
+
+        .split-table-header thead tr:last-child th:not(:last-child) {
+            border-bottom: black 2px solid;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
@@ -45,7 +54,140 @@
 </head>
 <body>
 <div id="body">
+    <a href="." target="_blank">home</a>
+    <br/>
+    <br/>
+    <label>
+        backend:
+        <input class="string-pad" name="backend" v-model="backend"/>
+    </label>
+    <button v-on:click="flush">Flush</button>
+    <br/>
+    ---------------------------------------------------------------------------------------------
+    <br/>
+    <table style="border: black 3px dashed;" class="split-table-header">
+        <thead>
+        <tr>
+            <th colspan="15" v-bind:colspan="dataTable.h.length+3"
+                style="text-align: center;"
+            >
+                <template v-if="targetMode==='client'">
+                    Client Table
+                </template>
+                <template v-else-if="targetMode==='listen'">
+                    Listen Table
+                </template>
+            </th>
+        </tr>
+        <tr>
+            <th style="border-left-width: 0;" rowspan="5">
+                No. <br> ↓
+            </th>
+            <th rowspan="5">
+                <template v-if="targetMode==='client'">
+                    Server →<br>
+                    <br>
+                    <hr style="transform: rotate(30deg);border: 1px dashed;">
+                    <br>
+                    Listen <br> ↓
+                </template>
+                <template v-else-if="targetMode==='listen'">
+                    Server →<br>
+                    <br>
+                    <hr style="transform: rotate(30deg);border: 1px dashed;">
+                    <br>
+                    Client <br> ↓
+                </template>
+            </th>
+            <template v-for="h in dataTable.h">
+                <th>{{h.index}}</th>
+                <!--        <th></th>-->
+            </template>
+            <th class="text-light">
+                index
+            </th>
+        </tr>
+        <tr>
+            <template v-for="h in dataTable.h">
+                <th>{{h.name}}</th>
+                <!--        <th></th>-->
+            </template>
+            <th class="text-light">
+                name
+            </th>
+        </tr>
+        <tr>
+            <template v-for="h in dataTable.h">
+                <th v-bind:style="{color:(h.isWork?'green':'red')}">{{h.isWork}}</th>
+                <!--        <th></th>-->
+            </template>
+            <th class="text-light">
+                work
+            </th>
+        </tr>
+        <tr>
+            <template v-for="h in dataTable.h">
+                <th>
+                    {{dataTable.r.reduce(function(acc,r,i) {
+                    if(h.index===r.serverIndex){
+                    ++acc;
+                    }
+                    return acc;
+                    },0)}}
+                </th>
+                <!--        <th></th>-->
+            </template>
+            <th class="text-light">
+                count
+            </th>
+        </tr>
+        <tr>
+            <template v-for="h in dataTable.h">
+                <th>
+                    <a href="javascript:void(0)"
+                       v-on:click="sendCommand(
+                       '/op?_targetMode=' + targetMode
+                       + '&endAllConnect=2'
+                       + '&_target=' + target
+                       + '&_upstream=' + h.index)"
+                    >×</a>
+                </th>
+                <!--        <th></th>-->
+            </template>
+            <th class="text-light">
+                close
+            </th>
+        </tr>
+        </thead>
+        <tbody>
 
+        <template v-for="(r,i) in dataTable.r">
+            <tr>
+                <td style="text-align: center;">{{i}}</td>
+                <td>
+                    <template v-if="targetMode==='client'">{{r.ListenEnd}}</template>
+                    <template v-else-if="targetMode==='listen'">{{r.ClientEndpoint}}</template>
+                </td>
+                <template v-for="h in dataTable.h">
+                    <td v-if="h.index===r.serverIndex" style="text-align: center;">√</td>
+                    <td v-else="">&emsp;</td>
+                </template>
+                <td style="text-align: center;">
+                    <a href="javascript:void(0)"
+                    >×</a>
+                </td>
+            </tr>
+        </template>
+
+        </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="15" v-bind:colspan="dataTable.h.length+3">
+
+            </td>
+        </tr>
+        </tfoot>
+    </table>
     ---------------------------------------------------------------------------------------------
     <br/>
     <div>
@@ -57,6 +199,10 @@
 </div>
 
 <script>
+
+    function arrayOrEmpty(a) {
+        return _.isArray(a) ? a : [];
+    }
 
     function getSearchParams(key) {
         var q = (new URL(document.location)).searchParams;
@@ -135,15 +281,32 @@
             set backend(s) {
                 setSearchParams('backend', s);
             },
+            get targetMode() {
+                return getSearchParams('targetMode');
+            },
+            get target() {
+                return getSearchParams('target');
+            },
             InternetState: {
                 isOk: false,
                 error: undefined,
             },
+            ServerJsonInfo: {},
             BaseInfo: {},
             UpstreamPool: [],
             UpstreamIndex: [],
             ClientIndex: [],
             ListenIndex: [],
+            dataRef: [],
+            dataTable: {
+                // header
+                // server index,name
+                h: [],
+                // footer
+                f: [],
+                // row
+                r: [],
+            }
         },
         computed: {},
         methods: {
@@ -185,11 +348,43 @@
                         app.ServerJsonInfo = T;
 
                         app.BaseInfo = T.BaseInfo;
-                        app.UpstreamPool = T.UpstreamPool;
-                        app.UpstreamIndex = T.UpstreamIndex;
-                        app.ClientIndex = _.isArray(T.ClientIndex) ? T.ClientIndex : [];
-                        app.ListenIndex = _.isArray(T.ListenIndex) ? T.ListenIndex : [];
+                        app.UpstreamPool = arrayOrEmpty(T.UpstreamPool);
+                        app.UpstreamIndex = arrayOrEmpty(T.UpstreamIndex);
+                        app.ClientIndex = arrayOrEmpty(T.ClientIndex);
+                        app.ListenIndex = arrayOrEmpty(T.ListenIndex);
 
+                        app.dataRef = undefined;
+
+                        switch (targetMode) {
+                            case 'client':
+                                app.dataRef = app.ClientIndex;
+                                break;
+                            case 'listen':
+                                app.dataRef = app.ListenIndex;
+                                break;
+                            default:
+                                break;
+                        }
+
+                        if (app.dataRef) {
+                            // process data
+                            app.dataTable = {
+                                // header
+                                // server index,name
+                                h: app.UpstreamPool.map(T => {
+                                    return {
+                                        index: T.index,
+                                        name: T.name,
+                                        isWork: T.isWork,
+                                    };
+                                }),
+                                // footer
+                                f: [],
+                                // row
+                                r: app.dataRef,
+                            };
+
+                        }
 
                         app.InternetState.isOk = true;
                         app.InternetState.error = undefined;

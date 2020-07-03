@@ -424,24 +424,31 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                 auto q = *queryPairs.find("endAllConnect");
                 auto index = boost::lexical_cast<size_t>(q.second);
                 if (targetMode != queryPairs.end()
-                    && target != queryPairs.end()
-                    && index == 0) {
-                    if (auto ptr = tcpRelayServer.lock()) {
-                        auto t = targetMode->second;
-                        if ("client" == t) {
-                            if (ptr->getStatisticsInfo()) {
-                                auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
-                                if (info) {
-                                    info->closeAllSession();
+                    && target != queryPairs.end()) {
+                    if (index == 0) {
+                        if (auto ptr = tcpRelayServer.lock()) {
+                            auto t = targetMode->second;
+                            if ("client" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
+                                    if (info) {
+                                        info->closeAllSession();
+                                    }
+                                }
+                            } else if ("listen" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
+                                    if (info) {
+                                        info->closeAllSession();
+                                    }
                                 }
                             }
-                        } else if ("listen" == t) {
-                            if (ptr->getStatisticsInfo()) {
-                                auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
-                                if (info) {
-                                    info->closeAllSession();
-                                }
-                            }
+                        }
+                    }
+                    if (index == 2) {
+                        auto _upstream = queryPairs.find("_upstream");
+                        if (_upstream != queryPairs.end()) {
+                            // TODO
                         }
                     }
                 } else {
