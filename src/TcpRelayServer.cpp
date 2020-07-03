@@ -55,13 +55,13 @@ void TcpRelaySession::try_connect_upstream() {
         if (pSI) {
             // try get by client
             auto ic = pSI->getInfoClient(clientEndpointAddrString);
-            if (ic) {
+            if (ic && ic->rule != RuleEnum::inherit) {
                 s = upstreamPool->getServerByHint(ic->rule, ic->lastUseUpstreamIndex);
             }
             if (!s) {
                 // try get by listen
                 auto il = pSI->getInfoListen(clientEndpointAddrString);
-                if (il) {
+                if (il && il->rule != RuleEnum::inherit) {
                     s = upstreamPool->getServerByHint(il->rule, il->lastUseUpstreamIndex);
                 }
             }
