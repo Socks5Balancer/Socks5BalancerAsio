@@ -72,10 +72,10 @@
                 style="text-align: center;"
             >
                 <template v-if="targetMode==='client'">
-                    Client Table
+                    Client <span style="font-weight: normal;color: blueviolet;">{{target}}</span> Table
                 </template>
                 <template v-else-if="targetMode==='listen'">
-                    Listen Table
+                    Listen <span style="font-weight: normal;color: blueviolet;">{{target}}</span> Table
                 </template>
             </th>
         </tr>
@@ -118,7 +118,8 @@
         </tr>
         <tr>
             <template v-for="h in dataTable.h">
-                <th v-bind:style="{color:(h.isWork?'green':'red')}">{{h.isWork}}</th>
+                <th v-if="h.isWork==='true'" style="color: green;">{{h.isWork}}</th>
+                <th v-else="" style="color: red;">{{h.isWork}}</th>
                 <!--        <th></th>-->
             </template>
             <th class="text-light">
