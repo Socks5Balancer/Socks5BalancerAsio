@@ -101,7 +101,11 @@ add_executable(${ProjectMainName}
         src/ConnectType.h
         src/EmbedWebServer.cpp
         src/EmbedWebServer.h
-        src/ConfigRuleEnum.h)
+        src/ConfigRuleEnum.h
+        src/AsyncDelay.cpp
+        src/AsyncDelay.h
+        src/UtilTools.cpp
+        src/UtilTools.h)
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
