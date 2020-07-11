@@ -168,6 +168,7 @@ Type=simple
 User=username
 Restart=always
 AmbientCapabilities=CAP_NET_BIND_SERVICE
+WorkingDirectory=/home/username/Socks5BalancerAsio/
 ExecStart=/home/username/Socks5BalancerAsio/Socks5BalancerAsio /home/username/Socks5BalancerAsio/config.json
 
 [Install]
