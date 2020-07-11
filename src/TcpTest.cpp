@@ -18,6 +18,8 @@
 
 #include "TcpTest.h"
 
+#include "UtilTools.h"
+
 void TcpTestSession::do_resolve() {
 //        std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port << std::endl;
 
@@ -116,7 +118,13 @@ void TcpTestSession::run(std::function<void()> onOk, std::function<void(std::str
     callback = std::make_unique<CallbackContainer>();
     callback->successfulCallback = std::move(onOk);
     callback->failedCallback = std::move(onErr);
-    do_resolve();
+    if (delayTime.count() == 0) {
+        do_resolve();
+    } else {
+        asyncDelay(delayTime, executor, [self = shared_from_this(), this]() {
+            do_resolve();
+        });
+    }
 }
 
 bool TcpTestSession::isComplete() {
@@ -146,7 +154,8 @@ void TcpTest::do_cleanTimer() {
     cleanTimer->async_wait(c);
 }
 
-std::shared_ptr<TcpTestSession> TcpTest::createTest(std::string socks5Host, std::string socks5Port) {
+std::shared_ptr<TcpTestSession> TcpTest::createTest(std::string socks5Host, std::string socks5Port,
+                                                    std::chrono::milliseconds maxRandomDelay) {
     if (!cleanTimer) {
         cleanTimer = std::make_shared<boost::asio::steady_timer>(executor, std::chrono::seconds{5});
         do_cleanTimer();
@@ -154,7 +163,10 @@ std::shared_ptr<TcpTestSession> TcpTest::createTest(std::string socks5Host, std:
     auto s = std::make_shared<TcpTestSession>(
             executor,
             socks5Host,
-            socks5Port
+            socks5Port,
+            std::chrono::milliseconds{
+                    maxRandomDelay.count() > 0 ? getRandom<long long int>(0, maxRandomDelay.count()) : 0
+            }
     );
     sessions.push_back(s->shared_from_this());
     return s;

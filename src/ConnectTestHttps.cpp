@@ -18,11 +18,15 @@
 
 #include "ConnectTestHttps.h"
 
+#include "UtilTools.h"
+
 ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
                                                  const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
                                                  const std::string &targetHost, uint16_t targetPort,
                                                  const std::string &targetPath, int httpVersion,
-                                                 const std::string &socks5Host, const std::string &socks5Port) :
+                                                 const std::string &socks5Host, const std::string &socks5Port,
+                                                 std::chrono::milliseconds delayTime) :
+        executor(executor),
         resolver_(executor),
         stream_(executor, *ssl_context),
         targetHost(targetHost),
@@ -30,7 +34,8 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
         targetPath(targetPath),
         httpVersion(httpVersion),
         socks5Host(socks5Host),
-        socks5Port(socks5Port) {
+        socks5Port(socks5Port),
+        delayTime(delayTime) {
 //        std::cout << "ConnectTestHttpsSession :" << socks5Host << ":" << socks5Port << std::endl;
 
     // Set SNI Hostname (many hosts need this to handshake successfully)
@@ -57,7 +62,13 @@ void ConnectTestHttpsSession::run(std::function<void(SuccessfulInfo)> onOk, std:
     callback = std::make_unique<CallbackContainer>();
     callback->successfulCallback = std::move(onOk);
     callback->failedCallback = std::move(onErr);
-    do_resolve();
+    if (delayTime.count() == 0) {
+        do_resolve();
+    } else {
+        asyncDelay(delayTime, executor, [self = shared_from_this(), this]() {
+            do_resolve();
+        });
+    }
 }
 
 void ConnectTestHttpsSession::release() {
@@ -463,7 +474,8 @@ ConnectTestHttps::ConnectTestHttps(boost::asio::executor ex) :
 std::shared_ptr<ConnectTestHttpsSession>
 ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &socks5Port,
                              const std::string &targetHost, uint16_t targetPort, const std::string &targetPath,
-                             int httpVersion) {
+                             int httpVersion,
+                             std::chrono::milliseconds maxRandomDelay) {
     if (!cleanTimer) {
         cleanTimer = std::make_shared<boost::asio::steady_timer>(executor, std::chrono::seconds{5});
         do_cleanTimer();
@@ -476,7 +488,10 @@ ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &s
             targetPath,
             httpVersion,
             socks5Host,
-            socks5Port
+            socks5Port,
+            std::chrono::milliseconds{
+                    maxRandomDelay.count() > 0 ? getRandom<long long int>(0, maxRandomDelay.count()) : 0
+            }
     );
     sessions.push_back(s->shared_from_this());
     // sessions.front().lock();

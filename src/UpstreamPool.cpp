@@ -320,10 +320,18 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
     if (_configLoader->config.disableConnectTest) {
         return;
     }
+    auto maxDelayTime = std::chrono::milliseconds{
+            std::min<long long int>(
+                    static_cast<long long int>(_pool.size()),
+                    std::chrono::duration_cast<std::chrono::seconds>(
+                            _configLoader->config.tcpCheckPeriod
+                    ).count() / 2
+            ) * 1000
+    };
     for (auto &a: _pool) {
         if (!a->isManualDisable) {
             auto p = std::to_string(a->port);
-            auto t = tcpTest->createTest(a->host, p);
+            auto t = tcpTest->createTest(a->host, p, maxDelayTime);
             t->run([t, a]() {
                        // on ok
                        if (a->isOffline) {
@@ -435,6 +443,14 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
     if (_configLoader->config.disableConnectTest) {
         return;
     }
+    auto maxDelayTime = std::chrono::milliseconds{
+            std::min<long long int>(
+                    static_cast<long long int>(_pool.size()),
+                    std::chrono::duration_cast<std::chrono::seconds>(
+                            _configLoader->config.connectCheckPeriod
+                    ).count() / 2
+            ) * 1000
+    };
     for (const auto &a: _pool) {
         if (!a->isManualDisable) {
             auto t = connectTestHttps->createTest(
@@ -442,7 +458,9 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
                     std::to_string(a->port),
                     _configLoader->config.testRemoteHost,
                     _configLoader->config.testRemotePort,
-                    R"(\)"
+                    R"(\)",
+                    11,
+                    maxDelayTime
             );
             t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
                        // on ok

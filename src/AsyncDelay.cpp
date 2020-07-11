@@ -24,7 +24,7 @@ void asyncDelay(std::chrono::milliseconds delayTime, boost::asio::executor execu
 
     auto timer = std::make_shared<boost::asio::steady_timer>(executor, delayTime);
 
-    std::cout << "asyncDelay:" << delayTime.count() << std::endl;
+//    std::cout << "asyncDelay:" << delayTime.count() << std::endl;
 
     timer->async_wait([timer, callback](const boost::system::error_code &e) {
         if (e) {

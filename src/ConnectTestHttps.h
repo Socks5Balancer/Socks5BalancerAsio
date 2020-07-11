@@ -37,6 +37,8 @@
 #include <functional>
 #include <openssl/opensslv.h>
 
+#include "AsyncDelay.h"
+
 #ifdef _WIN32
 
 #include <wincrypt.h>
@@ -45,6 +47,8 @@
 #endif // _WIN32
 
 class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestHttpsSession> {
+    boost::asio::executor executor;
+
     boost::asio::ip::tcp::resolver resolver_;
     boost::beast::ssl_stream<boost::beast::tcp_stream> stream_;
     boost::beast::flat_buffer buffer_; // (Must persist between reads)
@@ -58,6 +62,8 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
     int httpVersion;
     const std::string socks5Host;
     const std::string socks5Port;
+
+    std::chrono::milliseconds delayTime;
 
     enum {
         MAX_LENGTH = 8192
@@ -74,7 +80,8 @@ public:
             const std::string &targetPath,
             int httpVersion,
             const std::string &socks5Host,
-            const std::string &socks5Port
+            const std::string &socks5Port,
+            std::chrono::milliseconds delayTime = std::chrono::milliseconds{0}
     );
 
     ~ConnectTestHttpsSession() {
@@ -95,6 +102,7 @@ public:
 
     // to avoid circle ref
     void release();
+
     void stop();
 
 private:
@@ -153,10 +161,12 @@ public:
             const std::string &targetHost,
             uint16_t targetPort,
             const std::string &targetPath,
-            int httpVersion = 11
+            int httpVersion = 11,
+            std::chrono::milliseconds maxRandomDelay = std::chrono::milliseconds{0}
     );
 
     void stop();
+
 private:
     void do_cleanTimer();
 };

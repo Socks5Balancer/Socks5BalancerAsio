@@ -34,25 +34,34 @@
 #include <vector>
 #include <functional>
 
+#include "AsyncDelay.h"
+
 
 class TcpTestSession : public std::enable_shared_from_this<TcpTestSession> {
+    boost::asio::executor executor;
+
     boost::asio::ip::tcp::resolver resolver_;
     boost::beast::tcp_stream stream_;
 
     const std::string socks5Host;
     const std::string socks5Port;
 
+    std::chrono::milliseconds delayTime;
+
     bool _isComplete = false;
 
 public:
     TcpTestSession(boost::asio::executor executor,
                    const std::string &socks5Host,
-                   const std::string &socks5Port
+                   const std::string &socks5Port,
+                   std::chrono::milliseconds delayTime = std::chrono::milliseconds{0}
     ) :
+            executor(executor),
             resolver_(executor),
             stream_(executor),
             socks5Host(socks5Host),
-            socks5Port(socks5Port) {
+            socks5Port(socks5Port),
+            delayTime(delayTime) {
 //        std::cout << "TcpTestSession :" << socks5Host << ":" << socks5Port << std::endl;
     }
 
@@ -107,7 +116,8 @@ public:
 
     std::shared_ptr<TcpTestSession> createTest(
             const std::string socks5Host,
-            const std::string socks5Port
+            const std::string socks5Port,
+            std::chrono::milliseconds maxRandomDelay = std::chrono::milliseconds{0}
     );
 
     void stop();
