@@ -54,9 +54,16 @@ else ()
     add_definitions(-DUSE_BOOST_THEAD)
 endif ()
 
-set(Boost_USE_STATIC_LIBS ON)
+
+if (USE_DYNAMIC_BOOST)
+    message(STATUS "USE DYNAMIC BOOST !!!")
+    add_definitions(-DBOOST_ALL_DYN_LINK=1)
+else ()
+    message(STATUS "USE STATIC BOOST !!!")
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_STATIC_RUNTIME OFF)
+endif ()
 set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.70.0 REQUIRED COMPONENTS system filesystem program_options ${BOOST_THEAD_MODULE} REQUIRED)
 
 
