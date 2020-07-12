@@ -20,13 +20,50 @@
 
 #include <memory>
 
-std::unique_ptr<std::default_random_engine> UtilsRandomGenerator;
+// https://zh.cppreference.com/w/cpp/thread/call_once
+// https://www.modernescpp.com/index.php/thread-safe-initialization-of-a-singleton
+#include <mutex>
+
+
+template<typename T>
+class SingletonWrapper {
+    std::once_flag onceFlag{};
+
+    std::unique_ptr<T> itemPtr;
+
+    void fill() {
+        itemPtr = std::make_unique<T>();
+    }
+
+public:
+
+    T &get() {
+        std::call_once(onceFlag, &SingletonWrapper<T>::fill, this);
+        return *itemPtr;
+    }
+
+};
+
+//std::once_flag onceFlag_UtilsRandomGenerator{};
+//
+//std::unique_ptr<std::default_random_engine> UtilsRandomGenerator;
+//
+//void fillUtilsRandomGenerator() {
+//    UtilsRandomGenerator = std::make_unique<decltype(UtilsRandomGenerator)::element_type>();
+//}
+//
+//std::default_random_engine &getUtilsRandomGenerator() {
+//    if (!UtilsRandomGenerator) {
+//        std::call_once(onceFlag_UtilsRandomGenerator, fillUtilsRandomGenerator);
+////        UtilsRandomGenerator = std::make_unique<decltype(UtilsRandomGenerator)::element_type>();
+//    }
+//    return *UtilsRandomGenerator;
+//}
+
+SingletonWrapper<std::default_random_engine> singletonUtilsRandomGenerator;
 
 std::default_random_engine &getUtilsRandomGenerator() {
-    if (!UtilsRandomGenerator) {
-        UtilsRandomGenerator = std::make_unique<decltype(UtilsRandomGenerator)::element_type>();
-    }
-    return *UtilsRandomGenerator;
+    return singletonUtilsRandomGenerator.get();
 }
 
 
