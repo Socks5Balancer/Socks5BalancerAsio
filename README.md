@@ -350,7 +350,7 @@ so i write this, hope it can work more faster and more stable.
 - [ ] monitor per connect info
 - [ ] backend latency analysis 
 - [x] port aggregation mode(multi-listen only mode)
-- [ ] direct provide Monitor Page (embedding nginx)
+- [x] direct provide Monitor Page (embedding nginx)
 
 - [ ] ~~support socks5 UDP~~ (socks5 UDP will work well if use on localhost or on LAN)
 - [ ] support Load Balance Rule `best_latency`
