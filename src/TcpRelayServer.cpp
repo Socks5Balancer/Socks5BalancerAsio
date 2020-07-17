@@ -353,16 +353,26 @@ void TcpRelayServer::start() {
     ul.port = configLoader->config.listenPort;
 
     auto f = [this, self = shared_from_this(), &resolver](MultiListen &ul) {
-        boost::asio::ip::tcp::endpoint listen_endpoint =
-                *resolver.resolve(ul.host,
-                                  std::to_string(ul.port)).begin();
-        auto &sa = socket_acceptors.emplace_back(ex);
-        sa.open(listen_endpoint.protocol());
-        sa.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-        sa.bind(listen_endpoint);
-        sa.listen();
-        auto local_endpoint = sa.local_endpoint();
-        std::cout << "listening on: " << local_endpoint.address() << ":" << local_endpoint.port() << std::endl;
+        auto it = resolver.resolve(ul.host, std::to_string(ul.port)).begin();
+        decltype(it) end;
+        for (; end != it; ++it) {
+
+            // https://raw.githubusercontent.com/boostcon/2011_presentations/master/wed/IPv6.pdf
+            // https://stackoverflow.com/questions/32803756/accepting-ipv4-and-ipv6-connections-on-a-single-port-using-boost-asio
+
+            // maybe will resolve two endpoint from a host,
+            // example, we can get '0.0.0.0'(v4) and '::'(v6) from host string '::'
+
+            boost::asio::ip::tcp::endpoint listen_endpoint = *it;
+            auto &sa = socket_acceptors.emplace_back(ex);
+            sa.open(listen_endpoint.protocol());
+            sa.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+            sa.bind(listen_endpoint);
+            sa.listen();
+            auto local_endpoint = sa.local_endpoint();
+            std::cout << "listening on: " << local_endpoint.address() << ":" << local_endpoint.port() << std::endl;
+
+        }
     };
     f(ul);
     for (auto &a: configLoader->config.multiListen) {
