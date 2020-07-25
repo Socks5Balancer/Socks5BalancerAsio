@@ -500,11 +500,23 @@
         const seconds = moment.duration(time).seconds();
         const minutes = moment.duration(time).minutes();
         const hours = moment.duration(time).hours();
+        const days = moment.duration(time).days();
+        const months = moment.duration(time).months();
+        const years = moment.duration(time).years();
+        if (years > 0) {
+            return `${years}Y-${months}M-${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
+        }
+        if (months > 0) {
+            return `${months}M-${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
+        }
+        if (days > 0) {
+            return `${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
+        }
         if (hours > 0) {
-            return `${formatInt(hours)}:${formatInt(minutes)}:${formatInt(seconds)}`;
+            return `${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
         }
         if (minutes > 0) {
-            return `${formatInt(minutes)}:${formatInt(seconds)}`;
+            return `${formatInt(minutes)}m:${formatInt(seconds)}s`;
         }
         return `00:${formatInt(seconds)}`;
     }
