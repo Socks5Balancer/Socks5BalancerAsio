@@ -89,27 +89,27 @@
             </div>
         </div>
         <div class="row">
-            <template v-if="!upstreamPool.find(function(u) {
+            <div class="col">
+                <template v-if="!upstreamPool.find(function(u) {
                   return u.isWork==='true';
                 }) && upstreamPool.length>0">
-                <h3 class="alert alert-danger">Warning: we don't have Usable Server !!! </h3>
-                <br/>
-            </template>
-            <template v-if="upstreamPool.length===0&&InternetState.isOk">
-                <h3 class="alert alert-info">No Server ...</h3>
-            </template>
-            <template v-if="!InternetState.isOk">
-                <h3 class="alert alert-danger">No Data Come From Server.</h3>
-                <div style="color: orange;"
-                     v-if="!!InternetState.error">
-                    {{InternetState.error.message}}
-                </div>
-            </template>
-            <template v-if="disableConnectTest">
-                <div class="alert alert-primary">Now Running On [DisableConnectTest] Mode.</div>
-            </template>
-        </div>
-        <div class="row">
+                    <h3 class="alert alert-danger">Warning: we don't have Usable Server !!! </h3>
+                    <br/>
+                </template>
+                <template v-if="upstreamPool.length===0&&InternetState.isOk">
+                    <h3 class="alert alert-info">No Server ...</h3>
+                </template>
+                <template v-if="!InternetState.isOk">
+                    <h3 class="alert alert-danger" style="margin-bottom: 0;">No Data Come From Server.</h3>
+                    <div class="alert alert-info"
+                         v-if="!!InternetState.error">
+                        {{InternetState.error.message}}
+                    </div>
+                </template>
+                <template v-if="disableConnectTest">
+                    <div class="alert alert-primary">Now Running On [DisableConnectTest] Mode.</div>
+                </template>
+            </div>
         </div>
     </div>
     ---------------------------------------------------------------------------------------------
