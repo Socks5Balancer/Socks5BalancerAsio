@@ -8,7 +8,12 @@ if (MSVC)
     add_definitions(-DBOOST_ALL_NO_LIB)
 
     add_definitions(-DMSVC)
-    add_definitions(-D_WIN32_WINNT=0x0A00)
+    if (COMMAND _WIN32_WINNT)
+    else ()
+        # if _WIN32_WINNT not set. set the _WIN32_WINNT to 0x0A00 (Windows 10)
+        # you can add " /D_WIN32_WINNT=0x0601" in CMAKE_CXX_FLAGS to set it to 0x0601 (win7)
+        add_definitions(-D_WIN32_WINNT=0x0A00)
+    endif ()
     add_compile_options(/bigobj)
 
     add_definitions(/W4)
