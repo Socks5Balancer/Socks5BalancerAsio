@@ -206,6 +206,7 @@ handle_request(
             return send(bad_request("Illegal request-target 2.4"));
         }
     } catch (const std::exception &e) {
+        boost::ignore_unused(e);
         return send(bad_request("Illegal request-target 4"));
     }
     // ------------------------ path check --------------------
