@@ -18,11 +18,11 @@
 
 #include "FirstPackAnalyzer.h"
 #include "TcpRelayServer.h"
-#include "ConnectionTracker.h"
 #include <regex>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/beast.hpp>
+#include <boost/asio/read.hpp>
+#include <boost/asio/read_until.hpp>
 
 // from https://github.com/boostorg/beast/issues/787#issuecomment-376259849
 ParsedURI FirstPackAnalyzer::parseURI(const std::string &url) {

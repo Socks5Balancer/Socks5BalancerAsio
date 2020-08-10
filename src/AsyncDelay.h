@@ -20,8 +20,9 @@
 #define SOCKS5BALANCERASIO_ASYNCDELAY_H
 
 
-#include <boost/asio.hpp>
+#include <boost/asio/executor.hpp>
 #include <memory>
+#include <chrono>
 #include <functional>
 
 

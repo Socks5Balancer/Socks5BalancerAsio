@@ -18,7 +18,6 @@
 
 #include "ConnectionTracker.h"
 
-#include <boost/asio.hpp>
 
 // the data Client --> Proxy --> Remove Server
 void ConnectionTracker::relayGotoUp(const boost::asio::streambuf &buf) {

@@ -23,7 +23,6 @@
 #pragma once
 #endif
 
-#include <boost/asio.hpp>
 #include <memory>
 #include <string>
 #include <utility>

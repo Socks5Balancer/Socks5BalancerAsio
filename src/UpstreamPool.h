@@ -23,7 +23,8 @@
 #pragma once
 #endif
 
-#include <boost/asio.hpp>
+#include <boost/asio/executor.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <string>
 #include <deque>
 #include <memory>

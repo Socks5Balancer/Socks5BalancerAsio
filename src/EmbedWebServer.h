@@ -25,8 +25,10 @@
 
 // https://www.boost.org/doc/libs/develop/libs/beast/example/http/server/async/http_server_async.cpp
 
-#include <boost/asio.hpp>
-#include <boost/beast.hpp>
+#include <boost/asio/executor.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <memory>
 #include <string>

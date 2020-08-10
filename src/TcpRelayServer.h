@@ -23,7 +23,8 @@
 #pragma once
 #endif
 
-#include <boost/asio.hpp>
+#include <boost/asio/executor.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <string>
 #include <utility>

@@ -23,7 +23,8 @@
 #pragma once
 #endif
 
-#include <boost/asio.hpp>
+#include <boost/asio/streambuf.hpp>
+#include <boost/asio/buffers_iterator.hpp>
 #include <memory>
 #include <iostream>
 #include <string>

@@ -20,6 +20,8 @@
 
 #include "UtilTools.h"
 
+#include <boost/beast/version.hpp>
+
 ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
                                                  const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
                                                  const std::string &targetHost, uint16_t targetPort,

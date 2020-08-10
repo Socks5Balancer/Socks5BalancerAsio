@@ -23,8 +23,11 @@
 #pragma once
 #endif
 
-#include <boost/asio.hpp>
-#include <boost/beast.hpp>
+#include <boost/asio/executor.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
 #include <memory>
 #include <utility>
 #include <iostream>
