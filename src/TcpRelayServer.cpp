@@ -73,7 +73,10 @@ void TcpRelaySession::try_connect_upstream() {
         if (s) {
             std::cout << "TcpRelaySession try_connect_upstream()"
                       << " " << s->host << ":" << s->port << std::endl;
-            nowServer = s;
+            {
+                std::lock_guard<std::mutex> g{nowServerMtx};
+                nowServer = s;
+            }
             do_resolve(s->host, s->port);
         } else {
             std::cerr << "try_connect_upstream error:" << "No Valid Server." << "\n";
@@ -93,10 +96,12 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
                     const boost::system::error_code &error,
                     boost::asio::ip::tcp::resolver::results_type results) {
                 if (error) {
-                    std::cerr << "do_resolve error:" << error.message() << "\n";
-                    nowServer->isOffline = true;
-                    // try next
-                    try_connect_upstream();
+                    if (error != boost::asio::error::operation_aborted) {
+                        std::cerr << "do_resolve error:" << error.message() << "\n";
+                        nowServer->isOffline = true;
+                        // try next
+                        try_connect_upstream();
+                    }
                 } else {
 
                     std::cout << "TcpRelaySession do_resolve()"
@@ -119,6 +124,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
 
                     std::cout << "TcpRelaySession do_connect_upstream()" << std::endl;
 
+                    refAdded = true;
                     ++nowServer->connectCount;
                     nowServer->updateOnlineTime();
                     auto pSI = statisticsInfo.lock();
@@ -176,10 +182,12 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                     }
 
                 } else {
-                    std::cerr << "do_connect_upstream error:" << error.message() << "\n";
-                    nowServer->isOffline = true;
-                    // try next
-                    try_connect_upstream();
+                    if (error != boost::asio::error::operation_aborted) {
+                        std::cerr << "do_connect_upstream error:" << error.message() << "\n";
+                        nowServer->isOffline = true;
+                        // try next
+                        try_connect_upstream();
+                    }
                 }
             }
     );
@@ -288,8 +296,9 @@ void TcpRelaySession::close(boost::system::error_code error) {
     }
 
     if (!isDeCont) {
-        isDeCont = true;
-        if (nowServer) {
+        std::lock_guard<std::mutex> g{nowServerMtx};
+        if (nowServer && refAdded) {
+            isDeCont = true;
             --nowServer->connectCount;
             auto pSI = statisticsInfo.lock();
             if (pSI) {

@@ -31,6 +31,7 @@
 #include <list>
 #include <map>
 #include <atomic>
+#include <mutex>
 #include "UpstreamPool.h"
 #include "ConnectionTracker.h"
 #include "FirstPackAnalyzer.h"
@@ -62,6 +63,8 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     std::shared_ptr<FirstPackAnalyzer> firstPackAnalyzer;
     std::shared_ptr<ConnectionTracker> connectionTracker;
 
+    std::mutex nowServerMtx;
+    std::atomic_bool refAdded{false};
     UpstreamServerRef nowServer;
 
     size_t retryCount = 0;
@@ -102,6 +105,7 @@ public:
     boost::asio::ip::tcp::socket &upstream_socket();
 
     UpstreamServerRef getNowServer() {
+        std::lock_guard<std::mutex> g{nowServerMtx};
         return nowServer;
     }
 
