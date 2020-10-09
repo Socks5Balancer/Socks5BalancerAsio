@@ -144,7 +144,7 @@ you can set ```
   "traditionTcpRelay": true ``` ,
 then it will run as a pure tcp relay or pure tcp balance or multi port bundle.
 but in that case, the `upstreamSelectRule` must be `random` or `loop`,
-any other rule will not work as expected because of the backend measure are be disabled.
+any other rule will not work as expected because of the backend measure are disabled.
 
 
 ## how to run it ?
@@ -352,7 +352,7 @@ so i write this, hope it can work more faster and more stable.
 - [x] port aggregation mode(multi-listen only mode)
 - [x] direct provide Monitor Page (embedding nginx)
 
-- [ ] ~~support socks5 UDP~~ (socks5 UDP will work well if use on localhost or on LAN)
+- [x] ~~support socks5 UDP~~ (socks5 UDP will work well if use on localhost or on LAN)
 - [ ] support Load Balance Rule `best_latency`
 - [ ] support Load Balance Rule `fast_download_speed`
 - [ ] support Load Balance Rule `fast_upload_speed`
@@ -366,4 +366,36 @@ so i write this, hope it can work more faster and more stable.
 - [X] show how many data was transfer in data monitor
 - [ ] Analysis socks5 proxy
 - [ ] Direct Impl Proxy Client
-- [ ] ~~Impl Trojan Proxy Client~~ KISS(keep it simple stupid)
+- [x] ~~Impl Trojan Proxy Client~~ KISS(keep it simple stupid)
+
+## The Background story
+for a long time ago, i want to find a simple tools to balance on many proxy. it need auto chose the best proxy and dont let dead one to slow the internet speed .  
+but when i search all over the internet , i cannot find a simple , alone , light , fast , stable , easy to use and free tools to complete this requirement.  
+so, i write it by myself, i named it as `socks5 balancer`.   
+
+this tools build in top of Boost.Asio and C++, it's a single executable file, can work in both Windows and Linux, and can load balance for socks5 backend or pure tcp backend, provide a socks5/http/https multi in one port support, and it can detect the backend socks5 proxy health state similar like the HAProxy. also, it can work on multi-to-one mode, this mode run like a invert-load balance. and it can easy monitor and control through the http interface.  
+
+this project still in develop, and i am using it every day every night to test the stability . now it continue run in my Home's network for a mouth ago without any error or crush.   
+i will add more feature on it and continue make it more stable. and i hope it can help some one like me.  
+
+---
+the background story:  
+I am a develop in a special country, for well-known reasons, i need use proxy to access the international worldwide internet to contribution code for humanity.  
+but because of the poor,  i don't have many money to by a expensive stable proxy server, the only one way is that collect many low price or free proxy and try they one by one hope some of it can work.  
+so, i write this project as a Open Source Software, hope it can help other one who face the same dilemma as me.  
+
+---
+follow is a prototype i wrote with Typescript in top of NodeJs :  
+https://github.com/Lyoko-Jeremie/Socks5Balancer  
+Because the performance of Node and JavaScript. it not stable, not fast, not lightly, so i rewrite it with C++/Boost.Asio.  
+
+---
+BTW, you can see the `.idea` dir in my every project. so , you can know how i love jetbrains so far.
+
+---
+The Clion / WebStorm / IDEA / RSharp Tools is the world-class best IDE(Integrated Development Environment) in my heart .  
+Thank To The Jetbrains send me a All Pack License to let me continue to use the Best Tools In The World.   
+[
+<img alt="Jetbrains Logo" src="https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/jetbrains-variant-4.png" width="200">
+](https://www.jetbrains.com/?from=Socks5Balancer)  
+
