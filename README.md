@@ -199,7 +199,9 @@ if all backend are disabled, the front connect will be reject.
 
 ## which rule is best ?
 
-I recommend `change_by_time` if you often browser web page.
+ if you all server have good performance , use `change_by_time` .
+ 
+ if you have some best server than other , use `one_by_one` .
 
 if you want the IP not change, example playing some game, use `one_by_one`
 
