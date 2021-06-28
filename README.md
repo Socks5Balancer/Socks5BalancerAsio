@@ -227,7 +227,7 @@ _(`Vue.js` is a good replace for jQ at small project , i only use it's data and 
 
 ## Use Monitor Page On EmbedWebServer
 
-if you dont want to install a addition web server , and you use the web page on save env, you can use the EmbedWebServer.
+if you dont want to install a addition web server , and you use the web page on safe env, you can use the EmbedWebServer.
  
 the EmbedWebServer only do two action:    
 
