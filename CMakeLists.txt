@@ -4,6 +4,11 @@ project(${ProjectMainName})
 
 set(CMAKE_CXX_STANDARD 17)
 if (MSVC)
+
+    # recommend config
+    # cmake.exe -G "Visual Studio 16 2019" -DBOOST_INCLUDEDIR=H:/CodeLib/boost_1_73_0 -DOPENSSL_ROOT_DIR=h:\CodeLib\openssl-1.1.1h\x64 -DUSE_DYNAMIC_BOOST=0
+    # https://stackoverflow.com/questions/52206636/force-cmake-to-look-for-x64-bit-libraries-instead-of-x32
+
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     add_definitions(-DBOOST_ALL_NO_LIB)
 
@@ -17,6 +22,7 @@ if (MSVC)
     add_compile_options(/bigobj)
 
     add_definitions(/W4)
+
 else ()
     add_definitions(-Wall -Wextra)
 endif ()
