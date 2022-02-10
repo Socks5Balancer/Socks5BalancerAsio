@@ -62,7 +62,7 @@ void UpstreamServer::updateOnlineTime() {
     lastOnlineTime = UpstreamTimePointNow();
 }
 
-UpstreamPool::UpstreamPool(boost::asio::executor ex, std::shared_ptr<TcpTest> tcpTest,
+UpstreamPool::UpstreamPool(boost::asio::any_io_executor ex, std::shared_ptr<TcpTest> tcpTest,
                            std::shared_ptr<ConnectTestHttps> connectTestHttps)
         : ex(ex),
           tcpTest(std::move(tcpTest)),

@@ -23,7 +23,7 @@
 #pragma once
 #endif
 
-#include <boost/asio/executor.hpp>
+#include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/beast/core.hpp>
@@ -41,7 +41,7 @@
 
 
 class TcpTestSession : public std::enable_shared_from_this<TcpTestSession> {
-    boost::asio::executor executor;
+    boost::asio::any_io_executor executor;
 
     boost::asio::ip::tcp::resolver resolver_;
     boost::beast::tcp_stream stream_;
@@ -54,7 +54,7 @@ class TcpTestSession : public std::enable_shared_from_this<TcpTestSession> {
     bool _isComplete = false;
 
 public:
-    TcpTestSession(boost::asio::executor executor,
+    TcpTestSession(boost::asio::any_io_executor executor,
                    const std::string &socks5Host,
                    const std::string &socks5Port,
                    std::chrono::milliseconds delayTime = std::chrono::milliseconds{0}
@@ -108,12 +108,12 @@ private:
 };
 
 class TcpTest : public std::enable_shared_from_this<TcpTest> {
-    boost::asio::executor executor;
+    boost::asio::any_io_executor executor;
     std::list<std::shared_ptr<TcpTestSession>> sessions;
 
     std::shared_ptr<boost::asio::steady_timer> cleanTimer;
 public:
-    TcpTest(boost::asio::executor ex) :
+    TcpTest(boost::asio::any_io_executor ex) :
             executor(ex) {
     }
 

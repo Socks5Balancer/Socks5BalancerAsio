@@ -22,7 +22,7 @@
 
 #include <boost/beast/version.hpp>
 
-ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
+ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::any_io_executor executor,
                                                  const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
                                                  const std::string &targetHost, uint16_t targetPort,
                                                  const std::string &targetPath, int httpVersion,
@@ -138,7 +138,7 @@ void ConnectTestHttpsSession::do_resolve() {
 }
 
 void ConnectTestHttpsSession::do_tcp_connect(
-        const boost::asio::ip::basic_resolver<boost::asio::ip::tcp, boost::asio::executor>::results_type &results) {
+        const boost::asio::ip::basic_resolver<boost::asio::ip::tcp, boost::asio::any_io_executor>::results_type &results) {
 
 
     // Set a timeout on the operation
@@ -444,7 +444,7 @@ void ConnectTestHttpsSession::do_shutdown(bool isOn) {
                     }));
 }
 
-ConnectTestHttps::ConnectTestHttps(boost::asio::executor ex) :
+ConnectTestHttps::ConnectTestHttps(boost::asio::any_io_executor ex) :
         executor(ex),
         ssl_context(std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23)) {
 

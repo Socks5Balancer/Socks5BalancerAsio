@@ -20,13 +20,13 @@
 #define SOCKS5BALANCERASIO_ASYNCDELAY_H
 
 
-#include <boost/asio/executor.hpp>
+#include <boost/asio/any_io_executor.hpp>
 #include <memory>
 #include <chrono>
 #include <functional>
 
 
-void asyncDelay(std::chrono::milliseconds delayTime, boost::asio::executor executor, std::function<void()> callback);
+void asyncDelay(std::chrono::milliseconds delayTime, boost::asio::any_io_executor executor, std::function<void()> callback);
 
 
 #endif //SOCKS5BALANCERASIO_ASYNCDELAY_H

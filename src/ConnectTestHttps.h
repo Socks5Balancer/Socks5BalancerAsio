@@ -23,7 +23,7 @@
 #pragma once
 #endif
 
-#include <boost/asio/executor.hpp>
+#include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -50,7 +50,7 @@
 #endif // _WIN32
 
 class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestHttpsSession> {
-    boost::asio::executor executor;
+    boost::asio::any_io_executor executor;
 
     boost::asio::ip::tcp::resolver resolver_;
     boost::beast::ssl_stream<boost::beast::tcp_stream> stream_;
@@ -76,7 +76,7 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
 
 public:
     ConnectTestHttpsSession(
-            boost::asio::executor executor,
+            boost::asio::any_io_executor executor,
             const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
             const std::string &targetHost,
             uint16_t targetPort,
@@ -149,14 +149,14 @@ private:
 };
 
 class ConnectTestHttps : public std::enable_shared_from_this<ConnectTestHttps> {
-    boost::asio::executor executor;
+    boost::asio::any_io_executor executor;
     std::shared_ptr<boost::asio::ssl::context> ssl_context;
     bool need_verify_ssl = true;
     std::list<std::shared_ptr<ConnectTestHttpsSession>> sessions;
 
     std::shared_ptr<boost::asio::steady_timer> cleanTimer;
 public:
-    ConnectTestHttps(boost::asio::executor ex);
+    ConnectTestHttps(boost::asio::any_io_executor ex);
 
     std::shared_ptr<ConnectTestHttpsSession> createTest(
             const std::string &socks5Host,
