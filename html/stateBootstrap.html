@@ -84,6 +84,7 @@
                 <input class="form-control" name="backend" v-model="backend"/>
                 <div class="input-group-append">
                     <button class="btn btn-primary" v-on:click="flush">Flush</button>
+                    <button class="btn btn-light" v-on:click="autoFlush">AutoFlush {{ autoFlushState }}</button>
                 </div>
             </div>
         </div>

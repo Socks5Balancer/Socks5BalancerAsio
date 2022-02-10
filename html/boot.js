@@ -217,7 +217,9 @@
             InternetState: {
                 isOk: false,
                 error: undefined,
-            }
+            },
+            autoFlushState: false,
+            autoFlushHandle: -1,
         },
         computed: {},
         methods: {
@@ -227,8 +229,25 @@
             speed2String: speed2String,
             dataCount2String: dataCount2String,
             reduceField: reduceField,
+            autoFlush: function () {
+                app.autoFlushState = !app.autoFlushState;
+                console.log('autoFlushHandle app.autoFlushState', app.autoFlushState);
+                if (app.autoFlushState) {
+                    console.log('autoFlushHandle setInterval');
+                    app.autoFlushHandle = setInterval(function () {
+                        console.log('autoFlushHandle flush');
+                        app.flush()
+                            .then(()=>{
+                                app.$forceUpdate();
+                            });
+                    }, 1000);
+                } else {
+                    console.log('autoFlushHandle clearTimeout');
+                    clearInterval(app.autoFlushHandle)
+                }
+            },
             flush: function () {
-                fetch('http://' + app.backend + '/', {
+                return fetch('http://' + app.backend + '/', {
                     credentials: 'omit'
                 }).then(function (T) {
                     if (T.ok) {

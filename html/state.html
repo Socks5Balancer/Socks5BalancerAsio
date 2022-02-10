@@ -38,7 +38,7 @@
             opacity: 0.1;
         }
     </style>
-    <link rel="stylesheet" href="./bootstrap.min.css" >
+    <link rel="stylesheet" href="./bootstrap.min.css">
     <script src="./lodash.min.js"></script>
     <script src="./vue.js"></script>
     <script src="./moment.min.js"></script>
@@ -66,6 +66,7 @@
         <input class="string-pad" name="backend" v-model="backend"/>
     </label>
     <button v-on:click="flush">Flush</button>
+    <button v-on:click="autoFlush">AutoFlush {{ autoFlushState }}}</button>
     <br/>
     <template v-if="!upstreamPool.find(function(u) {
       return u.isWork==='true';
@@ -221,12 +222,12 @@
     <br/>
     lastConnectServer:
     <span class="string-pad">
-        {{ (lastConnectServer?(lastConnectServer.host+':'+lastConnectServer.port):'Undefined') }}
+        {{ (lastConnectServer ? (lastConnectServer.host + ':' + lastConnectServer.port) : 'Undefined') }}
     </span>
     <br/>
     lastUseUpstreamIndex: <span class="string-pad">{{ _.parseInt(lastUseUpstreamIndex) + 1 }}</span>
     <br/>
-    Tcp Relay Mode: <span class="string-pad">{{ traditionTcpRelay?'Tradition Mode':'Mixed Mode' }}</span>
+    Tcp Relay Mode: <span class="string-pad">{{ traditionTcpRelay ? 'Tradition Mode' : 'Mixed Mode' }}</span>
     <br/>
     <br/>
     now time: <span class="string-pad">{{ nowTime }}</span>
@@ -281,7 +282,7 @@
 
         <tr v-for="u in ClientIndex">
             <td>{{u.index}}</td>
-            <td>{{u.lastUseUpstreamIndex+1}}</td>
+            <td>{{u.lastUseUpstreamIndex + 1}}</td>
             <td>
                 <select name="newRule" v-model="u.lastUseUpstreamIndex"
                         v-on:change="sendCommand(
@@ -292,9 +293,9 @@
                     <template v-for="it in upstreamPool">
                         <option v-if="it.index===u.lastUseUpstreamIndex"
                                 v-bind:value="it.index" selected>
-                            {{ it.index+1 }}
+                            {{ it.index + 1 }}
                         </option>
-                        <option v-else v-bind:value="it.index">{{ it.index+1 }}</option>
+                        <option v-else v-bind:value="it.index">{{ it.index + 1 }}</option>
                     </template>
                 </select>
             </td>
@@ -380,7 +381,7 @@
 
         <tr v-for="u in ListenIndex">
             <td>{{u.index}}</td>
-            <td>{{u.lastUseUpstreamIndex+1}}</td>
+            <td>{{u.lastUseUpstreamIndex + 1}}</td>
             <td>
                 <select name="newRule" v-model="u.lastUseUpstreamIndex"
                         v-on:change="sendCommand(
@@ -391,9 +392,9 @@
                     <template v-for="it in upstreamPool">
                         <option v-if="it.index===u.lastUseUpstreamIndex"
                                 v-bind:value="it.index" selected>
-                            {{ it.index+1 }}
+                            {{ it.index + 1 }}
                         </option>
-                        <option v-else v-bind:value="it.index">{{ it.index+1 }}</option>
+                        <option v-else v-bind:value="it.index">{{ it.index + 1 }}</option>
                     </template>
                 </select>
             </td>
@@ -707,7 +708,9 @@
             InternetState: {
                 isOk: false,
                 error: undefined,
-            }
+            },
+            autoFlushState: false,
+            autoFlushHandle: -1,
         },
         computed: {},
         methods: {
@@ -717,8 +720,25 @@
             speed2String: speed2String,
             dataCount2String: dataCount2String,
             reduceField: reduceField,
+            autoFlush: function () {
+                app.autoFlushState = !app.autoFlushState;
+                console.log('autoFlushHandle app.autoFlushState', app.autoFlushState);
+                if (app.autoFlushState) {
+                    console.log('autoFlushHandle setInterval');
+                    app.autoFlushHandle = setInterval(function () {
+                        console.log('autoFlushHandle flush');
+                        app.flush()
+                            .then(()=>{
+                                app.$forceUpdate();
+                            });
+                    }, 1000);
+                } else {
+                    console.log('autoFlushHandle clearTimeout');
+                    clearInterval(app.autoFlushHandle)
+                }
+            },
             flush: function () {
-                fetch('http://' + app.backend + '/', {
+                return fetch('http://' + app.backend + '/', {
                     credentials: 'omit'
                 }).then(function (T) {
                     if (T.ok) {
