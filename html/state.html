@@ -728,7 +728,7 @@
                     app.autoFlushHandle = setInterval(function () {
                         console.log('autoFlushHandle flush');
                         app.flush()
-                            .then(()=>{
+                            .then(() => {
                                 app.$forceUpdate();
                             });
                     }, 1000);
