@@ -1,5 +1,9 @@
 # Socks5BalancerAsio
-A Simple TCP Socket Balancer for balance Multi Socks5 Proxy Backend Powered by Boost.Asio
+A Simple TCP Socket Balancer for balance Multi Socks5 Proxy Backend Servers Powered by Boost.Asio
+
+---
+
+Docker version available with instructions here: [fossforreal/Socks5BalancerAsio-Docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker)
 
 ---
 
