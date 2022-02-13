@@ -2,6 +2,7 @@
   "listenHost": "127.0.0.1",
   "listenPort": 5000,
   "retryTimes": 3,
+  "connectTimeout": 2000,
   "testRemoteHost": "www.google.com",
   "testRemotePort": 443,
   "tcpCheckPeriod": 5000,

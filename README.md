@@ -289,11 +289,13 @@ _(`Vue.js` is a good replace for jQ at small project , i only use it's data and 
 ### Dependencies
 
 **CMake** >= 3.16  
-**Boost** >= 1.70  recommend  1.73  
+**Boost** >= 1.74
+> For older versions Boost v1.70+ (v1.73 is recommended as last working version)
+> Checkout at tag "v1.0" or commit "e6c491ce56f6de21423c5d780d1c8865714fabe3"
 **OpenSSL** >= 1.1.0 recommend 1.1.1h  
 **MSVC** or **GCC** , required C++17 support  
 
-#### windows
+#### Build on Windows
 
 install VS2019
 
@@ -306,18 +308,6 @@ OpenSSL Prebuild :
 - https://wiki.openssl.org/index.php/Binaries
 - https://kb.firedaemon.com/support/solutions/articles/4000121705
 
-#### ArchLinux
-
-```
-pacman -S base-devel --needed
-pacman -S boost
-pacman -S openssl
-pacman -S cmake
-```
-
-### Build
-
-#### windows
 
 ```
 cmake -DBOOST_INCLUDEDIR=<path_to>/boost_1_73_0 -DOPENSSL_ROOT_DIR=<path_to>\openssl-1.1.1h\x64
@@ -325,8 +315,33 @@ cmake -DBOOST_INCLUDEDIR=<path_to>/boost_1_73_0 -DOPENSSL_ROOT_DIR=<path_to>\ope
 
 then build it
 
+#### Build on ArchLinux
 
-#### ArchLinux
+```
+pacman -S base-devel --needed
+pacman -S openssl
+pacman -S cmake
+```
+
+```bash
+# IF YOU WANT TO BUILD WITH LATEST BOOST (v1.74+)
+pacman -S boost
+```
+
+> **If you are building older version, run:**
+>
+> ```bash
+> # DOWNLOAD & BUILD BOOST v1.73 FROM SOURCE
+> wget -nc https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.tar.bz2
+> tar --skip-old-files -jxf boost_1_73_0.tar.bz2
+> cd boost_1_73_0
+> ./bootstrap.sh
+> ./b2 link=static
+> PATH=$(pwd):$(pwd)/stage/lib:$PATH
+> cd ..
+> ```
+
+
 
 ```
 cd ./Socks5BalancerAsio
@@ -335,6 +350,44 @@ make
 ```
 
 then all ok
+
+#### Build on Debian
+
+```bash
+# FOR LATEST BOOST (v1.74+):
+apt update && apt upgrade
+apt install -y libboost-all-dev git cmake libssl-dev g++
+git clone https://github.com/fossforreal/Socks5BalancerAsio
+cd Socks5BalancerAsio
+cmake .
+make -j$(nproc)
+
+```
+
+or
+
+```bash
+# FOR BOOST v1.71-1.73:
+apt update && apt upgrade
+apt install -y git cmake libssl-dev g++ wget bzip2
+
+# DOWNLOAD & BUILD BOOST v1.73 FROM SOURCE
+wget -nc https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.tar.bz2
+tar --skip-old-files -jxf boost_1_73_0.tar.bz2
+cd boost_1_73_0
+./bootstrap.sh
+./b2 link=static
+PATH=$(pwd):$(pwd)/stage/lib:$PATH
+cd ..
+
+# CHECK THIS REPO AT TAG v1.0
+git clone https://github.com/fossforreal/Socks5BalancerAsio
+cd Socks5BalancerAsio
+git checkout e6c491ce56f6de21423c5d780d1c8865714fabe3
+cmake .
+make -j$(nproc)
+```
+
 
 ### Dev
 
