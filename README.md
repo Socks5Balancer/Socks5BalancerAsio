@@ -292,6 +292,7 @@ _(`Vue.js` is a good replace for jQ at small project , i only use it's data and 
 **Boost** >= 1.74
 > For older versions Boost v1.70+ (v1.73 is recommended as last working version)
 > Checkout at tag "v1.0" or commit "e6c491ce56f6de21423c5d780d1c8865714fabe3"
+
 **OpenSSL** >= 1.1.0 recommend 1.1.1h  
 **MSVC** or **GCC** , required C++17 support  
 
