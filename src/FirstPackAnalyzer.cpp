@@ -539,6 +539,15 @@ void FirstPackAnalyzer::do_socks5_connect_read() {
                                         socks5_read_buf->at(3) != 0x04
                                 )
                                     ) {
+//                                std::stringstream ss;
+//                                ss << "socks5_connect_read (bytes_transferred < 6)"
+//                                   << " the socks5_read_buf:" << std::hex
+//                                   << socks5_read_buf->at(0)
+//                                   << socks5_read_buf->at(1)
+//                                   << socks5_read_buf->at(2)
+//                                   << socks5_read_buf->at(3)
+//                                        ;
+//                                return fail(ec, ss.str());
                                 return fail(ec, "socks5_connect_read (bytes_transferred < 6)");
                             }
                             if (socks5_read_buf->at(3) == 0x03
