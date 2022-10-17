@@ -21,6 +21,8 @@
 #include "UtilTools.h"
 
 #include <boost/beast/version.hpp>
+#include <boost/asio/read.hpp>
+#include <boost/asio/read_until.hpp>
 
 ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
                                                  const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
@@ -305,8 +307,11 @@ void ConnectTestHttpsSession::do_socks5_connect_read() {
     boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
 
     // Make the connection on the IP address we get from a lookup
-    boost::beast::get_lowest_layer(stream_).async_read_some(
+//    boost::beast::get_lowest_layer(stream_).async_read_some(
+    boost::asio::async_read(
+            boost::beast::get_lowest_layer(stream_),
             boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+            boost::asio::transfer_at_least(6),
             boost::beast::bind_front_handler(
                     [this, self = shared_from_this(), socks5_read_buf](
                             boost::beast::error_code ec,
@@ -332,7 +337,16 @@ void ConnectTestHttpsSession::do_socks5_connect_read() {
                             )
                                 ) {
                             do_shutdown();
-                            return fail(ec, "socks5_connect_read (bytes_transferred < 6)");
+                            std::stringstream ss;
+                            ss << "socks5_connect_read (bytes_transferred < 6) "
+                               << "bytes_transferred:" << bytes_transferred
+                               << " the socks5_read_buf: "
+                               << int(socks5_read_buf->at(0))
+                               << int(socks5_read_buf->at(1))
+                               << int(socks5_read_buf->at(2))
+                               << int(socks5_read_buf->at(3));
+                            return fail(ec, ss.str());
+//                            return fail(ec, "socks5_connect_read (bytes_transferred < 6)");
                         }
                         if (socks5_read_buf->at(3) == 0x03
                             && bytes_transferred != (socks5_read_buf->at(4) + 4 + 1 + 2)
