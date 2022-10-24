@@ -59,19 +59,22 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     std::atomic_size_t connectCount{0};
     bool isManualDisable = false;
     bool disable = false;
+    bool slowImpl = false;
 
     UpstreamServer(
             size_t index,
             std::string name,
             std::string host,
             uint16_t port,
-            bool disable
+            bool disable,
+            bool slowImpl
     ) :
             index(index),
-            name(name),
-            host(host),
+            name(std::move(name)),
+            host(std::move(host)),
             port(port),
             disable(disable),
+            slowImpl(slowImpl),
             isManualDisable(disable) {}
 
     std::string print();

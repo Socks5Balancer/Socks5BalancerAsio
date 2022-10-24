@@ -81,7 +81,7 @@ void UpstreamPool::setConfig(std::shared_ptr<ConfigLoader> configLoader) {
     for (size_t i = 0; i != c.size(); ++i) {
         auto &r = c[i];
         UpstreamServerRef u = std::make_shared<UpstreamServer>(
-                i, r.name, r.host, r.port, r.disable
+                i, r.name, r.host, r.port, r.disable, r.slowImpl
         );
         _pool.push_back(u);
     }
@@ -155,7 +155,7 @@ auto UpstreamPool::tryGetLastServer(size_t &_lastUseUpstreamIndex) -> UpstreamSe
 
 auto UpstreamPool::filterValidServer() -> std::vector<UpstreamServerRef> {
     std::vector<UpstreamServerRef> r;
-    for (auto &a:_pool) {
+    for (auto &a: _pool) {
         if (checkServer(a)) {
             r.emplace_back(a->shared_from_this());
         }
@@ -456,6 +456,7 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
             auto t = connectTestHttps->createTest(
                     a->host,
                     std::to_string(a->port),
+                    a->slowImpl,
                     _configLoader->config.testRemoteHost,
                     _configLoader->config.testRemotePort,
                     R"(\)",
@@ -488,6 +489,7 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
     auto t = connectTestHttps->createTest(
             a->host,
             std::to_string(a->port),
+            a->slowImpl,
             _configLoader->config.testRemoteHost,
             _configLoader->config.testRemotePort,
             R"(\)"

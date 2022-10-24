@@ -211,6 +211,7 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
             u.port = pts.get("port", uint16_t{});
             u.name = pts.get("name", std::string{});
             u.disable = pts.get("disable", false);
+            u.slowImpl = pts.get("slowImpl", false);
             c.upstream.push_back(u);
         }
     }

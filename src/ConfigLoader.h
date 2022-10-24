@@ -41,6 +41,7 @@ struct Upstream {
     uint16_t port;
     std::string name;
     bool disable;
+    bool slowImpl;
 };
 
 struct MultiListen {
