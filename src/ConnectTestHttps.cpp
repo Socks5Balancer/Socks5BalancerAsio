@@ -29,6 +29,7 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
                                                  const std::string &targetHost, uint16_t targetPort,
                                                  const std::string &targetPath, int httpVersion,
                                                  const std::string &socks5Host, const std::string &socks5Port,
+                                                 bool slowImpl,
                                                  std::chrono::milliseconds delayTime) :
         executor(executor),
         resolver_(executor),
@@ -39,6 +40,7 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::executor executor,
         httpVersion(httpVersion),
         socks5Host(socks5Host),
         socks5Port(socks5Port),
+        slowImpl(slowImpl),
         delayTime(delayTime) {
 //        std::cout << "ConnectTestHttpsSession :" << socks5Host << ":" << socks5Port << std::endl;
 
@@ -338,7 +340,7 @@ void ConnectTestHttpsSession::do_socks5_connect_read() {
                                 ) {
                             do_shutdown();
                             std::stringstream ss;
-                            ss << "socks5_connect_read (bytes_transferred < 6) "
+                            ss << "ConnectTestHttpsSession socks5_connect_read (bytes_transferred < 6) "
                                << "bytes_transferred:" << bytes_transferred
                                << " the socks5_read_buf: "
                                << int(socks5_read_buf->at(0))
@@ -348,23 +350,128 @@ void ConnectTestHttpsSession::do_socks5_connect_read() {
                             return fail(ec, ss.str());
 //                            return fail(ec, "socks5_connect_read (bytes_transferred < 6)");
                         }
+
+                        if (slowImpl) {
+                            // the server is a bad impl (like Golang), it maybe not send all data in one package, we try to ignore it
+                            switch (socks5_read_buf->at(3)) {
+                                case 0x03: {
+                                    if (bytes_transferred != (socks5_read_buf->at(4) + 4 + 1 + 2)) {
+                                        // try to read last data
+                                        boost::asio::async_read(
+                                                boost::beast::get_lowest_layer(stream_),
+                                                boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+                                                boost::asio::transfer_exactly(
+                                                        (socks5_read_buf->at(4) + 4 + 1 + 2) - bytes_transferred
+                                                ),
+                                                boost::beast::bind_front_handler(
+                                                        [this, self = shared_from_this(), socks5_read_buf](
+                                                                boost::beast::error_code ec,
+                                                                const size_t &bytes_transferred) {
+                                                            boost::ignore_unused(bytes_transferred);
+                                                            if (ec) {
+                                                                return fail(ec, "socks5_connect_read slowImpl 0x03");
+                                                            }
+                                                            do_ssl_handshake();
+                                                        }
+                                                )
+                                        );
+                                    } else {
+                                        do_ssl_handshake();
+                                    }
+                                }
+                                    break;
+                                case 0x01: {
+                                    if (bytes_transferred != (4 + 4 + 2)) {
+                                        // try to read last data
+                                        boost::asio::async_read(
+                                                boost::beast::get_lowest_layer(stream_),
+                                                boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+                                                boost::asio::transfer_exactly(
+                                                        (4 + 4 + 2) - bytes_transferred
+                                                ),
+                                                boost::beast::bind_front_handler(
+                                                        [this, self = shared_from_this(), socks5_read_buf](
+                                                                boost::beast::error_code ec,
+                                                                const size_t &bytes_transferred) {
+                                                            boost::ignore_unused(bytes_transferred);
+                                                            if (ec) {
+                                                                return fail(ec, "socks5_connect_read slowImpl 0x01");
+                                                            }
+                                                            do_ssl_handshake();
+                                                        }
+                                                )
+                                        );
+                                    } else {
+                                        do_ssl_handshake();
+                                    }
+                                }
+                                    break;
+                                case 0x04:{
+                                    if (bytes_transferred != (4 + 16 + 2)) {
+                                        // try to read last data
+                                        boost::asio::async_read(
+                                                boost::beast::get_lowest_layer(stream_),
+                                                boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+                                                boost::asio::transfer_exactly(
+                                                        (4 + 16 + 2) - bytes_transferred
+                                                ),
+                                                boost::beast::bind_front_handler(
+                                                        [this, self = shared_from_this(), socks5_read_buf](
+                                                                boost::beast::error_code ec,
+                                                                const size_t &bytes_transferred) {
+                                                            boost::ignore_unused(bytes_transferred);
+                                                            if (ec) {
+                                                                return fail(ec, "socks5_connect_read slowImpl 0x04");
+                                                            }
+                                                            do_ssl_handshake();
+                                                        }
+                                                )
+                                        );
+                                    } else {
+                                        do_ssl_handshake();
+                                    }
+                                }
+                                    break;
+                                default:
+                                    return fail(ec, "socks5_connect_read slowImpl: never go there");
+                                    break;
+                            }
+                            return;
+                        }
+
                         if (socks5_read_buf->at(3) == 0x03
                             && bytes_transferred != (socks5_read_buf->at(4) + 4 + 1 + 2)
                                 ) {
                             do_shutdown();
-                            return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x03)");
+                            std::stringstream ss;
+                            ss
+                                    << "ConnectTestHttpsSession socks5_connect_read (socks5_read_buf->at(3) == 0x03) bytes_transferred: "
+                                    << int(bytes_transferred) << " must is " << int(socks5_read_buf->at(4) + 4 + 1 + 2)
+                                    << "  socks5_read_buf->at(4):" << int(socks5_read_buf->at(4));
+                            return fail(ec, ss.str());
+//                            return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x03)");
                         }
                         if (socks5_read_buf->at(3) == 0x01
                             && bytes_transferred != (4 + 4 + 2)
                                 ) {
                             do_shutdown();
-                            return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x01)");
+                            std::stringstream ss;
+                            ss
+                                    << "ConnectTestHttpsSession socks5_connect_read (socks5_read_buf->at(3) == 0x01) bytes_transferred: "
+                                    << int(bytes_transferred) << " must is " << int(4 + 4 + 2);
+                            return fail(ec, ss.str());
+//                            return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x01)");
                         }
                         if (socks5_read_buf->at(3) == 0x04
                             && bytes_transferred != (4 + 16 + 2)
                                 ) {
                             do_shutdown();
-                            return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
+                            std::stringstream ss;
+                            ss
+                                    << "ConnectTestHttpsSession socks5_connect_read (socks5_read_buf->at(3) == 0x04) bytes_transferred: "
+                                    << int(bytes_transferred) << " must is " << int(4 + 16 + 2);
+                            return fail(ec, ss.str());
+//                            return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
                         }
 
                         // socks5 handshake now complete
@@ -489,6 +596,7 @@ ConnectTestHttps::ConnectTestHttps(boost::asio::executor ex) :
 
 std::shared_ptr<ConnectTestHttpsSession>
 ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &socks5Port,
+                             bool slowImpl,
                              const std::string &targetHost, uint16_t targetPort, const std::string &targetPath,
                              int httpVersion,
                              std::chrono::milliseconds maxRandomDelay) {
@@ -505,6 +613,7 @@ ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &s
             httpVersion,
             socks5Host,
             socks5Port,
+            slowImpl,
             std::chrono::milliseconds{
                     maxRandomDelay.count() > 0 ? getRandom<long long int>(0, maxRandomDelay.count()) : 0
             }

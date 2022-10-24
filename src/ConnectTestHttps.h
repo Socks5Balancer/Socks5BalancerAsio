@@ -65,6 +65,7 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
     int httpVersion;
     const std::string socks5Host;
     const std::string socks5Port;
+    bool slowImpl;
 
     std::chrono::milliseconds delayTime;
 
@@ -84,6 +85,7 @@ public:
             int httpVersion,
             const std::string &socks5Host,
             const std::string &socks5Port,
+            bool slowImpl,
             std::chrono::milliseconds delayTime = std::chrono::milliseconds{0}
     );
 
@@ -161,6 +163,7 @@ public:
     std::shared_ptr<ConnectTestHttpsSession> createTest(
             const std::string &socks5Host,
             const std::string &socks5Port,
+            bool slowImpl,
             const std::string &targetHost,
             uint16_t targetPort,
             const std::string &targetPath,
