@@ -548,22 +548,22 @@ void FirstPackAnalyzer::do_socks5_connect_read() {
 //                                   << socks5_read_buf->at(3)
 //                                        ;
 //                                return fail(ec, ss.str());
-                                return fail(ec, "socks5_connect_read (bytes_transferred < 6)");
+                                return fail(ec, "FirstPackAnalyzer socks5_connect_read (bytes_transferred < 6)");
                             }
                             if (socks5_read_buf->at(3) == 0x03
                                 && bytes_transferred != (socks5_read_buf->at(4) + 4 + 1 + 2)
                                     ) {
-                                return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x03)");
+                                return fail(ec, "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x03)");
                             }
                             if (socks5_read_buf->at(3) == 0x01
                                 && bytes_transferred != (4 + 4 + 2)
                                     ) {
-                                return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x01)");
+                                return fail(ec, "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x01)");
                             }
                             if (socks5_read_buf->at(3) == 0x04
                                 && bytes_transferred != (4 + 16 + 2)
                                     ) {
-                                return fail(ec, "socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
+                                return fail(ec, "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
                             }
 
                             // std::cout << "do_socks5_connect_read()" << std::endl;
