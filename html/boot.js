@@ -152,6 +152,13 @@ function tryGetBackendConfigFromServer() {
     })
 }
 
+function createChart(target2DContext) {
+    return new Chart(target2DContext,{
+        type: 'line',
+    })
+}
+
+
 var defaultBackendHost = "127.0.0.1";
 var defaultBackendPort = 5010;
 
