@@ -50,13 +50,13 @@
         <div class="row">
             <div class="col">
                 <div class="input-group">
-                    <span class="input-group-text input-group-prepend">now running connect: </span>&emsp;
+                    <span class="input-group-text input-group-prepend">{{tableState.allConnectCountNotice.s}}</span>&emsp;
                     <span class="input-group-text input-group-append">{{ allConnectCount }}</span>
                 </div>
             </div>
             <div class="col">
                 <div class="input-group">
-                    <span class="input-group-text input-group-prepend">now rule: </span>&emsp;
+                    <span class="input-group-text input-group-prepend">{{tableState.nowRuleNotice.s}}</span>&emsp;
                     <span class="input-group-text input-group-append">{{ rule }}</span>
                 </div>
             </div>
@@ -69,7 +69,7 @@
                         <option v-else v-bind:value="u">{{ u }}</option>
                     </template>
                 </select>
-                <input type="button" value="Change It" class="btn btn-light"
+                <input type="button" v-bind:value="tableState.buttonChange.s" class="btn btn-light"
                        v-on:click="sendCommand('/op?newRule=' + newRule)"
                 />
             </form>
@@ -78,13 +78,15 @@
             <div class="input-group container-sm">
                 <div class="input-group-prepend">
             <span class="input-group-text">
-                backend:
+                {{tableState.backend.s}}
             </span>
                 </div>
                 <input class="form-control" name="backend" v-model="backend"/>
                 <div class="input-group-append">
-                    <button class="btn btn-primary" v-on:click="flush">Flush</button>
-                    <button class="btn btn-light" v-on:click="autoFlush">AutoFlush {{ autoFlushState }}</button>
+                    <button class="btn btn-primary" v-on:click="flush">{{tableState.Flush.s}}</button>
+                    <button class="btn btn-light" v-on:click="autoFlush">
+                        {{ tableState.AutoFlush.f(autoFlushState) }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -93,21 +95,21 @@
                 <template v-if="!upstreamPool.find(function(u) {
                   return u.isWork==='true';
                 }) && upstreamPool.length>0">
-                    <h3 class="alert alert-danger">Warning: we don't have Usable Server !!! </h3>
+                    <h3 class="alert alert-danger">{{tableState.NoUsableServer.s}}</h3>
                     <br/>
                 </template>
                 <template v-if="upstreamPool.length===0&&InternetState.isOk">
-                    <h3 class="alert alert-info">No Server ...</h3>
+                    <h3 class="alert alert-info">{{tableState.NoServer.s}}</h3>
                 </template>
                 <template v-if="!InternetState.isOk">
-                    <h3 class="alert alert-danger" style="margin-bottom: 0;">No Data Come From Server.</h3>
+                    <h3 class="alert alert-danger" style="margin-bottom: 0;">{{tableState.NoDataComeFromServer.s}}</h3>
                     <div class="alert alert-info"
                          v-if="!!InternetState.error">
                         {{InternetState.error.message}}
                     </div>
                 </template>
                 <template v-if="disableConnectTest">
-                    <div class="alert alert-primary">Now Running On [DisableConnectTest] Mode.</div>
+                    <div class="alert alert-primary">{{tableState.DisableConnectTestMode.s}}</div>
                 </template>
             </div>
         </div>
@@ -118,22 +120,22 @@
         <table style="border: black 3px dashed;">
             <thead>
             <tr>
-                <th style="border-left-width: 0;">No.</th>
-                <th>Host:Port</th>
-                <th>name</th>
-                <th>online</th>
-                <th v-if="!disableConnectTest">work</th>
-                <th>run</th>
-                <th>lastTCPCheckTime</th>
-                <th v-if="!disableConnectTest">lastConnectCheckTime</th>
-                <th>ManualDisable</th>
-                <th>Usable</th>
-                <th>Close Connect</th>
-                <th>Select</th>
-                <th v-if="!disableConnectTest">Check</th>
-                <th>data</th>
-                <th>speedMax</th>
-                <th>speed</th>
+                <th style="border-left-width: 0;">{{tableState.NumberSerial.s}}</th>
+                <th>{{tableState.Host_Port.s}}</th>
+                <th>{{tableState.name.s}}</th>
+                <th>{{tableState.online.s}}</th>
+                <th v-if="!disableConnectTest">{{tableState.work.s}}</th>
+                <th>{{tableState.runCount.s}}</th>
+                <th>{{tableState.lastTCPCheckTime.s}}</th>
+                <th v-if="!disableConnectTest">{{tableState.lastConnectCheckTime.s}}</th>
+                <th>{{tableState.ManualDisable.s}}</th>
+                <th>{{tableState.Usable.s}}</th>
+                <th>{{tableState.CloseConnect.s}}</th>
+                <th>{{tableState.Select.s}}</th>
+                <th v-if="!disableConnectTest">{{tableState.Check.s}}</th>
+                <th>{{tableState.data.s}}</th>
+                <th>{{tableState.speedMax.s}}</th>
+                <th>{{tableState.speed.s}}</th>
                 <!--        <th></th>-->
             </tr>
             </thead>
@@ -144,33 +146,34 @@
                 <td>{{u.host}}:{{u.port}}</td>
                 <td>{{u.name}}</td>
                 <td>
-                    <span style="color: gray" v-if="u.lastOnlineTime==='<empty>'">Unknown</span>
-                    <span style="color: green" v-else-if="u.isOffline==='false'">True</span>
-                    <span style="color: red" v-else>False</span>
+                    <span style="color: gray" v-if="u.lastOnlineTime==='<empty>'">{{tableState.online_Unknown.s}}</span>
+                    <span style="color: green" v-else-if="u.isOffline==='false'">{{tableState.online_True.s}}</span>
+                    <span style="color: red" v-else>{{tableState.online_False.s}}</span>
                 </td>
                 <td v-if="!disableConnectTest">
-                    <span style="color: gray" v-if="u.lastConnectTime==='<empty>'">Unknown</span>
-                    <span style="color: green" v-else-if="u.lastConnectFailed==='false'">True</span>
-                    <span style="color: red" v-else>False</span>
+                    <span style="color: gray" v-if="u.lastConnectTime==='<empty>'">{{tableState.work_Unknown.s}}</span>
+                    <span style="color: green"
+                          v-else-if="u.lastConnectFailed==='false'">{{tableState.work_True.s}}</span>
+                    <span style="color: red" v-else>{{tableState.work_False.s}}</span>
                 </td>
                 <td>{{u.sessionsCount}} <span class="opacity_01">/ {{u.connectCount}} / {{u.connectCount2}}</span></td>
-                <td>{{u.lastOnlineTime}}</td>
-                <td v-if="!disableConnectTest">{{u.lastConnectTime}}</td>
+                <td>{{tableState.emptyFilterFunction.f(u.lastOnlineTime)}}</td>
+                <td v-if="!disableConnectTest">{{tableState.emptyFilterFunction.f(u.lastConnectTime)}}</td>
                 <td>
                     <template v-if="u.isManualDisable==='true'">
-                        <span style="color: red">Disabled</span>
+                        <span style="color: red">{{tableState.Disabled.s}}</span>
                         <a href="javascript:void(0)"
                            v-on:click="sendCommand('/op?enable=' + _.parseInt(u.index))"
                         >
-                            Enable It
+                            {{tableState.EnableIt.s}}
                         </a>
                     </template>
                     <template v-else>
-                        <span style="color: green">Enabled</span>
+                        <span style="color: green">{{tableState.Enable.s}}</span>
                         <a href="javascript:void(0)"
                            v-on:click="sendCommand('/op?disable=' + _.parseInt(u.index))"
                         >
-                            Disable
+                            {{tableState.Disable.s}}
                         </a>
                     </template>
                 </td>
@@ -182,21 +185,21 @@
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?endConnectOnServer=' + _.parseInt(u.index))"
                     >
-                        Close Connect
+                        {{tableState.CloseConnect.s}}
                     </a>
                 </td>
                 <td>
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?forceNowUseServer=' + _.parseInt(u.index))"
                     >
-                        Use Now
+                        {{tableState.UseNow.s}}
                     </a>
                 </td>
                 <td v-if="!disableConnectTest">
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?forceCheckServer=' + _.parseInt(u.index))"
                     >
-                        Check Now
+                        {{tableState.CheckNow.s}}
                     </a>
                 </td>
                 <td>{{formatData(u)}}</td>
@@ -213,20 +216,20 @@
                        v-on:click="sendCommand('/op?cleanAllCheckState=1')"
                        style="margin-right: 1em;"
                     >
-                        Clean Check State
+                        {{tableState.CleanCheckState.s}}
                     </a>
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?endAllConnect=1')"
                        style="margin-right: 1em;"
                     >
-                        Force Close All Connect
+                        {{tableState.ForceCloseAllConnect.s}}
                     </a>
                     <a href="javascript:void(0)"
                        v-if="!disableConnectTest"
                        v-on:click="sendCommand('/op?forceCheckAllServer=1')"
                        style="margin-right: 1em;"
                     >
-                        Force Check All Now
+                        {{tableState.ForceCheckAllNow.s}}
                     </a>
                     <span class="table-info-cell">
                 ↑ {{dataCount2String(totalUp)}}
@@ -250,28 +253,30 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col">
-                lastConnectServer:
+                {{tableState.lastConnectServer.s}}
                 <span class="string-pad">
                     {{ (lastConnectServer ? (lastConnectServer.host + ':' + lastConnectServer.port) : 'Undefined') }}
                 </span>
             </div>
             <div class="col">
-                lastUseUpstreamIndex: <span class="string-pad">{{ _.parseInt(lastUseUpstreamIndex) + 1 }}</span>
+                {{tableState.lastUseUpstreamIndex.s}} <span class="string-pad">{{ _.parseInt(lastUseUpstreamIndex) + 1
+                }}</span>
             </div>
             <div class="col">
-                Tcp Relay Mode: <span class="string-pad">{{ traditionTcpRelay ? 'Tradition Mode' : 'Mixed Mode'
+                {{tableState.TcpRelayMode.s}} <span
+                    class="string-pad">{{ traditionTcpRelay ? tableState.TraditionMode.s : tableState.MixedMode.s
                 }}</span>
             </div>
         </div>
         <div class="row">
             <div class="col">
-                now time: <span class="string-pad">{{ nowTime }}</span>
+                {{tableState.nowTime.s}} <span class="string-pad">{{ nowTime }}</span>
             </div>
             <div class="col">
-                startTime: <span class="string-pad">{{ startTime }}</span>
+                {{tableState.startTime.s}} <span class="string-pad">{{ startTime }}</span>
             </div>
             <div class="col">
-                runTime:
+                {{tableState.runTime.s}}
                 <span class="string-pad">{{ runTimeString }}</span>
                 <span class="string-pad">{{ runTimeString2 }}</span>
                 <span class="string-pad">{{ runTime }} ms</span>
@@ -279,23 +284,23 @@
         </div>
         <div class="row">
             <div class="col">
-                lastConnectComeTime: <span class="string-pad">{{ lastConnectComeTime }}</span>
+                {{tableState.lastConnectComeTime.s}} <span class="string-pad">{{ lastConnectComeTime }}</span>
             </div>
             <div class="col">
-                lastConnectComeTime:
+                {{tableState.lastConnectComeTime.s}}
                 <span class="string-pad">{{ lastConnectComeTimeAgoString }}</span>
                 <span class="string-pad">{{ lastConnectComeTimeAgoString2 }}</span>
                 <span class="string-pad">{{ lastConnectComeTimeAgo }} ms</span>
             </div>
             <div class="col">
-                isSleeping:
-                <span v-if="lastConnectComeTimeAgo>sleepTime">sleeping</span>
-                <span v-else="">running</span>
+                {{tableState.isSleeping.s}}
+                <span v-if="lastConnectComeTimeAgo>sleepTime">{{tableState.sleeping.s}}</span>
+                <span v-else="">{{tableState.running.s}}</span>
             </div>
         </div>
         <div class="row">
             <div class="col">
-                listen On: <span class="string-pad">{{ listenOn }}</span>
+                {{tableState.listenOn.s}} <span class="string-pad">{{ listenOn }}</span>
             </div>
         </div>
     </div>
@@ -307,20 +312,20 @@
             <thead>
             <tr>
                 <th colspan="11" style="text-align: center;">
-                    Client Connect Info
+                    {{tableState.ClientConnectInfo.s}}
                 </th>
             </tr>
             <tr>
-                <th>Host</th>
-                <th>lastServer</th>
-                <th>newServer</th>
-                <th>nowRule</th>
-                <th>newRule</th>
-                <th>running</th>
-                <th>closeConnect</th>
-                <th>data</th>
-                <th>speedMax</th>
-                <th>speed</th>
+                <th>{{tableState.Host.s}}</th>
+                <th>{{tableState.lastServer.s}}</th>
+                <th>{{tableState.newServer.s}}</th>
+                <th>{{tableState.nowRule.s}}</th>
+                <th>{{tableState.newRule.s}}</th>
+                <th>{{tableState.running.s}}</th>
+                <th>{{tableState.closeConnect.s}}</th>
+                <th>{{tableState.data.s}}</th>
+                <th>{{tableState.speedMax.s}}</th>
+                <th>{{tableState.speed.s}}</th>
                 <th>detail</th>
                 <!--        <th></th>-->
             </tr>
@@ -366,7 +371,7 @@
                    + '&_target=' + u.index)"
                        style="margin-right: 1em;"
                     >
-                        CloseConnect
+                        {{tableState.CloseConnect.s}}
                     </a>
                 </td>
                 <td>{{formatData(u)}}</td>
@@ -408,20 +413,20 @@
             <thead>
             <tr>
                 <th colspan="11" style="text-align: center;">
-                    Listen Port Info
+                    {{tableState.ListenPortInfo.s}}
                 </th>
             </tr>
             <tr>
-                <th>Host</th>
-                <th>lastServer</th>
-                <th>newServer</th>
-                <th>nowRule</th>
-                <th>newRule</th>
-                <th>running</th>
-                <th>closeConnect</th>
-                <th>data</th>
-                <th>speedMax</th>
-                <th>speed</th>
+                <th>{{tableState.Host.s}}</th>
+                <th>{{tableState.lastServer.s}}</th>
+                <th>{{tableState.newServer.s}}</th>
+                <th>{{tableState.nowRule.s}}</th>
+                <th>{{tableState.newRule.s}}</th>
+                <th>{{tableState.running.s}}</th>
+                <th>{{tableState.closeConnect.s}}</th>
+                <th>{{tableState.data.s}}</th>
+                <th>{{tableState.speedMax.s}}</th>
+                <th>{{tableState.speed.s}}</th>
                 <th>detail</th>
                 <!--        <th></th>-->
             </tr>
@@ -467,7 +472,7 @@
                    + '&_target=' + u.index)"
                        style="margin-right: 1em;"
                     >
-                        CloseConnect
+                        {{tableState.CloseConnect.s}}
                     </a>
                 </td>
                 <td>{{formatData(u)}}</td>
@@ -508,27 +513,27 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h5>Fast Issue Resolve</h5>
+                <h5>{{tableState.FastIssueResolve.s}}</h5>
                 <ul>
-                    <li>Web page Open very Sloooow :&emsp;
+                    <li>{{tableState.WebPageOpenVerySlow.s}}&emsp;
                         <a href="javascript:void(0)"
                            v-on:click="sendCommand('/op?endAllConnect=1')">
-                            Force Close All Connect
+                            {{tableState.ForceCheckAllNow.s}}
                         </a></li>
-                    <li v-if="!disableConnectTest">Seems like Server State not update :&emsp;
+                    <li v-if="!disableConnectTest">{{tableState.SeemsLikeServerStateNotUpdate.s}}&emsp;
                         <a href="javascript:void(0)"
                            v-on:click="sendCommand('/op?forceCheckAllServer=1')">
-                            Force Check All Now
+                            {{tableState.ForceCheckAllNow.s}}
                         </a></li>
-                    <li>I Want To Disable All Server :&emsp;
+                    <li>{{tableState.IWantToDisableAllServer.s}}&emsp;
                         <a href="javascript:void(0)"
                            v-on:click="sendCommand('/op?disableAllServer=1')">
-                            Disable All Server
+                            {{tableState.DisableAllServer.s}}
                         </a></li>
-                    <li>I Want To Enable All Server :&emsp;
+                    <li>{{tableState.IWantToEnableAllServer.s}}&emsp;
                         <a href="javascript:void(0)"
                            v-on:click="sendCommand('/op?enableAllServer=1')">
-                            Enable All Server
+                            {{tableState.EnableAllServer.s}}
                         </a></li>
                 </ul>
             </div>
@@ -539,12 +544,14 @@
     <br/>
     <div>
         <button class="btn btn-outline-light" v-on:click="ServerJsonInfo_Show=!ServerJsonInfo_Show">
-            click to show detail
+            {{tableState.clickToShowDetail.s}}
         </button>
         <pre v-show="ServerJsonInfo_Show">{{ JSON.stringify(ServerJsonInfo, null, 2) }}</pre>
     </div>
 </div>
 
+<!--<script src="./i18n-table/en-US.js"></script>-->
+<script src="./i18n-table/zh-CN.js"></script>
 <script src="./boot.js"></script>
 
 </body>

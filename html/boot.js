@@ -153,7 +153,7 @@ function tryGetBackendConfigFromServer() {
 }
 
 function createChart(target2DContext) {
-    return new Chart(target2DContext,{
+    return new Chart(target2DContext, {
         type: 'line',
     })
 }
@@ -226,6 +226,7 @@ var app = new Vue({
         },
         autoFlushState: false,
         autoFlushHandle: -1,
+        tableState: window.i18nTable,
     },
     computed: {},
     methods: {
@@ -298,7 +299,11 @@ var app = new Vue({
 
                     app.runTime = T.runTime;
                     app.runTimeString = moment.duration(_.parseInt(T.runTime)).humanize();
-                    app.runTimeString2 = formatDuration(_.parseInt(T.runTime));
+                    if (window.i18nTable && window.i18nTable.formatDurationFunction) {
+                        app.runTimeString2 = window.i18nTable.formatDurationFunction.f(_.parseInt(T.runTime));
+                    } else {
+                        app.runTimeString2 = formatDuration(_.parseInt(T.runTime));
+                    }
 
                     app.startTime = T.startTime;
 
@@ -333,7 +338,11 @@ var app = new Vue({
                     app.lastConnectComeTime = T.pool.lastConnectComeTime;
                     app.lastConnectComeTimeAgo = _.parseInt(T.pool.lastConnectComeTimeAgo);
                     app.lastConnectComeTimeAgoString = moment.duration(app.lastConnectComeTimeAgo).humanize();
-                    app.lastConnectComeTimeAgoString2 = formatDuration(app.lastConnectComeTimeAgo);
+                    if (window.i18nTable && window.i18nTable.formatDurationFunction) {
+                        app.lastConnectComeTimeAgoString2 = window.i18nTable.formatDurationFunction.f(app.lastConnectComeTimeAgo);
+                    } else {
+                        app.lastConnectComeTimeAgoString2 = formatDuration(app.lastConnectComeTimeAgo);
+                    }
 
                     app.lastConnectServerIndex = _.parseInt(T.lastConnectServerIndex);
                     app.lastConnectServer = app.upstreamPool.find(function (n) {
