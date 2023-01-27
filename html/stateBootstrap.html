@@ -130,9 +130,9 @@
                 <th v-if="!disableConnectTest">{{tableState.lastConnectCheckTime.s}}</th>
                 <th>{{tableState.ManualDisable.s}}</th>
                 <th>{{tableState.Usable.s}}</th>
-                <th>{{tableState.CloseConnect.s}}</th>
-                <th>{{tableState.Select.s}}</th>
-                <th v-if="!disableConnectTest">{{tableState.Check.s}}</th>
+                <th v-html="tableState.CloseConnect.s"></th>
+                <th v-html="tableState.Select.s"></th>
+                <th v-if="!disableConnectTest" v-html="tableState.Check.s"></th>
                 <th>{{tableState.data.s}}</th>
                 <th>{{tableState.speedMax.s}}</th>
                 <th>{{tableState.speed.s}}</th>
@@ -169,7 +169,7 @@
                         </a>
                     </template>
                     <template v-else>
-                        <span style="color: green">{{tableState.Enable.s}}</span>
+                        <span style="color: green">{{tableState.Enabled.s}}</span>
                         <a href="javascript:void(0)"
                            v-on:click="sendCommand('/op?disable=' + _.parseInt(u.index))"
                         >
@@ -178,28 +178,31 @@
                     </template>
                 </td>
                 <td>
-                    <span style="color: green" v-if="u.isWork==='true'">True</span>
-                    <span style="color: red" v-else-if="u.isWork==='false'">False</span>
+                    <span style="color: green" v-if="u.isWork==='true'">{{tableState.Usable_True.s}}</span>
+                    <span style="color: red" v-else-if="u.isWork==='false'">{{tableState.Usable_False.s}}</span>
                 </td>
                 <td>
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?endConnectOnServer=' + _.parseInt(u.index))"
+                       v-html="tableState.CloseConnect.s"
                     >
-                        {{tableState.CloseConnect.s}}
+                        {{}}
                     </a>
                 </td>
                 <td>
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?forceNowUseServer=' + _.parseInt(u.index))"
+                       v-html="tableState.UseNow.s"
                     >
-                        {{tableState.UseNow.s}}
+                        {{}}
                     </a>
                 </td>
                 <td v-if="!disableConnectTest">
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand('/op?forceCheckServer=' + _.parseInt(u.index))"
+                       v-html="tableState.CheckNow.s"
                     >
-                        {{tableState.CheckNow.s}}
+                        {{}}
                     </a>
                 </td>
                 <td>{{formatData(u)}}</td>
@@ -279,7 +282,7 @@
                 {{tableState.runTime.s}}
                 <span class="string-pad">{{ runTimeString }}</span>
                 <span class="string-pad">{{ runTimeString2 }}</span>
-                <span class="string-pad">{{ runTime }} ms</span>
+                <span class="string-pad">{{ runTime }} {{tableState.timeMs.s}}</span>
             </div>
         </div>
         <div class="row">
@@ -290,7 +293,7 @@
                 {{tableState.lastConnectComeTime.s}}
                 <span class="string-pad">{{ lastConnectComeTimeAgoString }}</span>
                 <span class="string-pad">{{ lastConnectComeTimeAgoString2 }}</span>
-                <span class="string-pad">{{ lastConnectComeTimeAgo }} ms</span>
+                <span class="string-pad">{{ lastConnectComeTimeAgo }} {{tableState.timeMs.s}}</span>
             </div>
             <div class="col">
                 {{tableState.isSleeping.s}}
@@ -322,7 +325,7 @@
                 <th>{{tableState.nowRule.s}}</th>
                 <th>{{tableState.newRule.s}}</th>
                 <th>{{tableState.running.s}}</th>
-                <th>{{tableState.closeConnect.s}}</th>
+                <th v-html="tableState.CloseConnect.s">{{ }}</th>
                 <th>{{tableState.data.s}}</th>
                 <th>{{tableState.speedMax.s}}</th>
                 <th>{{tableState.speed.s}}</th>
@@ -370,8 +373,9 @@
                    + '&endAllConnect=0'
                    + '&_target=' + u.index)"
                        style="margin-right: 1em;"
+                       v-html="tableState.CloseConnect.s"
                     >
-                        {{tableState.CloseConnect.s}}
+                        {{ }}
                     </a>
                 </td>
                 <td>{{formatData(u)}}</td>
@@ -423,7 +427,7 @@
                 <th>{{tableState.nowRule.s}}</th>
                 <th>{{tableState.newRule.s}}</th>
                 <th>{{tableState.running.s}}</th>
-                <th>{{tableState.closeConnect.s}}</th>
+                <th v-html="tableState.CloseConnect.s">{{ }}</th>
                 <th>{{tableState.data.s}}</th>
                 <th>{{tableState.speedMax.s}}</th>
                 <th>{{tableState.speed.s}}</th>
@@ -471,8 +475,9 @@
                    + '&endAllConnect=0'
                    + '&_target=' + u.index)"
                        style="margin-right: 1em;"
+                       v-html="tableState.CloseConnect.s"
                     >
-                        {{tableState.CloseConnect.s}}
+                        {{ }}
                     </a>
                 </td>
                 <td>{{formatData(u)}}</td>

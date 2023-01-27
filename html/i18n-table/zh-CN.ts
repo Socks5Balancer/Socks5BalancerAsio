@@ -15,19 +15,19 @@ const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
             const months = globalThis.moment.duration(time).months();
             const years = globalThis.moment.duration(time).years();
             if (years > 0) {
-                return `${years}Y-${months}M-${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
+                return `${years}年-${months}月-${days}天 ${formatInt(hours)}时:${formatInt(minutes)}分:${formatInt(seconds)}秒`;
             }
             if (months > 0) {
-                return `${months}M-${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
+                return `${months}月-${days}天 ${formatInt(hours)}时:${formatInt(minutes)}分:${formatInt(seconds)}秒`;
             }
             if (days > 0) {
-                return `${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
+                return `${days}天 ${formatInt(hours)}时:${formatInt(minutes)}分:${formatInt(seconds)}秒`;
             }
             if (hours > 0) {
-                return `${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
+                return `${formatInt(hours)}时:${formatInt(minutes)}m:${formatInt(seconds)}秒`;
             }
             if (minutes > 0) {
-                return `${formatInt(minutes)}m:${formatInt(seconds)}s`;
+                return `${formatInt(minutes)}m:${formatInt(seconds)}秒`;
             }
             return `00:${formatInt(seconds)}`;
         }
@@ -57,8 +57,8 @@ const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
     lastTCPCheckTime: {s: "上次TCP检查时间"},
     lastConnectCheckTime: {s: "上次可连通性检查时间"},
     ManualDisable: {s: "手动禁用"},
-    Usable: {s: "使用"},
-    CloseConnect: {s: "关闭连接"},
+    Usable: {s: "可用性"},
+    CloseConnect: {s: "&emsp;关闭连接&emsp;"},
     Select: {s: "选择"},
     Check: {s: "检查"},
     data: {s: "总数据量"},
@@ -71,18 +71,19 @@ const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
     work_True: {s: "工作中"},
     work_False: {s: "不工作"},
     Disabled: {s: "已禁用"},
+    Enabled: {s: "已启用"},
     EnableIt: {s: "启用它"},
     Enable: {s: "启用"},
     Disable: {s: "禁用"},
     Usable_True: {s: "可用"},
     Usable_False: {s: "不可用"},
     // CloseConnect: {s: "Close Connect"},
-    UseNow: {s: "使用"},
-    CheckNow: {s: "检测"},
+    UseNow: {s: "&emsp;&emsp;使用&emsp;&emsp;"},
+    CheckNow: {s: "&emsp;&emsp;检测&emsp;&emsp;"},
     CleanCheckState: {s: "清除检测状态"},
     ForceCloseAllConnect: {s: "强制关闭所有连接"},
     ForceCheckAllNow: {s: "强制检测所有连接"},
-    lastConnectServer: {s: "上次连接的服务器:"},
+    lastConnectServer: {s: "上次连接的上游服务器:"},
     lastUseUpstreamIndex: {s: "上次使用的上游服务器编号:"},
     TraditionMode: {s: "传统模式"},
     MixedMode: {s: "混合模式"},
@@ -96,8 +97,8 @@ const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
     listenOn: {s: "监听于:"},
     ClientConnectInfo: {s: "客户端连接信息"},
     Host: {s: "主机"},
-    lastServer: {s: "上一个服务器"},
-    newServer: {s: "新服务器"},
+    lastServer: {s: "上次连接的上游服务器"},
+    newServer: {s: "下一个上游服务器"},
     nowRule: {s: "当前规则"},
     newRule: {s: "新规则"},
     running: {s: "运行中"},
@@ -118,6 +119,7 @@ const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
     IWantToEnableAllServer: {s: "我想启用所有服务器 :"},
     EnableAllServer: {s: "启用所有服务器"},
     clickToShowDetail: {s: "点击查看详情"},
+    timeMs: {s: "毫秒"},
 };
 
 

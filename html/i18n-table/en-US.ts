@@ -71,6 +71,7 @@ const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
     work_True: {s: "True"},
     work_False: {s: "False"},
     Disabled: {s: "Disabled"},
+    Enabled: {s: "Enabled"},
     EnableIt: {s: "Enable It"},
     Enable: {s: "Enable"},
     Disable: {s: "Disable"},
@@ -118,6 +119,7 @@ const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
     IWantToEnableAllServer: {s: "I Want To Enable All Server :"},
     EnableAllServer: {s: "Enable All Server"},
     clickToShowDetail: {s: "click to show detail"},
+    timeMs: {s: "ms"},
 };
 
 

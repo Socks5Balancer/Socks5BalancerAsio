@@ -71,6 +71,7 @@ const tableState = {
     work_True: { s: "True" },
     work_False: { s: "False" },
     Disabled: { s: "Disabled" },
+    Enabled: { s: "Enabled" },
     EnableIt: { s: "Enable It" },
     Enable: { s: "Enable" },
     Disable: { s: "Disable" },
@@ -118,6 +119,7 @@ const tableState = {
     IWantToEnableAllServer: { s: "I Want To Enable All Server :" },
     EnableAllServer: { s: "Enable All Server" },
     clickToShowDetail: { s: "click to show detail" },
+    timeMs: { s: "ms" },
 };
 // @ts-ignore
 window.i18nTable = tableState;
