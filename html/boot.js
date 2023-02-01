@@ -164,6 +164,17 @@ var defaultBackendPort = 5010;
 
 moment.locale('zh-cn');
 
+var getI18nTable = () => {
+    if (window.navigator.language === "zh-CN") {
+        // chinese
+        window.i18nTable = window.i18n.zhCN;
+    } else {
+        // english
+        window.i18nTable = window.i18n.enUS;
+    }
+};
+getI18nTable();
+
 var app = new Vue({
     el: '#body',
     data: {
