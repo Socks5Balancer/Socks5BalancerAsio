@@ -94,7 +94,8 @@ it must encode with `UTF-8 no BOM`
     {
       "name": "Server Name B",
       "host": "127.0.0.1",
-      "port": 3001
+      "port": 3001,
+      "slowImpl": 1                         // compatible bad/slow server impl (like Golang), it maybe not send all data in one package
     },
     {
       "name": "Server Name C",
