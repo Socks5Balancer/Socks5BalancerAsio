@@ -734,7 +734,7 @@ void HttpConnectSession::create_response() {
     static const std::regex PARSE_URL{R"((/([^ ?]+)?)?/?\??([^/ ]+\=[^/ ]+)?)",
                                       std::regex_constants::ECMAScript | std::regex_constants::icase};
     std::smatch match;
-    auto url = request_.target().to_string();
+    auto url = std::string{request_.target()};
     if (std::regex_match(url, match, PARSE_URL) && match.size() == 4) {
         std::string path = match[1];
         std::string query = match[3];

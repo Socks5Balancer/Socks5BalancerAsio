@@ -84,7 +84,7 @@ else ()
     set(Boost_USE_STATIC_RUNTIME OFF)
 endif ()
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.70.0 REQUIRED COMPONENTS system filesystem program_options ${BOOST_THEAD_MODULE} REQUIRED)
+find_package(Boost 1.81.0 REQUIRED COMPONENTS system filesystem program_options ${BOOST_THEAD_MODULE} REQUIRED)
 
 
 message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")

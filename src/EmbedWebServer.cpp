@@ -155,7 +155,7 @@ handle_request(
 
     // ------------------------ path check --------------------
 
-    std::string reqString = req.target().to_string();
+    std::string reqString = std::string{req.target()};
     if (reqString.find("?") != std::string::npos) {
         reqString = reqString.substr(0, reqString.find("?"));
     }
@@ -166,7 +166,7 @@ handle_request(
 
     // ------------------------ path check --------------------
     try {
-        std::filesystem::path root_path{doc_root.to_string()};
+        std::filesystem::path root_path{std::string{doc_root}};
         std::error_code errorCode;
         root_path = std::filesystem::canonical(root_path, errorCode);
         if (errorCode) {
@@ -330,7 +330,7 @@ void EmbedWebServerSession::on_read(boost::beast::error_code ec, std::size_t byt
     std::cout << "req_.target():" << req_.target() << std::endl;
     if (req_.method() == boost::beast::http::verb::get) {
         // answer backend json
-        if (boost::beast::string_view{req_.target()}.to_string() == std::string{"/backend"}) {
+        if (boost::beast::string_view{req_.target()} == std::string{"/backend"}) {
             boost::beast::http::response<boost::beast::http::string_body> res{
                     boost::beast::http::status::ok,
                     req_.version()};
