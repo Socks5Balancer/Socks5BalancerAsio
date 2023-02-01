@@ -47,7 +47,7 @@ window.i18n.enUS = (() => {
         buttonChange: { s: "Change It" },
         backend: { s: "backend:" },
         Flush: { s: "Flush" },
-        AutoFlush: { s: "AutoFlush" },
+        AutoFlush: { s: "AutoFlush", f: (b) => b ? `AutoFlush ⚪On` : `AutoFlush ⚫Off` },
         NoUsableServer: { s: "Warning: we don't have Usable Server !!! " },
         NoServer: { s: "No Server ..." },
         NoDataComeFromServer: { s: "No Data Come From Server." },
