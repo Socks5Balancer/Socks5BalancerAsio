@@ -46,7 +46,7 @@ void TcpTestSession::do_resolve() {
 }
 
 void TcpTestSession::do_tcp_connect(
-        const boost::asio::ip::basic_resolver<boost::asio::ip::tcp, boost::asio::executor>::results_type &results) {
+        const boost::asio::ip::basic_resolver<boost::asio::ip::tcp, boost::asio::any_io_executor>::results_type &results) {
 
     // Set a timeout on the operation
     boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));

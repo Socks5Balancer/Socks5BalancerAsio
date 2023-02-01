@@ -793,7 +793,7 @@ void HttpConnectSession::create_response() {
 void HttpConnectSession::write_response() {
     auto self = shared_from_this();
 
-    response_.set(boost::beast::http::field::content_length, response_.body().size());
+    response_.set(boost::beast::http::field::content_length, std::to_string(response_.body().size()));
 
     boost::beast::http::async_write(
             socket_,

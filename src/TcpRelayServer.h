@@ -23,7 +23,7 @@
 #pragma once
 #endif
 
-#include <boost/asio/executor.hpp>
+#include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <string>
@@ -40,7 +40,7 @@
 // code template from https://github.com/ArashPartow/proxy/blob/master/tcpproxy_server.cpp
 class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
 
-    boost::asio::executor ex;
+    boost::asio::any_io_executor ex;
 
     boost::asio::ip::tcp::socket downstream_socket_;
     boost::asio::ip::tcp::socket upstream_socket_;
@@ -76,7 +76,7 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     bool isDeCont = false;
 public:
     TcpRelaySession(
-            boost::asio::executor ex,
+            boost::asio::any_io_executor ex,
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo,
             size_t retryLimit,
@@ -172,7 +172,7 @@ public:
 
 class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
 
-    boost::asio::executor ex;
+    boost::asio::any_io_executor ex;
     std::shared_ptr<ConfigLoader> configLoader;
     std::shared_ptr<UpstreamPool> upstreamPool;
     std::list<boost::asio::ip::tcp::acceptor> socket_acceptors;
@@ -184,7 +184,7 @@ class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
     std::shared_ptr<boost::asio::steady_timer> speedCalcTimer;
 public:
     TcpRelayServer(
-            boost::asio::executor ex,
+            boost::asio::any_io_executor ex,
             std::shared_ptr<ConfigLoader> configLoader,
             std::shared_ptr<UpstreamPool> upstreamPool
     ) : ex(ex),

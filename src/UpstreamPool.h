@@ -23,7 +23,7 @@
 #pragma once
 #endif
 
-#include <boost/asio/executor.hpp>
+#include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <string>
 #include <deque>
@@ -85,7 +85,7 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
 using UpstreamServerRef = std::shared_ptr<UpstreamServer>;
 
 class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
-    boost::asio::executor ex;
+    boost::asio::any_io_executor ex;
 
     std::deque<UpstreamServerRef> _pool;
     size_t lastUseUpstreamIndex = 0;
@@ -102,7 +102,7 @@ class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
     std::shared_ptr<ConnectTestHttps> connectTestHttps;
 
 public:
-    UpstreamPool(boost::asio::executor ex,
+    UpstreamPool(boost::asio::any_io_executor ex,
                  std::shared_ptr<TcpTest> tcpTest,
                  std::shared_ptr<ConnectTestHttps> connectTestHttps);
 
