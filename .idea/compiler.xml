@@ -2,5 +2,6 @@
 <project version="4">
   <component name="TypeScriptCompiler">
     <option name="nodeInterpreterTextField" value="C:/Program Files/nodejs/node" />
+    <option name="recompileOnChanges" value="true" />
   </component>
 </project>
