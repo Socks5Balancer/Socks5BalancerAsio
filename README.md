@@ -3,7 +3,7 @@ A Simple TCP Socket Balancer for balance Multi Socks5 Proxy Backend Servers Powe
 
 ---
 
-Docker version available with instructions here: [fossforreal/Socks5BalancerAsio-Docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker)
+Docker version available with instructions here: [fossforreal/Socks5BalancerAsio-Docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker) (thanks fossforreal)
 
 ---
 
