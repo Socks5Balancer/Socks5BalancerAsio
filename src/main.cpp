@@ -17,7 +17,7 @@
  */
 
 #include <iostream>
-#include <boost/asio/executor.hpp>
+#include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/signal_set.hpp>
@@ -92,7 +92,7 @@ int main(int argc, const char *argv[]) {
 
     try {
         boost::asio::io_context ioc;
-        boost::asio::executor ex = boost::asio::make_strand(ioc);
+        boost::asio::any_io_executor ex = boost::asio::make_strand(ioc);
 
         auto configLoader = std::make_shared<ConfigLoader>();
         configLoader->load(config_file);

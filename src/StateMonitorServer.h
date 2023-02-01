@@ -23,7 +23,7 @@
 #pragma once
 #endif
 
-#include <boost/asio/executor.hpp>
+#include <boost/asio/any_io_executor.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -105,7 +105,7 @@ protected:
 };
 
 class StateMonitorServer : public std::enable_shared_from_this<StateMonitorServer> {
-    boost::asio::executor ex;
+    boost::asio::any_io_executor ex;
     std::shared_ptr<ConfigLoader> configLoader;
     std::shared_ptr<UpstreamPool> upstreamPool;
     std::shared_ptr<TcpRelayServer> tcpRelayServer;
@@ -113,7 +113,7 @@ class StateMonitorServer : public std::enable_shared_from_this<StateMonitorServe
     UpstreamTimePoint startTime;
 public:
     StateMonitorServer(
-            boost::asio::executor ex,
+            boost::asio::any_io_executor ex,
             std::shared_ptr<ConfigLoader> configLoader,
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::shared_ptr<TcpRelayServer> tcpRelayServer
