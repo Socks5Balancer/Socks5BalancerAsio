@@ -17,6 +17,9 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 
 ![Monitor Screen](https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/monitor-screen.png)
 
+![Monitor Screen CN](https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/monitor-screen-CN.png)
+
+
 ## Features
 1. support http-proxy/socks5-proxy on same port (aka mixed-port mode), now you never need run another tools to covert socks5 proxy to http proxy
 1. support listen on multi port
