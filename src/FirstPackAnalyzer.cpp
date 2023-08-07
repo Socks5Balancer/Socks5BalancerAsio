@@ -24,6 +24,12 @@
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
 
+#include "./ProxyHandshakeUtils/HttpServerImpl.h"
+#include "./ProxyHandshakeUtils/HttpClientImpl.h"
+#include "./ProxyHandshakeUtils/Socks5ServerImpl.h"
+#include "./ProxyHandshakeUtils/Socks5ClientImpl.h"
+
+
 // from https://github.com/boostorg/beast/issues/787#issuecomment-376259849
 ParsedURI FirstPackAnalyzer::parseURI(const std::string &url) {
     ParsedURI result;
@@ -553,17 +559,20 @@ void FirstPackAnalyzer::do_socks5_connect_read() {
                             if (socks5_read_buf->at(3) == 0x03
                                 && bytes_transferred != (socks5_read_buf->at(4) + 4 + 1 + 2)
                                     ) {
-                                return fail(ec, "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x03)");
+                                return fail(ec,
+                                            "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x03)");
                             }
                             if (socks5_read_buf->at(3) == 0x01
                                 && bytes_transferred != (4 + 4 + 2)
                                     ) {
-                                return fail(ec, "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x01)");
+                                return fail(ec,
+                                            "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x01)");
                             }
                             if (socks5_read_buf->at(3) == 0x04
                                 && bytes_transferred != (4 + 16 + 2)
                                     ) {
-                                return fail(ec, "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
+                                return fail(ec,
+                                            "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
                             }
 
                             // std::cout << "do_socks5_connect_read()" << std::endl;

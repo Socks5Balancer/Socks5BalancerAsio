@@ -132,7 +132,15 @@ add_executable(${ProjectMainName}
         src/AsyncDelay.cpp
         src/AsyncDelay.h
         src/UtilTools.cpp
-        src/UtilTools.h)
+        src/UtilTools.h
+        src/ProxyHandshakeUtils/HttpServerImpl.cpp
+        src/ProxyHandshakeUtils/HttpServerImpl.h
+        src/ProxyHandshakeUtils/HttpClientImpl.cpp
+        src/ProxyHandshakeUtils/HttpClientImpl.h
+        src/ProxyHandshakeUtils/Socks5ServerImpl.cpp
+        src/ProxyHandshakeUtils/Socks5ServerImpl.h
+        src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
+        src/ProxyHandshakeUtils/Socks5ClientImpl.h)
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
