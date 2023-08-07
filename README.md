@@ -420,6 +420,7 @@ so i write this, hope it can work more faster and more stable.
 - [ ] support Load Balance Rule `best_latency`
 - [ ] support Load Balance Rule `fast_download_speed`
 - [ ] support Load Balance Rule `fast_upload_speed`
+- [x] support Load Balance Rule `force_only_one`
 - [ ] add server priority
 - [x] add control function on state monitor
 - [x] add manual disable function on state monitor
@@ -428,9 +429,12 @@ so i write this, hope it can work more faster and more stable.
 - [ ] auto close all connect when manual switch (change) server
 - [X] show connect speed on state monitor
 - [X] show how many data was transfer in data monitor
+
 - [ ] Analysis socks5 proxy
 - [ ] Direct Impl Proxy Client
 - [x] ~~Impl Trojan Proxy Client~~ KISS(keep it simple stupid)
+
+- [ ] proxy Auth support (both client/server side)
 
 ## The Background story
 for a long time ago, i want to find a simple tools to balance on many proxy. it need auto chose the best proxy and dont let dead one to slow the internet speed .  

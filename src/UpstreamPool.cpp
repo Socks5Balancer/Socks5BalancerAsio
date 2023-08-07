@@ -181,6 +181,10 @@ auto UpstreamPool::getServerByHint(
 
     UpstreamServerRef s{};
     switch (__upstreamSelectRule) {
+        case RuleEnum::force_only_one:
+            s = _pool[_lastUseUpstreamIndex]->shared_from_this();
+            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
+            return s;
         case RuleEnum::loop:
             s = getNextServer(_lastUseUpstreamIndex);
             std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";

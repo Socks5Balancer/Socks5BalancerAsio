@@ -24,6 +24,7 @@ enum class RuleEnum {
     random,
     one_by_one,
     change_by_time,
+    force_only_one,
     inherit,
 };
 
