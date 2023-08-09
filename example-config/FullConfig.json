@@ -49,6 +49,8 @@
       "name": "serverC",
       "host": "127.0.0.1",
       "port": 3002,
+      "authUser": "username1111",
+      "authPwd": "password22222",
       "disable": 1
     }
   ],

@@ -36,6 +36,12 @@
 
 using ConfigTimeDuration = std::chrono::milliseconds;
 
+struct AuthClientInfo {
+    std::string user;
+    std::string pwd;
+    std::string base64AuthString;
+};
+
 struct Upstream {
     std::string host;
     uint16_t port;
@@ -67,6 +73,8 @@ struct EmbedWebServerConfig {
 };
 
 struct Config {
+    std::vector<AuthClientInfo> authClientInfo;
+
     std::vector<Upstream> upstream;
 
     std::string listenHost;

@@ -155,7 +155,7 @@ add_executable(${ProjectMainName}
         src/AsyncDelay.h
         src/UtilTools.cpp
         src/UtilTools.h
-        ${ProxyHandshakeAuthHeader})
+        ${ProxyHandshakeAuthHeader} src/base64.h)
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})

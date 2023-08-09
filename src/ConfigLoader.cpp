@@ -18,6 +18,8 @@
 
 #include "ConfigLoader.h"
 
+#include "./base64.h"
+
 RuleEnum string2RuleEnum(std::string s) {
     if ("loop" == s) {
         return RuleEnum::loop;
@@ -234,6 +236,21 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
             u.host = pts.get("host", std::string{"127.0.0.1"});
             u.port = pts.get("port", uint16_t{});
             c.multiListen.push_back(u);
+        }
+    }
+
+    if (tree.get_child_optional("authClientInfo")) {
+        auto multiListen = tree.get_child("authClientInfo");
+        for (auto &item: multiListen) {
+            auto &pts = item.second;
+            AuthClientInfo u;
+            u.user = pts.get("user", std::string{});
+            u.pwd = pts.get("pwd", std::string{});
+            u.base64AuthString = base64_encode_string(u.user + std::string{":"} + u.pwd);
+            if (!u.user.empty()) {
+                // username must not empty
+                c.authClientInfo.push_back(u);
+            }
         }
     }
 
