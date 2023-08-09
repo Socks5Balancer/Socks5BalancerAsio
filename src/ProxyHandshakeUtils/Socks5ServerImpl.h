@@ -36,8 +36,15 @@
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
 
+class ProxyHandshakeAuth;
+
 // Socks5 proxy protocol server
 class Socks5ServerImpl : public std::enable_shared_from_this<Socks5ServerImpl> {
+public:
+    std::weak_ptr<ProxyHandshakeAuth> parents;
+
+public:
+    Socks5ServerImpl(const std::shared_ptr<ProxyHandshakeAuth>& parents_) : parents(parents_) {}
 };
 
 

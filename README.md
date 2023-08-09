@@ -430,11 +430,11 @@ so i write this, hope it can work more faster and more stable.
 - [X] show connect speed on state monitor
 - [X] show how many data was transfer in data monitor
 
+- [ ] proxy Auth support (both client/server side)
 - [ ] Analysis socks5 proxy
 - [ ] Direct Impl Proxy Client
 - [x] ~~Impl Trojan Proxy Client~~ KISS(keep it simple stupid)
 
-- [ ] proxy Auth support (both client/server side)
 
 ## The Background story
 for a long time ago, i want to find a simple tools to balance on many proxy. it need auto chose the best proxy and dont let dead one to slow the internet speed .  

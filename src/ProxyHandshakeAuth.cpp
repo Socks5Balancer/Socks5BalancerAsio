@@ -16,36 +16,4 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SOCKS5BALANCERASIO_SOCKS5CLIENTIMPL_H
-#define SOCKS5BALANCERASIO_SOCKS5CLIENTIMPL_H
-
-#ifdef MSVC
-#pragma once
-#endif
-
-#include <boost/asio/streambuf.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <memory>
-#include <iostream>
-#include <string>
-#include <functional>
-#include <utility>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/asio/read.hpp>
-#include <boost/asio/read_until.hpp>
-
-class ProxyHandshakeAuth;
-
-// Socks5 proxy protocol client
-class Socks5ClientImpl : public std::enable_shared_from_this<Socks5ClientImpl> {
-public:
-    std::weak_ptr<ProxyHandshakeAuth> parents;
-
-public:
-    Socks5ClientImpl(const std::shared_ptr<ProxyHandshakeAuth>& parents_) : parents(parents_) {}
-};
-
-
-#endif //SOCKS5BALANCERASIO_SOCKS5CLIENTIMPL_H
+#include "ProxyHandshakeAuth.h"

@@ -24,11 +24,6 @@
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
 
-#include "./ProxyHandshakeUtils/HttpServerImpl.h"
-#include "./ProxyHandshakeUtils/HttpClientImpl.h"
-#include "./ProxyHandshakeUtils/Socks5ServerImpl.h"
-#include "./ProxyHandshakeUtils/Socks5ClientImpl.h"
-
 
 // from https://github.com/boostorg/beast/issues/787#issuecomment-376259849
 ParsedURI FirstPackAnalyzer::parseURI(const std::string &url) {

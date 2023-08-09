@@ -34,7 +34,11 @@
 #include <mutex>
 #include "UpstreamPool.h"
 #include "ConnectionTracker.h"
+#ifdef Need_ProxyHandshakeAuth
+#include "ProxyHandshakeAuth.h"
+#else
 #include "FirstPackAnalyzer.h"
+#endif // Need_ProxyHandshakeAuth
 #include "TcpRelayStatisticsInfo.h"
 
 // code template from https://github.com/ArashPartow/proxy/blob/master/tcpproxy_server.cpp
@@ -60,7 +64,11 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     unsigned char downstream_data_[max_data_length];
     unsigned char upstream_data_[max_data_length];
 
+#ifdef Need_ProxyHandshakeAuth
+    std::shared_ptr<ProxyHandshakeAuth> firstPackAnalyzer;
+#else
     std::shared_ptr<FirstPackAnalyzer> firstPackAnalyzer;
+#endif // Need_ProxyHandshakeAuth
     std::shared_ptr<ConnectionTracker> connectionTracker;
 
     std::mutex nowServerMtx;
@@ -74,11 +82,14 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     bool disableConnectionTracker;
 
     bool isDeCont = false;
+
+    std::shared_ptr<ConfigLoader> configLoader;
 public:
     TcpRelaySession(
             boost::asio::any_io_executor ex,
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo,
+            std::shared_ptr<ConfigLoader> configLoader,
             size_t retryLimit,
             bool traditionTcpRelay,
             bool disableConnectionTracker
@@ -88,7 +99,8 @@ public:
             upstream_socket_(ex),
             resolver_(ex),
             upstreamPool(std::move(upstreamPool)),
-            statisticsInfo(statisticsInfo),
+            statisticsInfo(std::move(statisticsInfo)),
+            configLoader(std::move(configLoader)),
             retryLimit(retryLimit),
             traditionTcpRelay(traditionTcpRelay),
             disableConnectionTracker(disableConnectionTracker) {

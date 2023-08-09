@@ -103,6 +103,24 @@ else ()
     #    endif ()
 endif ()
 
+option(Need_ProxyHandshakeAuth "Enable ProxyHandshakeAuth" OFF)
+if (Need_ProxyHandshakeAuth)
+    set(ProxyHandshakeAuthHeader
+            src/ProxyHandshakeUtils/HttpServerImpl.cpp
+            src/ProxyHandshakeUtils/HttpServerImpl.h
+            src/ProxyHandshakeUtils/HttpClientImpl.cpp
+            src/ProxyHandshakeUtils/HttpClientImpl.h
+            src/ProxyHandshakeUtils/Socks5ServerImpl.cpp
+            src/ProxyHandshakeUtils/Socks5ServerImpl.h
+            src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
+            src/ProxyHandshakeUtils/Socks5ClientImpl.h
+            src/ProxyHandshakeAuth.cpp
+            src/ProxyHandshakeAuth.h)
+else ()
+    set(ProxyHandshakeAuthHeader "")
+endif ()
+
+
 find_package(OpenSSL 1.1.0 REQUIRED)
 
 add_executable(${ProjectMainName}
@@ -133,14 +151,7 @@ add_executable(${ProjectMainName}
         src/AsyncDelay.h
         src/UtilTools.cpp
         src/UtilTools.h
-        src/ProxyHandshakeUtils/HttpServerImpl.cpp
-        src/ProxyHandshakeUtils/HttpServerImpl.h
-        src/ProxyHandshakeUtils/HttpClientImpl.cpp
-        src/ProxyHandshakeUtils/HttpClientImpl.h
-        src/ProxyHandshakeUtils/Socks5ServerImpl.cpp
-        src/ProxyHandshakeUtils/Socks5ServerImpl.h
-        src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
-        src/ProxyHandshakeUtils/Socks5ClientImpl.h)
+        ${ProxyHandshakeAuth})
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
@@ -161,6 +172,10 @@ if (OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
     if (ENABLE_TLS13_CIPHERSUITES)
         add_definitions(-DENABLE_TLS13_CIPHERSUITES)
     endif ()
+endif ()
+
+if (Need_ProxyHandshakeAuth)
+    add_definitions(-DNeed_ProxyHandshakeAuth)
 endif ()
 
 if (WIN32)

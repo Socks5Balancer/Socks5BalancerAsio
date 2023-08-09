@@ -37,8 +37,16 @@
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
 
+
+class ProxyHandshakeAuth;
+
 // http proxy protocol client
 class HttpClientImpl : public std::enable_shared_from_this<HttpClientImpl> {
+public:
+    std::weak_ptr<ProxyHandshakeAuth> parents;
+
+public:
+    HttpClientImpl(const std::shared_ptr<ProxyHandshakeAuth>& parents_) : parents(parents_) {}
 };
 
 

@@ -145,35 +145,50 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         // Setup async read from client (downstream)
                         do_downstream_read();
                     } else {
+                        auto whenComplete = [self = weak_from_this()]() {
+                            // start relay
+                            if (auto ptr = self.lock()) {
+                                // impl: insert protocol analysis on here
+                                auto ct = ptr->getConnectionTracker();
+
+                                // Setup async read from remote server (upstream)
+                                ptr->do_upstream_read();
+
+                                // Setup async read from client (downstream)
+                                ptr->do_downstream_read();
+                            } else {
+                                std::cerr << "firstPackAnalyzer whenComplete ptr lock failed." << std::endl;
+                            }
+                        };
+                        auto whenError = [self = weak_from_this()](boost::system::error_code error) {
+                            if (auto ptr = self.lock()) {
+                                ptr->close(error);
+                            } else {
+                                std::cerr << "firstPackAnalyzer whenError ptr lock failed." << std::endl;
+                            }
+                        };
+
                         // impl : insert first pack analyzer on there
                         if (!firstPackAnalyzer) {
+#ifdef Need_ProxyHandshakeAuth
+                            firstPackAnalyzer = std::make_shared<ProxyHandshakeAuth>(
+                                    shared_from_this(),
+                                    downstream_socket_,
+                                    upstream_socket_,
+                                    configLoader->shared_from_this(),
+                                    nowServer->shared_from_this(),
+                                    std::move(whenComplete),
+                                    std::move(whenError)
+                            );
+#else
                             firstPackAnalyzer = std::make_shared<FirstPackAnalyzer>(
                                     shared_from_this(),
                                     downstream_socket_,
                                     upstream_socket_,
-                                    [self = weak_from_this()]() {
-                                        // start relay
-                                        if (auto ptr = self.lock()) {
-                                            // impl: insert protocol analysis on here
-                                            auto ct = ptr->getConnectionTracker();
-
-                                            // Setup async read from remote server (upstream)
-                                            ptr->do_upstream_read();
-
-                                            // Setup async read from client (downstream)
-                                            ptr->do_downstream_read();
-                                        } else {
-                                            std::cerr << "firstPackAnalyzer whenComplete ptr lock failed." << std::endl;
-                                        }
-                                    },
-                                    [self = weak_from_this()](boost::system::error_code error) {
-                                        if (auto ptr = self.lock()) {
-                                            ptr->close(error);
-                                        } else {
-                                            std::cerr << "firstPackAnalyzer whenError ptr lock failed." << std::endl;
-                                        }
-                                    }
+                                    std::move(whenComplete),
+                                    std::move(whenError)
                             );
+#endif // Need_ProxyHandshakeAuth
                             firstPackAnalyzer->start();
                         } else {
                             // wrong
@@ -410,6 +425,7 @@ void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
             ex,
             upstreamPool,
             statisticsInfo->weak_from_this(),
+            configLoader->shared_from_this(),
             configLoader->config.retryTimes,
             configLoader->config.traditionTcpRelay,
             configLoader->config.disableConnectionTracker
