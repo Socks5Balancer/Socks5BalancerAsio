@@ -41,6 +41,10 @@ std::string base64_encode(const T &binary) {
     return base64.append((3 - binary.size() % 3) % 3, '=');
 }
 
+inline std::string base64_encode_string(const std::string_view &text) {
+    return base64_encode<std::string_view>(text);
+}
+
 inline std::string base64_encode_string(const std::string &text) {
     return base64_encode<std::string>(text);
 }
@@ -49,11 +53,11 @@ inline std::string base64_encode_vector(const std::vector<unsigned char> &binary
     return base64_encode<std::vector<unsigned char>>(binary);
 }
 
-template<typename T>
-T base64_decode(const std::string &base64) {
+template<typename R, typename I>
+R base64_decode(const I &base64) {
     using namespace boost::archive::iterators;
-    using It = transform_width<binary_from_base64<std::string::const_iterator>, 8, 6>;
-    auto binary = T(It(base64.begin()), It(base64.end()));
+    using It = transform_width<binary_from_base64<typename I::const_iterator>, 8, 6>;
+    auto binary = R(It(base64.begin()), It(base64.end()));
     // Remove padding.
     auto length = base64.size();
     if (binary.size() > 2 && base64[length - 1] == '=' && base64[length - 2] == '=') {
@@ -66,11 +70,19 @@ T base64_decode(const std::string &base64) {
 
 
 inline std::vector<unsigned char> base64_decode_vector(const std::string &base64) {
-    return base64_decode<std::vector<unsigned char>>(base64);
+    return base64_decode<std::vector<unsigned char>, std::string>(base64);
+}
+
+inline std::vector<unsigned char> base64_decode_vector(const std::string_view &base64) {
+    return base64_decode<std::vector<unsigned char>, std::string_view>(base64);
 }
 
 inline std::string base64_decode_string(const std::string &base64) {
-    return base64_decode<std::string>(base64);
+    return base64_decode<std::string, std::string>(base64);
+}
+
+inline std::string base64_decode_string(const std::string_view &base64) {
+    return base64_decode<std::string, std::string_view>(base64);
 }
 
 #endif //SOCKS5BALANCERASIO_BASE64_H

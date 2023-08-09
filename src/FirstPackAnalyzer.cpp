@@ -263,7 +263,7 @@ void FirstPackAnalyzer::do_analysis_client_first_http_header() {
         auto d = downstream_buf_.data();
         size_t len = d.size();
         auto data = reinterpret_cast<const char *>(d.data());
-        const std::string_view s(data, len);
+        const boost::string_view s(data, len);
         auto it = s.find("\r\n\r\n");
         if (it != std::string::npos) {
             // find

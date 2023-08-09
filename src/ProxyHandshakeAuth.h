@@ -76,6 +76,7 @@ public:
     int beforeCompleteUp = 1;
     int beforeCompleteDown = 1;
 
+    // Useless
     ConnectType connectType = ConnectType::unknown;
 
     std::string host{};
@@ -131,6 +132,13 @@ private:
 
 public:
 
+    void do_whenUpReady() {
+        // do send last ok package to client in downside
+        util_HttpServerImpl_->to_send_last_ok_package();
+        //
+        do_whenCompleteUp();
+    }
+
     void do_whenCompleteUp() {
         --beforeCompleteUp;
         if (beforeCompleteUp < 0) {
@@ -138,6 +146,17 @@ public:
             BOOST_ASSERT_MSG(!(beforeCompleteUp < 0), "do_whenCompleteUp (beforeCompleteUp < 0)");
         }
         check_whenComplete();
+    }
+
+    void do_whenDownReady() {
+        // downside ready for send last ok package
+        if (beforeCompleteDown == 0 && beforeCompleteUp > 0) {
+            // start upside handshake
+            util_Socks5ClientImpl_->start();
+        } else {
+            // never go there
+            BOOST_ASSERT_MSG(false, "do_whenDownReady");
+        }
     }
 
     void do_whenCompleteDown() {
@@ -149,6 +168,10 @@ public:
         check_whenComplete();
     }
 
+    void do_whenError(boost::system::error_code error) {
+        whenError(error);
+    }
+
 private:
     void check_whenComplete() {
         if (0 == beforeCompleteUp && 0 == beforeCompleteDown) {
@@ -158,10 +181,6 @@ private:
                 whenComplete();
             }
         }
-    }
-
-    void do_whenError(boost::system::error_code error) {
-        whenError(error);
     }
 
 public:

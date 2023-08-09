@@ -41,12 +41,34 @@
 class ProxyHandshakeAuth;
 
 // http proxy protocol client
+// [NOT IMPLEMENT NOW]
 class HttpClientImpl : public std::enable_shared_from_this<HttpClientImpl> {
 public:
     std::weak_ptr<ProxyHandshakeAuth> parents;
 
 public:
-    HttpClientImpl(const std::shared_ptr<ProxyHandshakeAuth>& parents_) : parents(parents_) {}
+    HttpClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
+
+public:
+
+public:
+    void fail(boost::system::error_code ec, const std::string &what) {
+        std::string r;
+        {
+            std::stringstream ss;
+            ss << what << ": [" << ec.message() << "] . ";
+            r = ss.str();
+        }
+        std::cerr << r << std::endl;
+
+        do_whenError(ec);
+    }
+
+    void do_whenError(boost::system::error_code error);
+
+    void badParentPtr() {
+        // parents lost, simple ignore it, and stop run
+    }
 };
 
 

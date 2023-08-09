@@ -17,3 +17,11 @@
  */
 
 #include "Socks5ServerImpl.h"
+#include "../ProxyHandshakeAuth.h"
+
+void Socks5ServerImpl::do_whenError(boost::system::error_code error) {
+    auto ptr = parents.lock();
+    if (ptr) {
+        ptr->do_whenError(error);
+    }
+}

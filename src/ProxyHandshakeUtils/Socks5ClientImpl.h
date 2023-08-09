@@ -27,6 +27,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <functional>
 #include <utility>
@@ -35,6 +36,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
+#include <boost/asio/write.hpp>
 
 class ProxyHandshakeAuth;
 
@@ -44,7 +46,43 @@ public:
     std::weak_ptr<ProxyHandshakeAuth> parents;
 
 public:
-    Socks5ClientImpl(const std::shared_ptr<ProxyHandshakeAuth>& parents_) : parents(parents_) {}
+    Socks5ClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
+
+    void start();
+
+public:
+
+    void do_socks5_handshake_write();
+
+    void do_socks5_handshake_read();
+
+    void do_socks5_auth_write();
+
+    void do_socks5_auth_read();
+
+    void do_socks5_connect_write();
+
+    void do_socks5_connect_read();
+
+public:
+    void fail(boost::system::error_code ec, const std::string &what) {
+        std::string r;
+        {
+            std::stringstream ss;
+            ss << what << ": [" << ec.message() << "] . ";
+            r = ss.str();
+        }
+        std::cerr << r << std::endl;
+
+        do_whenError(ec);
+    }
+
+    void do_whenError(boost::system::error_code error);
+
+    void badParentPtr() {
+        // parents lost, simple ignore it, and stop run
+    }
+
 };
 
 

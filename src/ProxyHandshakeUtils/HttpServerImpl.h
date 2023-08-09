@@ -36,6 +36,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
+#include <boost/beast.hpp>
 
 class ProxyHandshakeAuth;
 
@@ -45,7 +46,56 @@ public:
     std::weak_ptr<ProxyHandshakeAuth> parents;
 
 public:
-    HttpServerImpl(const std::shared_ptr<ProxyHandshakeAuth>& parents_) : parents(parents_) {}
+    HttpServerImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
+
+public:
+
+    void do_analysis_client_first_http_header();
+
+    void do_read_client_first_http_header();
+
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#the_general_http_authentication_framework
+    void do_send_407();
+
+    void do_ready_to_send_Connection_Established(const std::shared_ptr<decltype(parents)::element_type> &ptr);
+
+    void do_send_Connection_Established();
+
+    void to_send_last_ok_package();
+
+    struct ParsedURI {
+        std::string protocol;
+        std::string domain;  // only domain must be present
+        std::string port;
+        std::string resource;
+        std::string query;   // everything after '?', possibly nothing
+    };
+
+    ParsedURI parseURI(const std::string &url);
+
+    bool checkHeaderAuthString(
+            const std::string_view &base64Part,
+            const std::shared_ptr<decltype(parents)::element_type> &ptr);
+
+public:
+    void fail(boost::system::error_code ec, const std::string &what) {
+        std::string r;
+        {
+            std::stringstream ss;
+            ss << what << ": [" << ec.message() << "] . ";
+            r = ss.str();
+        }
+        std::cerr << r << std::endl;
+
+        do_whenError(ec);
+    }
+
+    void do_whenError(boost::system::error_code error);
+
+    void badParentPtr() {
+        // parents lost, simple ignore it, and stop run
+    }
+
 };
 
 
