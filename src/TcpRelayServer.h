@@ -34,6 +34,7 @@
 #include <mutex>
 #include "UpstreamPool.h"
 #include "ConnectionTracker.h"
+#include "AuthClientManager.h"
 #ifdef Need_ProxyHandshakeAuth
 #include "ProxyHandshakeAuth.h"
 #else
@@ -50,6 +51,7 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     boost::asio::ip::tcp::socket upstream_socket_;
     boost::asio::ip::tcp::resolver resolver_;
     std::shared_ptr<UpstreamPool> upstreamPool;
+    std::shared_ptr<AuthClientManager> authClientManager;
 
     std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo;
 
@@ -90,6 +92,7 @@ public:
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo,
             std::shared_ptr<ConfigLoader> configLoader,
+            std::shared_ptr<AuthClientManager> authClientManager,
             size_t retryLimit,
             bool traditionTcpRelay,
             bool disableConnectionTracker
@@ -101,6 +104,7 @@ public:
             upstreamPool(std::move(upstreamPool)),
             statisticsInfo(std::move(statisticsInfo)),
             configLoader(std::move(configLoader)),
+            authClientManager(std::move(authClientManager)),
             retryLimit(retryLimit),
             traditionTcpRelay(traditionTcpRelay),
             disableConnectionTracker(disableConnectionTracker) {
@@ -187,6 +191,7 @@ class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
     boost::asio::any_io_executor ex;
     std::shared_ptr<ConfigLoader> configLoader;
     std::shared_ptr<UpstreamPool> upstreamPool;
+    std::shared_ptr<AuthClientManager> authClientManager;
     std::list<boost::asio::ip::tcp::acceptor> socket_acceptors;
 
     std::list<std::weak_ptr<TcpRelaySession>> sessions;
@@ -198,10 +203,12 @@ public:
     TcpRelayServer(
             boost::asio::any_io_executor ex,
             std::shared_ptr<ConfigLoader> configLoader,
-            std::shared_ptr<UpstreamPool> upstreamPool
+            std::shared_ptr<UpstreamPool> upstreamPool,
+            std::shared_ptr<AuthClientManager> authClientManager
     ) : ex(ex),
         configLoader(std::move(configLoader)),
         upstreamPool(std::move(upstreamPool)),
+        authClientManager(std::move(authClientManager)),
         statisticsInfo(std::make_shared<TcpRelayStatisticsInfo>()) {
     }
 

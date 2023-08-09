@@ -176,6 +176,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                     downstream_socket_,
                                     upstream_socket_,
                                     configLoader->shared_from_this(),
+                                    authClientManager->shared_from_this(),
                                     nowServer->shared_from_this(),
                                     std::move(whenComplete),
                                     std::move(whenError)
@@ -426,6 +427,7 @@ void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
             upstreamPool,
             statisticsInfo->weak_from_this(),
             configLoader->shared_from_this(),
+            authClientManager->shared_from_this(),
             configLoader->config.retryTimes,
             configLoader->config.traditionTcpRelay,
             configLoader->config.disableConnectionTracker

@@ -23,6 +23,8 @@
 #pragma once
 #endif
 
+#include <boost/assert.hpp>
+
 #include <boost/asio/streambuf.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <memory>
@@ -34,6 +36,7 @@
 
 #include "ConfigLoader.h"
 #include "UpstreamPool.h"
+#include "AuthClientManager.h"
 
 #include <regex>
 #include <boost/algorithm/string.hpp>
@@ -64,12 +67,14 @@ public:
     boost::asio::ip::tcp::socket &upstream_socket_;
 
     std::shared_ptr<ConfigLoader> configLoader;
+    std::shared_ptr<AuthClientManager> authClientManager;
     UpstreamServerRef nowServer;
 
     std::function<void()> whenComplete;
     std::function<void(boost::system::error_code error)> whenError;
 
-//    size_t beforeComplete = 2;
+    int beforeCompleteUp = 1;
+    int beforeCompleteDown = 1;
 
     ConnectType connectType = ConnectType::unknown;
 
@@ -88,6 +93,7 @@ public:
             boost::asio::ip::tcp::socket &downstream_socket_,
             boost::asio::ip::tcp::socket &upstream_socket_,
             std::shared_ptr<ConfigLoader> configLoader,
+            std::shared_ptr<AuthClientManager> authClientManager,
             UpstreamServerRef nowServer,
             std::function<void()> whenComplete,
             std::function<void(boost::system::error_code error)> whenError
@@ -96,6 +102,7 @@ public:
             downstream_socket_(downstream_socket_),
             upstream_socket_(upstream_socket_),
             configLoader(std::move(configLoader)),
+            authClientManager(std::move(authClientManager)),
             nowServer(std::move(nowServer)),
             whenComplete(std::move(whenComplete)),
             whenError(std::move(whenError)) {}
@@ -106,30 +113,58 @@ public:
         util_Socks5ClientImpl_ = std::make_shared<decltype(util_Socks5ClientImpl_)::element_type>(shared_from_this());
         util_Socks5ServerImpl_ = std::make_shared<decltype(util_Socks5ServerImpl_)::element_type>(shared_from_this());
 
+        // we must keep strong ptr when running, until call the whenComplete,
+        // to keep parent TcpRelaySession but dont make circle ref
+        auto ptr = tcpRelaySession.lock();
+        if (ptr) {
+            do_read_client_first_3_byte();
+            // debug
+//        do_prepare_whenComplete();
+        } else {
+            badParentPtr();
+        }
     }
 
 private:
 
+    void do_read_client_first_3_byte();
+
+public:
+
+    void do_whenCompleteUp() {
+        --beforeCompleteUp;
+        if (beforeCompleteUp < 0) {
+            // never go there
+            BOOST_ASSERT_MSG(!(beforeCompleteUp < 0), "do_whenCompleteUp (beforeCompleteUp < 0)");
+        }
+        check_whenComplete();
+    }
+
+    void do_whenCompleteDown() {
+        --beforeCompleteDown;
+        if (beforeCompleteDown < 0) {
+            // never go there
+            BOOST_ASSERT_MSG(!(beforeCompleteDown < 0), "do_whenCompleteDown (beforeCompleteDown < 0)");
+        }
+        check_whenComplete();
+    }
 
 private:
-
-    void do_whenComplete() {
-        // TODO
-//        --beforeComplete;
-//        if (0 == beforeComplete) {
-//            auto ptr = tcpRelaySession.lock();
-//            if (ptr) {
-//                // all ok
-//                whenComplete();
-//            }
-//        }
+    void check_whenComplete() {
+        if (0 == beforeCompleteUp && 0 == beforeCompleteDown) {
+            auto ptr = tcpRelaySession.lock();
+            if (ptr) {
+                // all ok
+                whenComplete();
+            }
+        }
     }
 
     void do_whenError(boost::system::error_code error) {
         whenError(error);
     }
 
-private:
+public:
     void fail(boost::system::error_code ec, const std::string &what) {
         std::string r;
         {
@@ -143,10 +178,9 @@ private:
     }
 
     void badParentPtr() {
-        // TODO
-//        if (0 != beforeComplete) {
-//            do_whenError({});
-//        }
+        if (!(0 == beforeCompleteUp && 0 == beforeCompleteDown)) {
+            do_whenError({});
+        }
     }
 
 };

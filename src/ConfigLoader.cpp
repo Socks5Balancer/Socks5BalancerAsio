@@ -133,6 +133,17 @@ void ConfigLoader::print() {
         std::cout << "\t" << "embedWebServerConfig.backend_json_string:" << ew.backend_json_string << "\n";
     }
 
+
+    for (size_t i = 0; i != config.authClientInfo.size(); ++i) {
+        const auto &it = config.authClientInfo[i];
+        std::cout << "config.AuthClientInfo [" << i << "]:\n";
+        std::cout << "\t" << "AuthClientInfo.user:" << it.user << "\n";
+        std::cout << "\t" << "AuthClientInfo.pwd:" << it.pwd << "\n";
+        std::cout << "\t" << "AuthClientInfo.base64AuthString: " << it.base64AuthString << "\n";
+    }
+
+    std::cout << std::endl;
+
 }
 
 void ConfigLoader::load(const std::string &filename) {
@@ -239,8 +250,8 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
         }
     }
 
-    if (tree.get_child_optional("authClientInfo")) {
-        auto multiListen = tree.get_child("authClientInfo");
+    if (tree.get_child_optional("AuthClientInfo")) {
+        auto multiListen = tree.get_child("AuthClientInfo");
         for (auto &item: multiListen) {
             auto &pts = item.second;
             AuthClientInfo u;

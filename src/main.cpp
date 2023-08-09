@@ -28,6 +28,7 @@
 #include <memory>
 #include <exception>
 #include "ConfigLoader.h"
+#include "AuthClientManager.h"
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
 #include "UpstreamPool.h"
@@ -101,10 +102,12 @@ int main(int argc, const char *argv[]) {
         auto tcpTest = std::make_shared<TcpTest>(ex);
         auto connectTestHttps = std::make_shared<ConnectTestHttps>(ex);
 
+        auto authClientManager = std::make_shared<AuthClientManager>(configLoader->shared_from_this());
+
         auto upstreamPool = std::make_shared<UpstreamPool>(ex, tcpTest, connectTestHttps);
         upstreamPool->setConfig(configLoader);
 
-        auto tcpRelay = std::make_shared<TcpRelayServer>(ex, configLoader, upstreamPool);
+        auto tcpRelay = std::make_shared<TcpRelayServer>(ex, configLoader, upstreamPool, authClientManager);
         auto stateMonitor = std::make_shared<StateMonitorServer>(
                 boost::asio::make_strand(ioc), configLoader, upstreamPool, tcpRelay);
 
