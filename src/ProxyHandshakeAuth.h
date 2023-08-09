@@ -32,7 +32,9 @@
 #include <utility>
 #include "ConnectType.h"
 
-#include "TcpRelayServer.h"
+#include "ConfigLoader.h"
+#include "UpstreamPool.h"
+
 #include <regex>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -44,6 +46,8 @@
 #include "./ProxyHandshakeUtils/Socks5ServerImpl.h"
 #include "./ProxyHandshakeUtils/Socks5ClientImpl.h"
 
+
+class TcpRelaySession;
 
 class ProxyHandshakeAuth : public std::enable_shared_from_this<ProxyHandshakeAuth> {
 public:

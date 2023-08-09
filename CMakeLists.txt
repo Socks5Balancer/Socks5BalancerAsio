@@ -105,6 +105,7 @@ endif ()
 
 option(Need_ProxyHandshakeAuth "Enable ProxyHandshakeAuth" OFF)
 if (Need_ProxyHandshakeAuth)
+    message(STATUS "Enable ProxyHandshakeAuth ON.")
     set(ProxyHandshakeAuthHeader
             src/ProxyHandshakeUtils/HttpServerImpl.cpp
             src/ProxyHandshakeUtils/HttpServerImpl.h
@@ -115,8 +116,11 @@ if (Need_ProxyHandshakeAuth)
             src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
             src/ProxyHandshakeUtils/Socks5ClientImpl.h
             src/ProxyHandshakeAuth.cpp
-            src/ProxyHandshakeAuth.h)
+            src/ProxyHandshakeAuth.h
+            src/AuthClientManager.cpp
+            src/AuthClientManager.h)
 else ()
+    message(STATUS "Enable ProxyHandshakeAuth OFF.")
     set(ProxyHandshakeAuthHeader "")
 endif ()
 
@@ -151,7 +155,7 @@ add_executable(${ProjectMainName}
         src/AsyncDelay.h
         src/UtilTools.cpp
         src/UtilTools.h
-        ${ProxyHandshakeAuth})
+        ${ProxyHandshakeAuthHeader})
 
 
 target_link_libraries(${ProjectMainName} ${CMAKE_THREAD_LIBS_INIT})
@@ -175,6 +179,7 @@ if (OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
 endif ()
 
 if (Need_ProxyHandshakeAuth)
+    message(STATUS "Enable ProxyHandshakeAuth ON.")
     add_definitions(-DNeed_ProxyHandshakeAuth)
 endif ()
 
