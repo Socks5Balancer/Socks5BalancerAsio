@@ -51,6 +51,9 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     std::string name;
     size_t index;
 
+    std::string authUser;
+    std::string authPwd;
+
     std::optional<UpstreamTimePoint> lastOnlineTime;
     std::optional<UpstreamTimePoint> lastConnectTime;
     bool lastConnectFailed = true;
@@ -66,6 +69,8 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
             std::string name,
             std::string host,
             uint16_t port,
+            std::string authUser,
+            std::string authPwd,
             bool disable,
             bool slowImpl
     ) :
@@ -73,6 +78,8 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
             name(std::move(name)),
             host(std::move(host)),
             port(port),
+            authUser(std::move(authUser)),
+            authPwd(std::move(authPwd)),
             disable(disable),
             slowImpl(slowImpl),
             isManualDisable(disable) {}

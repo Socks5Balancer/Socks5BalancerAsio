@@ -105,6 +105,8 @@ void ConfigLoader::print() {
         std::cout << "\t" << "upstream.name:" << it.name << "\n";
         std::cout << "\t" << "upstream.host:" << it.host << "\n";
         std::cout << "\t" << "upstream.port:" << it.port << "\n";
+        std::cout << "\t" << "upstream.authUser:" << it.authUser << "\n";
+        std::cout << "\t" << "upstream.authPwd:" << it.authPwd << "\n";
         std::cout << "\t" << "upstream.disable:" << it.disable << "\n";
     }
 
@@ -216,6 +218,8 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
             u.host = pts.get("host", std::string{"127.0.0.1"});
             u.port = pts.get("port", uint16_t{});
             u.name = pts.get("name", std::string{});
+            u.authUser = pts.get("authUser", std::string{});
+            u.authPwd = pts.get("authPwd", std::string{});
             u.disable = pts.get("disable", false);
             u.slowImpl = pts.get("slowImpl", false);
             c.upstream.push_back(u);

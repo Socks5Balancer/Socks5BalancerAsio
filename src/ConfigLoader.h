@@ -40,6 +40,8 @@ struct Upstream {
     std::string host;
     uint16_t port;
     std::string name;
+    std::string authUser;
+    std::string authPwd;
     bool disable;
     bool slowImpl;
 };

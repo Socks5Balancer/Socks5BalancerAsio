@@ -81,7 +81,10 @@ void UpstreamPool::setConfig(std::shared_ptr<ConfigLoader> configLoader) {
     for (size_t i = 0; i != c.size(); ++i) {
         auto &r = c[i];
         UpstreamServerRef u = std::make_shared<UpstreamServer>(
-                i, r.name, r.host, r.port, r.disable, r.slowImpl
+                i, r.name,
+                r.host, r.port,
+                r.authUser, r.authPwd,
+                r.disable, r.slowImpl
         );
         _pool.push_back(u);
     }
