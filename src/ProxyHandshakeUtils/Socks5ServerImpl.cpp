@@ -111,7 +111,7 @@ void Socks5ServerImpl::do_auth_client_write() {
         );
 
         boost::asio::async_write(
-                ptr->upstream_socket_,
+                ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
                 [this, self = shared_from_this(), data_send, ptr](
                         const boost::system::error_code &ec,
@@ -225,7 +225,7 @@ void Socks5ServerImpl::do_auth_client_ok() {
         );
 
         boost::asio::async_write(
-                ptr->upstream_socket_,
+                ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
                 [this, self = shared_from_this(), data_send, ptr](
                         const boost::system::error_code &ec,
@@ -268,7 +268,7 @@ void Socks5ServerImpl::do_auth_client_error() {
         );
 
         boost::asio::async_write(
-                ptr->upstream_socket_,
+                ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
                 [this, self = shared_from_this(), data_send, ptr](
                         const boost::system::error_code &ec,
@@ -453,7 +453,7 @@ void Socks5ServerImpl::do_handshake_client_header_error() {
         );
 
         boost::asio::async_write(
-                ptr->upstream_socket_,
+                ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
                 [this, self = shared_from_this(), data_send, ptr](
                         const boost::system::error_code &ec,
@@ -531,7 +531,7 @@ void Socks5ServerImpl::do_handshake_client_end_error(uint8_t errorType) {
         data_send->at(1) = static_cast<char>(errorType);
 
         boost::asio::async_write(
-                ptr->upstream_socket_,
+                ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
                 [this, self = shared_from_this(), data_send, ptr](
                         const boost::system::error_code &ec,
@@ -594,7 +594,7 @@ void Socks5ServerImpl::do_handshake_client_end() {
         }
 
         boost::asio::async_write(
-                ptr->upstream_socket_,
+                ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
                 [this, self = shared_from_this(), data_send, ptr](
                         const boost::system::error_code &ec,
