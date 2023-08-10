@@ -407,7 +407,7 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 // invalid
                                 return fail(ec, "do_handshake_client_read (socks5_read_buf->at(3) invalid)");
                             }
-                            BOOST_LOG_S5B(warning) << "do_handshake_client_read after read target:"
+                            BOOST_LOG_S5B(trace) << "do_handshake_client_read after read target:"
                                                    << " host:" << ptr->host
                                                    << " port:" << ptr->port;
                             switch (socks5_read_buf->at(1)) {
