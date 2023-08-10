@@ -114,8 +114,8 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                 if (ptr->authClientManager->needAuth()) {
                     auto hPA = h.count(boost::beast::http::field::proxy_authorization);
                     auto hA = h.count(boost::beast::http::field::authorization);
-                    BOOST_LOG_S5B(trace) << "===== authorization N:" << hPA;
-                    BOOST_LOG_S5B(trace) << "===== proxy_authorization N:" << hA;
+                    BOOST_LOG_S5B(trace) << "===== proxy_authorization N:" << hPA;
+                    BOOST_LOG_S5B(trace) << "===== authorization N:" << hA;
                     if (hPA == 0 && hA == 0) {
                         // no auth
                         BOOST_LOG_S5B(warning) << "do_analysis_client_first_http_header no auth.";
