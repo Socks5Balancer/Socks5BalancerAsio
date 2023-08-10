@@ -402,7 +402,7 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
                                 // We need an unsigned char* pointer to the IP address
                                 auto addr = reinterpret_cast<unsigned char *>(
-                                        socks5_read_buf->data() + 4 + 1
+                                        socks5_read_buf->data() + 4
                                 );
                                 boost::asio::ip::address_v4::bytes_type ipV4Byte;
                                 // Copy the address into our array
@@ -424,8 +424,8 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                     return fail(ec, "do_handshake_client_read (domain too long)");
                                 }
                                 ptr->host = std::string{
-                                        socks5_read_buf->begin() + 4 + 1 + 1,
-                                        socks5_read_buf->begin() + 4 + 1 + 1 + socks5_read_buf->at(4)};
+                                        socks5_read_buf->begin() + 4 + 1,
+                                        socks5_read_buf->begin() + 4 + 1 + socks5_read_buf->at(4)};
                                 ptr->port = (
                                         socks5_read_buf->at(bytes_transferred - 2) << 8
                                         |
@@ -442,7 +442,7 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
                                 // We need an unsigned char* pointer to the IP address
                                 auto addr = reinterpret_cast<unsigned char *>(
-                                        socks5_read_buf->data() + 4 + 1
+                                        socks5_read_buf->data() + 4
                                 );
                                 boost::asio::ip::address_v6::bytes_type ipV6Byte;
                                 // Copy the address into our array
