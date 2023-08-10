@@ -85,6 +85,12 @@ public:
 
     ParsedURI parseURI(const std::string &url);
 
+public:
+
+    ConnectType getConnectType() {
+        return connectType;
+    }
+
 private:
 
     void do_read_client_first_3_byte();
