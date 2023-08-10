@@ -91,7 +91,7 @@ public:
             ss << what << ": [" << ec.message() << "] . ";
             r = ss.str();
         }
-        std::cerr << r << std::endl;
+        BOOST_LOG_S5B(error) << r;
 
         do_whenError(ec);
     }

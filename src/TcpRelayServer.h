@@ -41,6 +41,7 @@
 #include "FirstPackAnalyzer.h"
 #endif // Need_ProxyHandshakeAuth
 #include "TcpRelayStatisticsInfo.h"
+#include "./log/Log.h"
 
 // code template from https://github.com/ArashPartow/proxy/blob/master/tcpproxy_server.cpp
 class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {

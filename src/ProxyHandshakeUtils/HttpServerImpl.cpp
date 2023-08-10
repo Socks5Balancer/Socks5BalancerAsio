@@ -57,23 +57,23 @@ bool HttpServerImpl::checkHeaderAuthString(
         const std::shared_ptr<decltype(parents)::element_type> &ptr
 ) {
     if (ptr->authClientManager->checkAuth_Base64AuthString(base64Part)) {
-        std::cout << "checkHeaderAuthString Base64AuthString ok: " << base64Part << std::endl;
+        BOOST_LOG_S5B(trace) << "checkHeaderAuthString Base64AuthString ok: " << base64Part;
         return true;
     } else {
         auto rr = base64_decode_string(base64Part);
         auto indexSplitFlag = rr.find(':');
         if (indexSplitFlag == decltype(rr)::npos || indexSplitFlag < 1) {
             // bad format
-            std::cout << "checkHeaderAuthString bad format: " << base64Part << " rr: " << rr << std::endl;
+            BOOST_LOG_S5B(warning) << "checkHeaderAuthString bad format: " << base64Part << " rr: " << rr;
             return false;
         }
         std::string_view user{rr.data(), indexSplitFlag};
         std::string_view pwd{rr.data() + indexSplitFlag + 1, rr.length() - indexSplitFlag - 1};
         if (ptr->authClientManager->checkAuth(user, pwd)) {
-            std::cout << "checkHeaderAuthString ok: " << user << " : " << pwd << std::endl;
+            BOOST_LOG_S5B(trace) << "checkHeaderAuthString ok: " << user << " : " << pwd;
             return true;
         } else {
-            std::cout << "checkHeaderAuthString wrong: " << user << " : " << pwd << std::endl;
+            BOOST_LOG_S5B(warning) << "checkHeaderAuthString wrong: " << user << " : " << pwd;
             return false;
         }
     }
@@ -97,15 +97,14 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
         auto it = s.find("\r\n\r\n");
         if (it != std::string::npos) {
             // find
-            std::cout << "do_analysis_client_first_http_header find!" << std::endl;
+            BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header find!";
             try {
                 boost::beast::http::parser<true, boost::beast::http::buffer_body> headerParser;
                 headerParser.skip(true);
                 boost::system::error_code ec;
                 headerParser.put(boost::asio::buffer(s), ec);
                 if (ec) {
-                    std::cout << "do_analysis_client_first_http_header headerParser ec:" << ec.message()
-                              << std::endl;
+                    BOOST_LOG_S5B(error) << "do_analysis_client_first_http_header headerParser ec:" << ec.message();
                     fail(ec, "do_analysis_client_first_http_header headerParser");
                     return;
                 }
@@ -115,20 +114,20 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                 if (ptr->authClientManager->needAuth()) {
                     auto hPA = h.count(boost::beast::http::field::proxy_authorization);
                     auto hA = h.count(boost::beast::http::field::authorization);
-                    std::cout << "===== authorization N:" << hPA << std::endl;
-                    std::cout << "===== proxy_authorization N:" << hA << std::endl;
+                    BOOST_LOG_S5B(trace) << "===== authorization N:" << hPA;
+                    BOOST_LOG_S5B(trace) << "===== proxy_authorization N:" << hA;
                     if (hPA == 0 && hA == 0) {
                         // no auth
-                        std::cout << "do_analysis_client_first_http_header no auth." << std::endl;
+                        BOOST_LOG_S5B(warning) << "do_analysis_client_first_http_header no auth.";
                         // goto 407 to let user retry
                         do_send_407();
                         return;
                     } else {
                         if (hPA > 0) {
                             auto pa = h.at(boost::beast::http::field::proxy_authorization);
-                            std::cout << "===== proxy_authorization:" << pa << std::endl;
+                            BOOST_LOG_S5B(trace) << "===== proxy_authorization:" << pa;
                             auto startCheck = boost::starts_with(pa, std::string{"Basic "});
-                            std::cout << "===== proxy_authorization startCheck:" << startCheck << std::endl;
+                            BOOST_LOG_S5B(trace) << "===== proxy_authorization startCheck:" << startCheck;
 
                             const std::string_view base64Part(s.begin() + 6, s.size() - 6);
                             if (!checkHeaderAuthString(base64Part, ptr)) {
@@ -138,9 +137,9 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                             }
                         } else if (hA > 0) {
                             auto pa = h.at(boost::beast::http::field::authorization);
-                            std::cout << "===== authorization:" << pa << std::endl;
+                            BOOST_LOG_S5B(trace) << "===== authorization:" << pa;
                             auto startCheck = boost::starts_with(pa, std::string{"Basic "});
-                            std::cout << "===== authorization startCheck:" << startCheck << std::endl;
+                            BOOST_LOG_S5B(trace) << "===== authorization startCheck:" << startCheck;
 
                             const std::string_view base64Part(s.begin() + 6, s.size() - 6);
                             if (!checkHeaderAuthString(base64Part, ptr)) {
@@ -153,17 +152,17 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                 }
 
                 auto target = h.base().target();
-                std::cout << "target:" << target << std::endl;
+                BOOST_LOG_S5B(trace) << "target:" << target;
                 auto uri = parseURI(std::string(target));
 
                 ptr->host = uri.domain;
                 ptr->port = boost::lexical_cast<uint16_t>(uri.port);
-                std::cout << "host:" << ptr->host << std::endl;
-                std::cout << "port:" << ptr->port << std::endl;
+                BOOST_LOG_S5B(trace) << "host:" << ptr->host;
+                BOOST_LOG_S5B(trace) << "port:" << ptr->port;
 
                 if (h.method() == boost::beast::http::verb::connect) {
                     // is "connect"
-                    std::cout << "do_analysis_client_first_http_header is connect trim" << std::endl;
+                    BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header is connect trim";
 
 //                    ptr->connectType = ConnectType::httpConnect;
 
@@ -191,13 +190,13 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                 return;
             } catch (const std::exception &e) {
                 std::stringstream ss;
-                ss << "do_analysis_client_first_http_header (const std::exception &e):" << e.what() << std::endl;
+                ss << "do_analysis_client_first_http_header (const std::exception &e):" << e.what();
                 fail({}, ss.str());
                 return;
             }
         } else {
             // not find
-            std::cout << "do_analysis_client_first_http_header not find" << std::endl;
+            BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header not find";
             do_read_client_first_http_header();
         }
     } else {
@@ -218,7 +217,7 @@ void HttpServerImpl::do_read_client_first_http_header() {
                         const size_t &bytes_transferred) {
                     boost::ignore_unused(bytes_transferred);
                     if (!error) {
-                        std::cout << "do_read_client_first_http_header" << std::endl;
+                        BOOST_LOG_S5B(trace) << "do_read_client_first_http_header";
                         do_analysis_client_first_http_header();
                     } else {
                         do_whenError(error);
@@ -288,7 +287,7 @@ void HttpServerImpl::do_send_Connection_Established() {
                         return fail(ec, ss.str());
                     }
 
-                    // std::cout << "do_send_Connection_Established()" << std::endl;
+                    // BOOST_LOG_S5B(trace) << "do_send_Connection_Established()";
 
                     ptr->do_whenDownEnd();
                 }

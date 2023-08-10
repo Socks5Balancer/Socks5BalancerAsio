@@ -50,7 +50,7 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
             d[1] == 0x01 &&
             d[2] == 0x00) {
             // is socks5 no auth
-            std::cout << "is socks5 no auth" << std::endl;
+            BOOST_LOG_S5B(trace) << "is socks5 no auth";
 //            connectType = ConnectType::socks5;
             ptr->downstream_buf_.consume(3);
             if (ptr->authClientManager->needAuth()) {
@@ -67,7 +67,7 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                    (d[1] == 0x02 || d[1] == 0x01 || d[1] == 0x00) &&
                    (d[2] == 0x02)) {
             // is socks5 with username/passwd auth
-            std::cout << "is socks5 with username/passwd auth" << std::endl;
+            BOOST_LOG_S5B(trace) << "is socks5 with username/passwd auth";
 //            connectType = ConnectType::socks5;
             ptr->downstream_buf_.consume(3);
 
@@ -81,7 +81,7 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 return;
             }
         } else {
-            std::cout << "do_analysis_client_first_socks5_header do_handshake_client_header_error" << std::endl;
+            BOOST_LOG_S5B(error) << "do_analysis_client_first_socks5_header do_handshake_client_header_error";
             do_handshake_client_header_error();
             return;
         }

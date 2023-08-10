@@ -71,7 +71,7 @@ void Socks5ClientImpl::do_socks5_handshake_write() {
                         return fail(ec, ss.str());
                     }
 
-                    // std::cout << "do_socks5_handshake_write()" << std::endl;
+                    // BOOST_LOG_S5B(trace) << "do_socks5_handshake_write()";
 
                     do_socks5_handshake_read();
                 }
@@ -124,7 +124,7 @@ void Socks5ClientImpl::do_socks5_handshake_read() {
                                 }
                             }
 
-                            // std::cout << "do_socks5_handshake_read()" << std::endl;
+                            // BOOST_LOG_S5B(trace) << "do_socks5_handshake_read()";
                             do_socks5_connect_write();
                         }));
     } else {
@@ -170,7 +170,7 @@ void Socks5ClientImpl::do_socks5_auth_write() {
                         return fail(ec, ss.str());
                     }
 
-                    // std::cout << "do_socks5_handshake_write()" << std::endl;
+                    // BOOST_LOG_S5B(trace) << "do_socks5_handshake_write()";
 
                     do_socks5_auth_read();
                 }
@@ -282,7 +282,7 @@ void Socks5ClientImpl::do_socks5_connect_write() {
                                 return fail(ec, ss.str());
                             }
 
-                            // std::cout << "do_socks5_connect_write()" << std::endl;
+                            // BOOST_LOG_S5B(trace) << "do_socks5_connect_write()";
                             do_socks5_connect_read();
                         })
         );
@@ -344,7 +344,7 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                    << socks5_read_buf->at(1)
                                    << socks5_read_buf->at(2)
                                    << socks5_read_buf->at(3);
-                                std::cout << ss.str() << std::endl;
+                                BOOST_LOG_S5B(error) << ss.str();
 
                                 ptr->do_whenUpReadyError();
                                 ptr->do_whenUpEnd();
@@ -425,13 +425,12 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                 boost::ignore_unused(bindAddr);
                                 // if bindPort != 0 , we not support multi-homed socks5 server
                                 if (bindPort != 0) {
-                                    std::cout <<
-                                              "do_socks5_connect_read (bindPort != 0), we not support multi-homed socks5 server"
-                                              << std::endl;
+                                    BOOST_LOG_S5B(warning)
+                                        << "do_socks5_connect_read (bindPort != 0), we not support multi-homed socks5 server";
                                 }
                             }
 
-                            // std::cout << "do_socks5_connect_read()" << std::endl;
+                            // BOOST_LOG_S5B(trace) << "do_socks5_connect_read()";
                             // socks5 handshake now complete
                             ptr->do_whenUpReady();
                             ptr->do_whenUpEnd();

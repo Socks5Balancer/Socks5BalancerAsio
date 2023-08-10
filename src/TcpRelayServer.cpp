@@ -21,7 +21,7 @@ void TcpRelaySession::start() {
     listenEndpointAddrString = listenEndpoint.address().to_string() + ":" +
                                boost::lexical_cast<std::string>(listenEndpoint.port());
 
-    std::cout << "TcpRelaySession start()" << std::endl;
+    BOOST_LOG_S5B(trace) << "TcpRelaySession start()";
     try_connect_upstream();
 }
 
@@ -71,18 +71,17 @@ void TcpRelaySession::try_connect_upstream() {
             s = upstreamPool->getServerGlobal();
         }
         if (s) {
-            std::cout << "TcpRelaySession try_connect_upstream()"
-                      << " " << s->host << ":" << s->port << std::endl;
+            BOOST_LOG_S5B(trace) << "TcpRelaySession try_connect_upstream()" << " " << s->host << ":" << s->port;
             {
                 std::lock_guard<std::mutex> g{nowServerMtx};
                 nowServer = s;
             }
             do_resolve(s->host, s->port);
         } else {
-            std::cerr << "try_connect_upstream error:" << "No Valid Server." << "\n";
+            BOOST_LOG_S5B(error) << "try_connect_upstream error:" << "No Valid Server.";
         }
     } else {
-        std::cerr << "try_connect_upstream error:" << "(retryCount > retryLimit)" << "\n";
+        BOOST_LOG_S5B(error) << "try_connect_upstream error:" << "(retryCount > retryLimit)";
     }
 }
 
@@ -97,16 +96,15 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
                     boost::asio::ip::tcp::resolver::results_type results) {
                 if (error) {
                     if (error != boost::asio::error::operation_aborted) {
-                        std::cerr << "do_resolve error:" << error.message() << "\n";
+                        BOOST_LOG_S5B(error) << "do_resolve error:" << error.message();
                         nowServer->isOffline = true;
                         // try next
                         try_connect_upstream();
                     }
                 } else {
 
-                    std::cout << "TcpRelaySession do_resolve()"
-                              << " " << results->endpoint().address() << ":" << results->endpoint().port()
-                              << std::endl;
+                    BOOST_LOG_S5B(trace) << "TcpRelaySession do_resolve()"
+                                         << " " << results->endpoint().address() << ":" << results->endpoint().port();
 
                     do_connect_upstream(results);
                 }
@@ -122,7 +120,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
             [this, self = shared_from_this()](const boost::system::error_code &error) {
                 if (!error) {
 
-                    std::cout << "TcpRelaySession do_connect_upstream()" << std::endl;
+                    BOOST_LOG_S5B(trace) << "TcpRelaySession do_connect_upstream()";
 
                     refAdded = true;
                     ++nowServer->connectCount;
@@ -157,14 +155,14 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                 // Setup async read from client (downstream)
                                 ptr->do_downstream_read();
                             } else {
-                                std::cerr << "firstPackAnalyzer whenComplete ptr lock failed." << std::endl;
+                                BOOST_LOG_S5B(error) << "firstPackAnalyzer whenComplete ptr lock failed.";
                             }
                         };
                         auto whenError = [self = weak_from_this()](boost::system::error_code error) {
                             if (auto ptr = self.lock()) {
                                 ptr->close(error);
                             } else {
-                                std::cerr << "firstPackAnalyzer whenError ptr lock failed." << std::endl;
+                                BOOST_LOG_S5B(error) << "firstPackAnalyzer whenError ptr lock failed.";
                             }
                         };
 
@@ -199,7 +197,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
 
                 } else {
                     if (error != boost::asio::error::operation_aborted) {
-                        std::cerr << "do_connect_upstream error:" << error.message() << "\n";
+                        BOOST_LOG_S5B(error) << "do_connect_upstream error:" << error.message();
                         nowServer->isOffline = true;
                         // try next
                         try_connect_upstream();
@@ -395,7 +393,7 @@ void TcpRelayServer::start() {
             sa.bind(listen_endpoint);
             sa.listen();
             auto local_endpoint = sa.local_endpoint();
-            std::cout << "listening on: " << local_endpoint.address() << ":" << local_endpoint.port() << std::endl;
+            BOOST_LOG_S5B(trace) << "listening on: " << local_endpoint.address() << ":" << local_endpoint.port();
 
         }
     };
@@ -438,26 +436,25 @@ void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
             [this, session, &sa](const boost::system::error_code error) {
                 if (error == boost::asio::error::operation_aborted) {
                     // got cancel signal, stop calling myself
-                    std::cerr << "async_accept error: operation_aborted" << "\n";
+                    BOOST_LOG_S5B(error) << "async_accept error: operation_aborted";
                     return;
                 }
                 if (!error) {
-                    std::cout << "async_accept accept." << "\n";
+                    BOOST_LOG_S5B(trace) << "async_accept accept.";
                     boost::system::error_code ec;
                     auto clientEndpoint = session->downstream_socket().remote_endpoint(ec);
                     auto listenEndpoint = session->downstream_socket().local_endpoint();
                     if (!ec) {
-                        std::cout << "incoming connection from : "
-                                  << clientEndpoint.address() << ":" << clientEndpoint.port()
-                                  << "  on : "
-                                  << listenEndpoint.address() << ":" << listenEndpoint.port()
-                                  << "\n";
+                        BOOST_LOG_S5B(trace) << "incoming connection from : "
+                                             << clientEndpoint.address() << ":" << clientEndpoint.port()
+                                             << "  on : "
+                                             << listenEndpoint.address() << ":" << listenEndpoint.port();
 
                         upstreamPool->updateLastConnectComeTime();
                         session->start();
                     }
                 }
-                std::cout << "async_accept next." << "\n";
+                BOOST_LOG_S5B(trace) << "async_accept next.";
                 async_accept(sa);
             });
 }
@@ -496,7 +493,7 @@ void TcpRelayServer::do_cleanTimer() {
         if (e) {
             return;
         }
-//        std::cout << "do_cleanTimer()" << std::endl;
+//        BOOST_LOG_S5B(trace) << "do_cleanTimer()";
 
         removeExpiredSession();
         statisticsInfo->removeExpiredSessionAll();
@@ -513,7 +510,7 @@ void TcpRelayServer::do_speedCalcTimer() {
         if (e) {
             return;
         }
-//        std::cout << "do_speedCalcTimer()" << std::endl;
+//        BOOST_LOG_S5B(trace) << "do_speedCalcTimer()";
 
         statisticsInfo->calcByteAll();
 

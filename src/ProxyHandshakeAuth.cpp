@@ -37,7 +37,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             (d[1] == 0x02 || d[1] == 0x01 || d[1] == 0x00) &&
                             (d[2] == 0x02 || d[2] == 0x00)) {
                             // is socks5
-                            std::cout << "is socks5" << std::endl;
+                            BOOST_LOG_S5B(trace) << "is socks5";
                             connectType = ConnectType::socks5;
                             // do socks5 handshake with client (downside)
                             upsideConnectType = UpsideConnectType::socks5;
@@ -46,7 +46,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                    (d[1] == 'O' || d[1] == 'o') &&
                                    (d[2] == 'N' || d[2] == 'n')) {
                             // is http Connect
-                            std::cout << "is http Connect" << std::endl;
+                            BOOST_LOG_S5B(trace) << "is http Connect";
                             // analysis downside target server and create upside handshake
                             connectType = ConnectType::httpConnect;
                             // do http handshake with client (downside)
@@ -54,47 +54,47 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         } else {
                             // is other protocol
-                            std::cout << "is other protocol" << std::endl;
+                            BOOST_LOG_S5B(trace) << "is other protocol";
                             // analysis target server and create socks5 handshake
                             switch (d[0]) {
                                 case 'P':
                                 case 'p':
                                     // POST, PUT, PATCH
-                                    std::cout << "is POST, PUT, PATCH" << std::endl;
+                                    BOOST_LOG_S5B(trace) << "is POST, PUT, PATCH";
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'G':
                                 case 'g':
-                                    std::cout << "is GET" << std::endl;
+                                    BOOST_LOG_S5B(trace) << "is GET";
                                     // GET
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'H':
                                 case 'h':
-                                    std::cout << "is HEAD" << std::endl;
+                                    BOOST_LOG_S5B(trace) << "is HEAD";
                                     // HEAD
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'D':
                                 case 'd':
-                                    std::cout << "is DELETE" << std::endl;
+                                    BOOST_LOG_S5B(trace) << "is DELETE";
                                     // DELETE
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'O':
                                 case 'o':
-                                    std::cout << "is OPTIONS" << std::endl;
+                                    BOOST_LOG_S5B(trace) << "is OPTIONS";
                                     // OPTIONS
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'T':
                                 case 't':
-                                    std::cout << "is TRACE" << std::endl;
+                                    BOOST_LOG_S5B(trace) << "is TRACE";
                                     // TRACE
                                     connectType = ConnectType::httpOther;
                                     break;
                                 default:
-                                    std::cout << "is default..." << std::endl;
+                                    BOOST_LOG_S5B(trace) << "is default...";
                                     connectType = ConnectType::unknown;
                                     fail({}, "ConnectType::unknown");
                                     return;
