@@ -221,7 +221,7 @@ Enable Auth Support need add flag `-DNeed_ProxyHandshakeAuth=ON` when CMake conf
 
 Enable Auth Support will replace `class FirstPackAnalyzer` with `class ProxyHandshakeAuth` AND use the `ProxyHandshakeUtils`.  
 when this mode, Socks5BalancerAsio will impl itself version Socks5-proxy client AND server, and Http-proxy client AND server .  
-(Http-proxy the client not impl, because now no plan to support http-proxy version backend server.).  
+(the Http-proxy client not impl, because now no plan to support http-proxy version backend server.).  
 
 Now, **Temporary** , the Socks5-proxy server Only impl CONNECT mode, the UDP mode not impl now,   
 so if Enable Auth Support , you will lose socks5 UDP function (if backend server support it). 
