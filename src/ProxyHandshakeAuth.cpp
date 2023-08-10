@@ -136,6 +136,7 @@ void ProxyHandshakeAuth::do_whenUpReady() {
         return;
     }
     readyUp = true;
+    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenUpReady()";
     // do send last ok package to client in downside
     switch (connectType) {
         case ConnectType::socks5:
@@ -163,6 +164,7 @@ void ProxyHandshakeAuth::do_whenUpReadyError() {
     }
     readyUp = true;
     completeUpError = true;
+    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenUpReadyError()";
     // do send last error package to client in downside
     switch (connectType) {
         case ConnectType::socks5:
@@ -197,6 +199,7 @@ void ProxyHandshakeAuth::do_whenDownReady() {
     }
     readyDown = true;
     // start upside handshake
+    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenDownReady() start upside handshake";
     util_Socks5ClientImpl_->start();
     // util_HttpClientImpl_->start();
 }
@@ -209,6 +212,7 @@ void ProxyHandshakeAuth::do_whenDownEnd(bool error) {
     if (error) {
         completeDownError = true;
     }
+    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenDownEnd() error:" << error;
     do_whenCompleteDown();
 }
 
@@ -220,6 +224,7 @@ void ProxyHandshakeAuth::do_whenCompleteUp() {
         return;
     }
     completeUp = true;
+    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenCompleteUp()";
     check_whenComplete();
 }
 
@@ -231,10 +236,12 @@ void ProxyHandshakeAuth::do_whenCompleteDown() {
         return;
     }
     completeDown = true;
+    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenCompleteDown()";
     check_whenComplete();
 }
 
 void ProxyHandshakeAuth::check_whenComplete() {
+    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::check_whenComplete() check";
     if (completeDown && completeUp) {
         if (completeDownError || completeUpError) {
             fail({}, "check_whenComplete (completeDownError || completeUpError)");
@@ -243,6 +250,7 @@ void ProxyHandshakeAuth::check_whenComplete() {
             auto ptr = tcpRelaySession;
             if (ptr) {
                 // all ok
+                BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::check_whenComplete() all ok";
                 do_whenComplete();
             }
         }

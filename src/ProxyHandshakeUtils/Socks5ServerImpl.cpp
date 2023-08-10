@@ -160,6 +160,19 @@ void Socks5ServerImpl::do_auth_client_read() {
                             if (ec) {
                                 return fail(ec, "do_auth_client_read");
                             }
+                            {
+                                std::stringstream ss;
+                                ss << "do_auth_client_read get bytes_transferred:"
+                                   << bytes_transferred
+                                   << " data:"
+                                   << std::string{(char *) socks5_read_buf->data(),
+                                                  bytes_transferred}
+                                   << " [*]:"
+                                   << "[0]" << (int) socks5_read_buf->at(0)
+                                   << "[1]" << (int) socks5_read_buf->at(1)
+                                   << "[2]" << (int) socks5_read_buf->at(2);
+                                BOOST_LOG_S5B(trace) << ss.str();
+                            }
 
                             if (bytes_transferred < (2 + 1 + 1 + 1)) {
                                 return fail(ec, "do_auth_client_read (bytes_transferred < (2 + 1 + 1 + 1))");
@@ -224,6 +237,7 @@ void Socks5ServerImpl::do_auth_client_ok() {
                 "\x01\x00", 2
         );
 
+        BOOST_LOG_S5B(trace) << "do do_handshake_client_read";
         boost::asio::async_write(
                 ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
@@ -240,6 +254,7 @@ void Socks5ServerImpl::do_auth_client_ok() {
                         return fail(ec, ss.str());
                     }
 
+                    BOOST_LOG_S5B(trace) << "call do_handshake_client_read";
                     do_handshake_client_read();
                 }
         );
@@ -318,6 +333,8 @@ void Socks5ServerImpl::do_handshake_client_read() {
                             if (ec) {
                                 return fail(ec, "do_handshake_client_read");
                             }
+                            BOOST_LOG_S5B(trace) << "do_handshake_client_read get bytes_transferred:"
+                                                 << bytes_transferred;
 
                             if (bytes_transferred < (4 + 2)) {
                                 return fail(ec, "do_handshake_client_read (bytes_transferred < (4 + 2))");

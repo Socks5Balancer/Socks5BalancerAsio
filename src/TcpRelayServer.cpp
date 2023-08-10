@@ -146,6 +146,8 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         auto whenComplete = [self = weak_from_this()]() {
                             // start relay
                             if (auto ptr = self.lock()) {
+                                BOOST_LOG_S5B(trace) << "firstPackAnalyzer whenComplete start relay";
+
                                 // impl: insert protocol analysis on here
                                 auto ct = ptr->getConnectionTracker();
 
