@@ -32,6 +32,8 @@
 #include <utility>
 #include "ConnectType.h"
 
+#include "./log/Log.h"
+
 // see https://imququ.com/post/web-proxy.html
 
 class TcpRelaySession;
