@@ -147,10 +147,61 @@ void Socks5ServerImpl::do_auth_client_read() {
     // do_downstream_read
     auto ptr = parents.lock();
     if (ptr) {
-        // TODO check auth
-        do_auth_client_ok();
-        return;
-        do_auth_client_error();
+
+        const size_t MAX_LENGTH = 8196;
+        auto socks5_read_buf = std::make_shared<std::vector<uint8_t>>(MAX_LENGTH);
+
+        ptr->downstream_socket_.async_read_some(
+                boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+                boost::beast::bind_front_handler(
+                        [this, self = shared_from_this(), socks5_read_buf, ptr](
+                                boost::beast::error_code ec,
+                                const size_t &bytes_transferred) {
+                            if (ec) {
+                                return fail(ec, "do_auth_client_read");
+                            }
+
+                            if (bytes_transferred < (2 + 1 + 1 + 1)) {
+                                return fail(ec, "do_auth_client_read (bytes_transferred < (2 + 1 + 1 + 1))");
+                            }
+                            if (bytes_transferred < (
+                                    2 + socks5_read_buf->at(1)
+                                    + 1
+                                    + socks5_read_buf->at(2 + socks5_read_buf->at(1)))) {
+                                return fail(ec, "do_auth_client_read (bytes_transferred too short)");
+                            }
+                            if (socks5_read_buf->at(0) != 0x01) {
+                                return fail(ec, "do_auth_client_read (socks5_read_buf->at(0) != 0x01)");
+                            }
+                            if (socks5_read_buf->at(1) != 0) {
+                                return fail(ec, "do_auth_client_read (socks5_read_buf->at(1) != 0)");
+                            }
+                            if (socks5_read_buf->at(2 + socks5_read_buf->at(1)) != 0) {
+                                return fail(
+                                        ec,
+                                        "do_auth_client_read (socks5_read_buf->at(2 + socks5_read_buf->at(1)) != 0)");
+                            }
+
+                            std::string_view user{
+                                    (char *) (socks5_read_buf->data() + 2),
+                                    socks5_read_buf->at(1)
+                            };
+                            std::string_view pwd{
+                                    (char *) (socks5_read_buf->data() + 2 + socks5_read_buf->at(1) + 1),
+                                    socks5_read_buf->at(2 + socks5_read_buf->at(1))
+                            };
+                            auto c = ptr->authClientManager->checkAuth(user, pwd);
+                            if (c) {
+                                BOOST_LOG_S5B(trace) << "do_auth_client_read auth ok :[" << user << "]:[" << pwd << "]";
+                                do_auth_client_ok();
+                            } else {
+                                BOOST_LOG_S5B(trace) << "do_auth_client_read auth error :[" << user << "]:[" << pwd
+                                                     << "]";
+                                do_auth_client_error();
+                            }
+                        }));
+
+
     } else {
         badParentPtr();
     }
@@ -232,6 +283,7 @@ void Socks5ServerImpl::do_auth_client_error() {
                         return fail(ec, ss.str());
                     }
 
+                    BOOST_LOG_S5B(warning) << "auth_client_error end.";
                     ptr->do_whenDownEnd(true);
 //                    fail({}, "auth_client_error");
                 }
@@ -268,7 +320,7 @@ void Socks5ServerImpl::do_handshake_client_read() {
                             }
 
                             if (bytes_transferred < (4 + 2)) {
-                                return fail(ec, "do_handshake_client_read (bytes_transferred < 4)");
+                                return fail(ec, "do_handshake_client_read (bytes_transferred < (4 + 2))");
                             }
                             if (socks5_read_buf->at(0) != 5
                                 || (
@@ -416,7 +468,9 @@ void Socks5ServerImpl::do_handshake_client_header_error() {
                         return fail(ec, ss.str());
                     }
 
-                    fail({}, "do_handshake_client_end_error end.");
+                    BOOST_LOG_S5B(warning) << "do_handshake_client_end_error end.";
+                    ptr->do_whenDownEnd(true);
+//                    fail({}, "do_handshake_client_end_error end.");
                 }
         );
     } else {
@@ -555,7 +609,7 @@ void Socks5ServerImpl::do_handshake_client_end() {
                         return fail(ec, ss.str());
                     }
 
-                    ptr->do_whenDownEnd();
+                    ptr->do_whenDownEnd(false);
                 }
         );
 
