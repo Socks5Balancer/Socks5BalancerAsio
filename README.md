@@ -187,6 +187,27 @@ WantedBy=multi-user.target
 
 ---
 
+## Auth Support [update 2023-08-11]
+
+now support Auth (UserName/Password) in http AND socks5 mode.  
+BUT need Enable option flag when building, and will **lost** UDP support, **NOW**, **Temporary**.
+
+#### detail:
+
+Enable Auth Support need add flag `-DNeed_ProxyHandshakeAuth=ON` when CMake config, then rebuild project.
+
+Enable Auth Support will replace `class FirstPackAnalyzer` with `class ProxyHandshakeAuth` AND use the `ProxyHandshakeUtils`.  
+when this mode, Socks5BalancerAsio will impl itself version Socks5-proxy client AND server, and Http-proxy client AND server .  
+(Http-proxy the client not impl, because now no plan to support http-proxy version backend server.).  
+
+Now, **Temporary** , the Socks5-proxy server Only impl CONNECT mode, the UDP mode not impl now,   
+so if Enable Auth Support , you will lose socks5 UDP function (if backend server support it). 
+
+if your backend server support socks5 UDP (not all socks5-proxy impl that), and you really need it, please don't Enable Auth Support.
+
+
+---
+
 ## Notice
 
 if a backend cannot connect to the `testRemoteHost`, this backend cannot pass the `connectCheck`.
@@ -430,9 +451,10 @@ so i write this, hope it can work more faster and more stable.
 - [X] show connect speed on state monitor
 - [X] show how many data was transfer in data monitor
 
-- [ ] proxy Auth support (both client/server side)
+- [x] proxy Auth support (both client/server side) (warring: now not impl UDP part, will impl later)
+- [ ] proxy Auth support UDP
 - [ ] Analysis socks5 proxy
-- [ ] Direct Impl Proxy Client
+- [X] Direct Impl Proxy Client
 - [x] ~~Impl Trojan Proxy Client~~ KISS(keep it simple stupid)
 
 
