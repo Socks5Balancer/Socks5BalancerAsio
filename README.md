@@ -92,7 +92,9 @@ it must encode with `UTF-8 no BOM`
     {
       "name": "Server Name A",              // the backend server name string, you can use any string on this
       "host": "127.0.0.1",                  // the backend server host
-      "port": 3000                          // the backend server port
+      "port": 3000,                         // the backend server port
+      "authUser": "username1111",           // the backend server username, (if empty, not auth)  , only work when **Enable Auth Support**
+      "authPwd": "password22222"            // the backend server password
     },
     {
       "name": "Server Name B",
@@ -105,6 +107,24 @@ it must encode with `UTF-8 no BOM`
       "host": "127.0.0.1",
       "port": 3002,
       "disable": 1                          // if set the "disable" as NOT Falsy (Falsy means 0,false,null,undefined..),  this server will disable by default
+    }
+  ],
+  "AuthClientInfo": [                       // the User Auth username/password config, (if not empty, all the proxy access MUST need auth, (include http-proxy/sock5-proxy))
+    {                                       //    NOTE:  please see follow ``##Auth Support`` section to see how to **Enable Auth Support**, and other more information
+      "user": "111",                        // the User Auth username
+      "pwd": "abc"                          // the User Auth Password
+    },
+    {
+      "user": "111",                        // if multi same username with different passwd, means the user have multi valid passwd, every one passwd work well
+      "pwd": "def00000000"
+    },
+    {
+      "user": "222",                        // can set multi user
+      "pwd": "def00000000"
+    },
+    {
+      "user": "333",
+      "pwd": "987654321000"
     }
   ],
   "EmbedWebServerConfig": {                 // the embedding web server, it work as a static file provider
@@ -191,6 +211,8 @@ WantedBy=multi-user.target
 
 now support Auth (UserName/Password) in http AND socks5 mode.  
 BUT need Enable option flag when building, and will **lost** UDP support, **NOW**, **Temporary**.
+
+use ```AuthClientInfo``` section in config file to config username/password.
 
 #### detail:
 
