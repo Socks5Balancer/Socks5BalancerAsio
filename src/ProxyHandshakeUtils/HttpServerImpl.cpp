@@ -127,6 +127,7 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                             auto pa = h.at(boost::beast::http::field::proxy_authorization);
                             BOOST_LOG_S5B(trace) << "===== proxy_authorization:" << pa;
                             auto startCheck = boost::starts_with(pa, std::string{"Basic "});
+                            // TODO support `basic BASIC BaSIc bAsIC`
                             BOOST_LOG_S5B(trace) << "===== proxy_authorization startCheck:" << startCheck;
 
                             const std::string_view base64Part(pa.begin() + 6, pa.size() - 6);
