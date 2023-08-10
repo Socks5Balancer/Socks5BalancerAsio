@@ -183,6 +183,12 @@ void Socks5ServerImpl::do_auth_client_read() {
                                     + socks5_read_buf->at(2 + socks5_read_buf->at(1)))) {
                                 return fail(ec, "do_auth_client_read (bytes_transferred too short)");
                             }
+                            if (bytes_transferred > (
+                                    2 + socks5_read_buf->at(1)
+                                    + 1
+                                    + socks5_read_buf->at(2 + socks5_read_buf->at(1)))) {
+                                return fail(ec, "do_auth_client_read (bytes_transferred too long)");
+                            }
                             if (socks5_read_buf->at(0) != 0x01) {
                                 return fail(ec, "do_auth_client_read (socks5_read_buf->at(0) != 0x01)");
                             }
@@ -353,6 +359,9 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 if (bytes_transferred < (4 + 4 + 2)) {
                                     return fail(ec, "do_handshake_client_read (invalid IPv4)");
                                 }
+                                if (bytes_transferred > (4 + 4 + 2)) {
+                                    return fail(ec, "do_handshake_client_read (IPv4 too long)");
+                                }
                                 // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
                                 // We need an unsigned char* pointer to the IP address
                                 auto addr = reinterpret_cast<unsigned char *>(
@@ -374,6 +383,9 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 if (bytes_transferred < (4 + 1 + socks5_read_buf->at(4) + 2)) {
                                     return fail(ec, "do_handshake_client_read (invalid domain)");
                                 }
+                                if (bytes_transferred > (4 + 1 + socks5_read_buf->at(4) + 2)) {
+                                    return fail(ec, "do_handshake_client_read (domain too long)");
+                                }
                                 ptr->host = std::string{
                                         socks5_read_buf->begin() + 4 + 1 + 1,
                                         socks5_read_buf->begin() + 4 + 1 + 1 + socks5_read_buf->at(4)};
@@ -386,6 +398,9 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 // IPv6
                                 if (bytes_transferred < (4 + 16 + 2)) {
                                     return fail(ec, "do_handshake_client_read (invalid IPv6)");
+                                }
+                                if (bytes_transferred > (4 + 16 + 2)) {
+                                    return fail(ec, "do_handshake_client_read (IPv6 too long)");
                                 }
                                 // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
                                 // We need an unsigned char* pointer to the IP address
@@ -413,6 +428,7 @@ void Socks5ServerImpl::do_handshake_client_read() {
                             switch (socks5_read_buf->at(1)) {
                                 case 0x01:
                                     // CONNECT
+                                    BOOST_LOG_S5B(trace) << "do_handshake_client_read CONNECT";
                                     break;
                                 case 0x02:
                                     // BIND
@@ -426,6 +442,7 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                     if (!ptr->upside_support_udp_mode()) {
                                         // upside not support UDP
                                         do_handshake_client_end_error(0x07);
+                                        BOOST_LOG_S5B(warning) << "do_handshake_client_read ( upside not support UDP)";
                                         return;
                                     }
                                     // we not impl this, only NOW
@@ -508,6 +525,7 @@ void Socks5ServerImpl::do_ready_to_send_last_ok_package(
 }
 
 void Socks5ServerImpl::do_handshake_client_end_error(uint8_t errorType) {
+    BOOST_LOG_S5B(warning) << "do_handshake_client_end_error errorType:" << errorType;
 
     // do_downstream_write
     auto ptr = parents.lock();
@@ -609,11 +627,15 @@ void Socks5ServerImpl::do_handshake_client_end() {
         // client request UDP but upside cannot provide
         if (udpEnabled) {
             if (!ptr->upside_in_udp_mode()) {
+                BOOST_LOG_S5B(warning) << "do_handshake_client_end (!ptr->upside_in_udp_mode())";
                 do_handshake_client_end_error(0x07);
                 return;
             } else {
                 // now in UDP mode
+                // empty
             }
+        } else {
+            // empty
         }
 
         boost::asio::async_write(
@@ -623,15 +645,16 @@ void Socks5ServerImpl::do_handshake_client_end() {
                         const boost::system::error_code &ec,
                         std::size_t bytes_transferred_) {
                     if (ec) {
-                        return fail(ec, "do_handshake_client_end_error");
+                        return fail(ec, "do_handshake_client_end");
                     }
                     if (bytes_transferred_ != data_send->size()) {
                         std::stringstream ss;
-                        ss << "do_handshake_client_end_error with bytes_transferred_:"
+                        ss << "do_handshake_client_end with bytes_transferred_:"
                            << bytes_transferred_ << " but data_send->size():" << data_send->size();
                         return fail(ec, ss.str());
                     }
 
+                    BOOST_LOG_S5B(trace) << "do_handshake_client_end";
                     ptr->do_whenDownEnd(false);
                 }
         );
@@ -646,5 +669,6 @@ void Socks5ServerImpl::to_send_last_ok_package() {
 }
 
 void Socks5ServerImpl::to_send_last_error_package() {
+    BOOST_LOG_S5B(warning) << "to_send_last_error_package";
     do_handshake_client_end_error(0x01);
 }

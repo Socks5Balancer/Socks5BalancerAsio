@@ -89,13 +89,21 @@ void FirstPackAnalyzer::do_whenComplete() {
         auto ptr = tcpRelaySession.lock();
         if (ptr) {
             // all ok
-            whenComplete();
+            if (whenComplete) {
+                whenComplete();
+                whenComplete = nullptr;
+                whenError = nullptr;
+            }
         }
     }
 }
 
 void FirstPackAnalyzer::do_whenError(boost::system::error_code error) {
-    whenError(error);
+    if (whenError) {
+        whenError(error);
+        whenComplete = nullptr;
+        whenError = nullptr;
+    }
 }
 
 void FirstPackAnalyzer::do_prepare_complete_downstream_write() {

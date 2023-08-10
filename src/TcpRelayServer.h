@@ -35,11 +35,15 @@
 #include "UpstreamPool.h"
 #include "ConnectionTracker.h"
 #include "AuthClientManager.h"
+
 #ifdef Need_ProxyHandshakeAuth
+
 #include "ProxyHandshakeAuth.h"
+
 #else
 #include "FirstPackAnalyzer.h"
 #endif // Need_ProxyHandshakeAuth
+
 #include "TcpRelayStatisticsInfo.h"
 #include "./log/Log.h"
 
@@ -113,7 +117,7 @@ public:
     }
 
     ~TcpRelaySession() {
-//        std::cout << "~TcpRelaySession()" << std::endl;
+        BOOST_LOG_S5B(trace) << "~TcpRelaySession()";
         close();
     }
 

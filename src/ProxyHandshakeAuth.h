@@ -108,7 +108,7 @@ private:
 public:
 
     ProxyHandshakeAuth(
-            std::weak_ptr<TcpRelaySession> tcpRelaySession,
+            std::shared_ptr<TcpRelaySession> tcpRelaySession,
             boost::asio::ip::tcp::socket &downstream_socket_,
             boost::asio::ip::tcp::socket &upstream_socket_,
             std::shared_ptr<ConfigLoader> configLoader,
@@ -125,6 +125,10 @@ public:
             nowServer(std::move(nowServer)),
             whenComplete(std::move(whenComplete)),
             whenError(std::move(whenError)) {}
+
+    ~ProxyHandshakeAuth() {
+        BOOST_LOG_S5B(trace) << "~ProxyHandshakeAuth()";
+    }
 
     void start();
 
@@ -167,15 +171,23 @@ private:
 public:
 
     void do_whenComplete() {
+        BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenComplete()";
         BOOST_ASSERT(tcpRelaySession);
+        BOOST_ASSERT(whenComplete);
         whenComplete();
         tcpRelaySession.reset();
+        whenComplete = nullptr;
+        whenError = nullptr;
     }
 
     void do_whenError(boost::system::error_code error) {
+        BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenError()";
         BOOST_ASSERT(tcpRelaySession);
+        BOOST_ASSERT(whenError);
         whenError(error);
         tcpRelaySession.reset();
+        whenComplete = nullptr;
+        whenError = nullptr;
     }
 
 private:

@@ -71,7 +71,7 @@ void Socks5ClientImpl::do_socks5_handshake_write() {
                         return fail(ec, ss.str());
                     }
 
-                    // BOOST_LOG_S5B(trace) << "do_socks5_handshake_write()";
+                    BOOST_LOG_S5B(trace) << "do_socks5_handshake_write()";
 
                     do_socks5_handshake_read();
                 }
@@ -124,7 +124,7 @@ void Socks5ClientImpl::do_socks5_handshake_read() {
                                 }
                             }
 
-                            // BOOST_LOG_S5B(trace) << "do_socks5_handshake_read()";
+                            BOOST_LOG_S5B(trace) << "do_socks5_handshake_read()";
                             do_socks5_connect_write();
                         }));
     } else {
@@ -282,7 +282,7 @@ void Socks5ClientImpl::do_socks5_connect_write() {
                                 return fail(ec, ss.str());
                             }
 
-                            // BOOST_LOG_S5B(trace) << "do_socks5_connect_write()";
+                            BOOST_LOG_S5B(trace) << "do_socks5_connect_write()";
                             do_socks5_connect_read();
                         })
         );
@@ -430,7 +430,7 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                 }
                             }
 
-                            // BOOST_LOG_S5B(trace) << "do_socks5_connect_read()";
+                            BOOST_LOG_S5B(trace) << "do_socks5_connect_read()";
                             // socks5 handshake now complete
                             ptr->do_whenUpReady();
                             ptr->do_whenUpEnd();

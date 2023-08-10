@@ -50,6 +50,10 @@ public:
 public:
     HttpServerImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
 
+    ~HttpServerImpl() {
+        BOOST_LOG_S5B(trace) << "~HttpServerImpl()";
+    }
+
 public:
 
     void do_analysis_client_first_http_header();

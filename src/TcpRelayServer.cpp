@@ -143,9 +143,9 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         // Setup async read from client (downstream)
                         do_downstream_read();
                     } else {
-                        auto whenComplete = [self = weak_from_this()]() {
+                        auto whenComplete = [self = shared_from_this()]() {
                             // start relay
-                            if (auto ptr = self.lock()) {
+                            if (auto ptr = self) {
                                 BOOST_LOG_S5B(trace) << "firstPackAnalyzer whenComplete start relay";
 
                                 // impl: insert protocol analysis on here
@@ -160,8 +160,8 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                 BOOST_LOG_S5B(error) << "firstPackAnalyzer whenComplete ptr lock failed.";
                             }
                         };
-                        auto whenError = [self = weak_from_this()](boost::system::error_code error) {
-                            if (auto ptr = self.lock()) {
+                        auto whenError = [self = shared_from_this()](boost::system::error_code error) {
+                            if (auto ptr = self) {
                                 ptr->close(error);
                             } else {
                                 BOOST_LOG_S5B(error) << "firstPackAnalyzer whenError failed. what:" << error.what();

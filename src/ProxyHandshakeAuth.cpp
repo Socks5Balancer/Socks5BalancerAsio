@@ -242,17 +242,16 @@ void ProxyHandshakeAuth::do_whenCompleteDown() {
 
 void ProxyHandshakeAuth::check_whenComplete() {
     BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::check_whenComplete() check";
-    if (completeDown && completeUp) {
-        if (completeDownError || completeUpError) {
-            fail({}, "check_whenComplete (completeDownError || completeUpError)");
-            return;
-        } else {
-            auto ptr = tcpRelaySession;
-            if (ptr) {
-                // all ok
-                BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::check_whenComplete() all ok";
-                do_whenComplete();
-            }
+    if (completeDownError || completeUpError) {
+        BOOST_LOG_S5B(warning) << "check_whenComplete (completeDownError || completeUpError)";
+        fail({}, "check_whenComplete (completeDownError || completeUpError)");
+        return;
+    } else if (completeDown && completeUp) {
+        auto ptr = tcpRelaySession;
+        if (ptr) {
+            // all ok
+            BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::check_whenComplete() all ok";
+            do_whenComplete();
         }
     }
 }
