@@ -336,8 +336,6 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                         socks5_read_buf->at(3) != 0x03 &&
                                         socks5_read_buf->at(3) != 0x04
                                 )) {
-                                ptr->do_whenUpReadyError();
-                                ptr->do_whenUpEnd();
 
                                 std::stringstream ss;
                                 ss << "socks5_connect_read (invalid)"
@@ -347,6 +345,9 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                    << socks5_read_buf->at(2)
                                    << socks5_read_buf->at(3);
                                 std::cout << ss.str() << std::endl;
+
+                                ptr->do_whenUpReadyError();
+                                ptr->do_whenUpEnd();
                                 return;
 //                                return fail(ec, ss.str());
                             }
@@ -377,21 +378,45 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                 switch (socks5_read_buf->at(3)) {
                                     case 0x03:
                                         bindAddr = std::string{
-                                                (char *) (socks5_read_buf->data()) + 4 + 1,
+                                                (char *) (socks5_read_buf->data()) + 4 + 1 + 1,
                                                 socks5_read_buf->at(4)
                                         };
                                         break;
-                                    case 0x01:
-                                        bindAddr = std::string{
-                                                (char *) (socks5_read_buf->data()) + 4,
-                                                4
-                                        };
+                                    case 0x01: {
+                                        // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
+                                        // We need an unsigned char* pointer to the IP address
+                                        auto addr = reinterpret_cast<unsigned char *>(
+                                                socks5_read_buf->data() + 4 + 1
+                                        );
+                                        boost::asio::ip::address_v4::bytes_type ipV4Byte;
+                                        // Copy the address into our array
+                                        std::copy(addr, addr + ipV4Byte.size(), ipV4Byte.data());
+                                        // Finally, initialize.
+                                        boost::asio::ip::address_v4 ipv4(ipV4Byte);
+                                        bindAddr = ipv4.to_string();
+//                                        bindAddr = std::string{
+//                                                (char *) (socks5_read_buf->data()) + 4,
+//                                                4
+//                                        };
+                                    }
                                         break;
-                                    case 0x04:
-                                        bindAddr = std::string{
-                                                (char *) (socks5_read_buf->data()) + 4,
-                                                16
-                                        };
+                                    case 0x04: {
+                                        // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
+                                        // We need an unsigned char* pointer to the IP address
+                                        auto addr = reinterpret_cast<unsigned char *>(
+                                                socks5_read_buf->data() + 4 + 1
+                                        );
+                                        boost::asio::ip::address_v6::bytes_type ipV6Byte;
+                                        // Copy the address into our array
+                                        std::copy(addr, addr + ipV6Byte.size(), ipV6Byte.data());
+                                        // Finally, initialize.
+                                        boost::asio::ip::address_v6 ipv6(ipV6Byte);
+                                        bindAddr = ipv6.to_string();
+//                                        bindAddr = std::string{
+//                                                (char *) (socks5_read_buf->data()) + 4,
+//                                                16
+//                                        };
+                                    }
                                         break;
                                     default:
                                         return fail(ec, "do_socks5_connect_read (socks5_read_buf->at(3) invalid)");

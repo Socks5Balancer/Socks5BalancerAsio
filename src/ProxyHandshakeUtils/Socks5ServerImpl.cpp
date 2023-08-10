@@ -147,8 +147,10 @@ void Socks5ServerImpl::do_auth_client_read() {
     // do_downstream_read
     auto ptr = parents.lock();
     if (ptr) {
+        // TODO check auth
         do_auth_client_ok();
-//    do_auth_client_error();
+        return;
+        do_auth_client_error();
     } else {
         badParentPtr();
     }
@@ -230,7 +232,8 @@ void Socks5ServerImpl::do_auth_client_error() {
                         return fail(ec, ss.str());
                     }
 
-                    fail({}, "auth_client_error");
+                    ptr->do_whenDownEnd(true);
+//                    fail({}, "auth_client_error");
                 }
         );
     } else {
@@ -250,9 +253,6 @@ void Socks5ServerImpl::do_handshake_client_read() {
         //  | 1  |  1  | X'00' |  1   | Variable |    2     |
         //  +----+-----+-------+------+----------+----------+
         //
-
-        // TODO set udpEnabled if user need UDP
-        //    udpEnabled = true;
 
         const size_t MAX_LENGTH = 8196;
         auto socks5_read_buf = std::make_shared<std::vector<uint8_t>>(MAX_LENGTH);
@@ -298,6 +298,9 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                     }
                                     // we not impl this, only NOW
                                     do_handshake_client_end_error(0x07);
+
+                                    // TODO set udpEnabled if user need UDP (when we impl UDP)
+                                    //    udpEnabled = true;
                                     return;
                                     break;
                                 default:
@@ -334,8 +337,8 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                     return fail(ec, "do_handshake_client_read (invalid domain)");
                                 }
                                 ptr->host = std::string{
-                                        socks5_read_buf->begin() + 4 + 1,
-                                        socks5_read_buf->begin() + 4 + 1 + socks5_read_buf->at(4)};
+                                        socks5_read_buf->begin() + 4 + 1 + 1,
+                                        socks5_read_buf->begin() + 4 + 1 + 1 + socks5_read_buf->at(4)};
                                 ptr->port = (
                                         socks5_read_buf->at(bytes_transferred - 2) << 8
                                         |
@@ -370,7 +373,6 @@ void Socks5ServerImpl::do_handshake_client_read() {
 
                             do_ready_to_send_last_ok_package(ptr);
 
-//        do_handshake_client_end_error();
                         }));
 
 
@@ -528,9 +530,13 @@ void Socks5ServerImpl::do_handshake_client_end() {
         //    AND impl UDP
 
         // client request UDP but upside cannot provide
-        if (udpEnabled && !ptr->upside_in_udp_mode()) {
-            do_handshake_client_end_error(0x07);
-            return;
+        if (udpEnabled) {
+            if (!ptr->upside_in_udp_mode()) {
+                do_handshake_client_end_error(0x07);
+                return;
+            } else {
+                // now in UDP mode
+            }
         }
 
         boost::asio::async_write(

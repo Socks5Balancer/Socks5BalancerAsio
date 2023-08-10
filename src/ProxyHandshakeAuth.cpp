@@ -40,6 +40,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             std::cout << "is socks5" << std::endl;
                             connectType = ConnectType::socks5;
                             // do socks5 handshake with client (downside)
+                            upsideConnectType = UpsideConnectType::socks5;
                             util_Socks5ServerImpl_->do_analysis_client_first_socks5_header();
                         } else if ((d[0] == 'C' || d[0] == 'c') &&
                                    (d[1] == 'O' || d[1] == 'o') &&
@@ -49,6 +50,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             // analysis downside target server and create upside handshake
                             connectType = ConnectType::httpConnect;
                             // do http handshake with client (downside)
+                            upsideConnectType = UpsideConnectType::http;
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         } else {
                             // is other protocol
@@ -99,6 +101,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             }
                             // debug
                             // do http handshake with client (downside)
+                            upsideConnectType = UpsideConnectType::http;
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         }
 
