@@ -18,6 +18,9 @@
 
 #include "ConfigLoader.h"
 
+#include <sstream>
+
+#include "./log/Log.h"
 #include "./base64.h"
 
 RuleEnum string2RuleEnum(std::string s) {
@@ -71,78 +74,85 @@ std::vector<std::string> RuleEnumList{
 };
 
 void ConfigLoader::print() {
-    std::cout << "config.listenHost:" << config.listenHost << "\n";
-    std::cout << "config.listenPort:" << config.listenPort << "\n";
-    std::cout << "config.testRemoteHost:" << config.testRemoteHost << "\n";
-    std::cout << "config.testRemotePort:" << config.testRemotePort << "\n";
-    std::cout << "config.stateServerHost:" << config.stateServerHost << "\n";
-    std::cout << "config.stateServerPort:" << config.stateServerPort << "\n";
-    std::cout << "config.upstreamSelectRule:" << ruleEnum2string(config.upstreamSelectRule) << "\n";
+    std::stringstream ss;
 
-    std::cout << "config.retryTimes:" << config.retryTimes << "\n";
+    ss << "config.listenHost:" << config.listenHost << "\n";
+    ss << "config.listenPort:" << config.listenPort << "\n";
+    ss << "config.testRemoteHost:" << config.testRemoteHost << "\n";
+    ss << "config.testRemotePort:" << config.testRemotePort << "\n";
+    ss << "config.stateServerHost:" << config.stateServerHost << "\n";
+    ss << "config.stateServerPort:" << config.stateServerPort << "\n";
+    ss << "config.upstreamSelectRule:" << ruleEnum2string(config.upstreamSelectRule) << "\n";
 
-    std::cout << "config.disableConnectTest:" << config.disableConnectTest << "\n";
-    std::cout << "config.disableConnectionTracker:" << config.disableConnectionTracker << "\n";
-    std::cout << "config.traditionTcpRelay:" << config.traditionTcpRelay << "\n";
+    ss << "config.retryTimes:" << config.retryTimes << "\n";
 
-    std::cout << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
+    ss << "config.disableConnectTest:" << config.disableConnectTest << "\n";
+    ss << "config.disableConnectionTracker:" << config.disableConnectionTracker << "\n";
+    ss << "config.traditionTcpRelay:" << config.traditionTcpRelay << "\n";
 
-    std::cout << "config.connectTimeout:" << config.connectTimeout.count() << "\n";
+    ss << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
 
-    std::cout << "config.sleepTime:" << config.sleepTime.count() << "\n";
+    ss << "config.connectTimeout:" << config.connectTimeout.count() << "\n";
 
-    std::cout << "config.threadNum:" << config.threadNum << "\n";
+    ss << "config.sleepTime:" << config.sleepTime.count() << "\n";
 
-    std::cout << "config.tcpCheckPeriod:" << config.tcpCheckPeriod.count() << "\n";
-    std::cout << "config.tcpCheckStart:" << config.tcpCheckStart.count() << "\n";
+    ss << "config.threadNum:" << config.threadNum << "\n";
 
-    std::cout << "config.connectCheckPeriod:" << config.connectCheckPeriod.count() << "\n";
-    std::cout << "config.connectCheckStart:" << config.connectCheckStart.count() << "\n";
+    ss << "config.tcpCheckPeriod:" << config.tcpCheckPeriod.count() << "\n";
+    ss << "config.tcpCheckStart:" << config.tcpCheckStart.count() << "\n";
 
-    std::cout << "config.additionCheckPeriod:" << config.additionCheckPeriod.count() << "\n";
+    ss << "config.connectCheckPeriod:" << config.connectCheckPeriod.count() << "\n";
+    ss << "config.connectCheckStart:" << config.connectCheckStart.count() << "\n";
+
+    ss << "config.additionCheckPeriod:" << config.additionCheckPeriod.count() << "\n";
 
     for (size_t i = 0; i != config.upstream.size(); ++i) {
         const auto &it = config.upstream[i];
-        std::cout << "config.upstream [" << i << "]:\n";
-        std::cout << "\t" << "upstream.name:" << it.name << "\n";
-        std::cout << "\t" << "upstream.host:" << it.host << "\n";
-        std::cout << "\t" << "upstream.port:" << it.port << "\n";
-        std::cout << "\t" << "upstream.authUser:" << it.authUser << "\n";
-        std::cout << "\t" << "upstream.authPwd:" << it.authPwd << "\n";
-        std::cout << "\t" << "upstream.disable:" << it.disable << "\n";
+        ss << "config.upstream [" << i << "]:\n";
+        ss << "\t" << "upstream.name:" << it.name << "\n";
+        ss << "\t" << "upstream.host:" << it.host << "\n";
+        ss << "\t" << "upstream.port:" << it.port << "\n";
+        ss << "\t" << "upstream.authUser:" << it.authUser << "\n";
+        ss << "\t" << "upstream.authPwd:" << it.authPwd << "\n";
+        ss << "\t" << "upstream.disable:" << it.disable << "\n";
     }
 
     for (size_t i = 0; i != config.multiListen.size(); ++i) {
         const auto &it = config.multiListen[i];
-        std::cout << "config.multiListen [" << i << "]:\n";
-        std::cout << "\t" << "multiListen.host:" << it.host << "\n";
-        std::cout << "\t" << "multiListen.port:" << it.port << "\n";
+        ss << "config.multiListen [" << i << "]:\n";
+        ss << "\t" << "multiListen.host:" << it.host << "\n";
+        ss << "\t" << "multiListen.port:" << it.port << "\n";
     }
 
     if (!config.embedWebServerConfig.enable) {
-        std::cout << "config.embedWebServerConfig.enable : false .\n";
+        ss << "config.embedWebServerConfig.enable : false .\n";
     } else {
         auto &ew = config.embedWebServerConfig;
-        std::cout << "config.embedWebServerConfig.enable : true :\n";
-        std::cout << "\t" << "embedWebServerConfig.host:" << ew.host << "\n";
-        std::cout << "\t" << "embedWebServerConfig.port:" << ew.port << "\n";
-        std::cout << "\t" << "embedWebServerConfig.root_path:" << ew.root_path << "\n";
-        std::cout << "\t" << "embedWebServerConfig.index_file_of_root:" << ew.index_file_of_root << "\n";
-        std::cout << "\t" << "embedWebServerConfig.backendHost:" << ew.backendHost << "\n";
-        std::cout << "\t" << "embedWebServerConfig.backendPort:" << ew.backendPort << "\n";
-        std::cout << "\t" << "embedWebServerConfig.backend_json_string:" << ew.backend_json_string << "\n";
+        ss << "config.embedWebServerConfig.enable : true :\n";
+        ss << "\t" << "embedWebServerConfig.host:" << ew.host << "\n";
+        ss << "\t" << "embedWebServerConfig.port:" << ew.port << "\n";
+        ss << "\t" << "embedWebServerConfig.root_path:" << ew.root_path << "\n";
+        ss << "\t" << "embedWebServerConfig.index_file_of_root:" << ew.index_file_of_root << "\n";
+        ss << "\t" << "embedWebServerConfig.backendHost:" << ew.backendHost << "\n";
+        ss << "\t" << "embedWebServerConfig.backendPort:" << ew.backendPort << "\n";
+        ss << "\t" << "embedWebServerConfig.backend_json_string:" << ew.backend_json_string << "\n";
     }
 
 
     for (size_t i = 0; i != config.authClientInfo.size(); ++i) {
         const auto &it = config.authClientInfo[i];
-        std::cout << "config.AuthClientInfo [" << i << "]:\n";
-        std::cout << "\t" << "AuthClientInfo.user:" << it.user << "\n";
-        std::cout << "\t" << "AuthClientInfo.pwd:" << it.pwd << "\n";
-        std::cout << "\t" << "AuthClientInfo.base64AuthString: " << it.base64AuthString << "\n";
+        ss << "config.AuthClientInfo [" << i << "]:\n";
+        ss << "\t" << "AuthClientInfo.user:" << it.user << "\n";
+        ss << "\t" << "AuthClientInfo.pwd:" << it.pwd << "\n";
+        ss << "\t" << "AuthClientInfo.base64AuthString: " << it.base64AuthString << "\n";
+    }
+    if (config.authClientInfo.empty()) {
+        ss << "config.authClientInfo.empty.\n";
     }
 
-    std::cout << std::endl;
+    ss << std::endl;
+
+    BOOST_LOG_S5B(info) << ss.str();
 
 }
 

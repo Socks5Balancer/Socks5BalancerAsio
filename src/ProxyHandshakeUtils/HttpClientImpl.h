@@ -37,6 +37,8 @@
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
 
+#include "../log/Log.h"
+
 
 class ProxyHandshakeAuth;
 

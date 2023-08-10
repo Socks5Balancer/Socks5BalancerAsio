@@ -38,6 +38,8 @@
 #include <boost/asio/read_until.hpp>
 #include <boost/asio/write.hpp>
 
+#include "../log/Log.h"
+
 class ProxyHandshakeAuth;
 
 // Socks5 proxy protocol server

@@ -38,6 +38,8 @@
 #include <boost/asio/read_until.hpp>
 #include <boost/beast.hpp>
 
+#include "../log/Log.h"
+
 class ProxyHandshakeAuth;
 
 // http proxy protocol server

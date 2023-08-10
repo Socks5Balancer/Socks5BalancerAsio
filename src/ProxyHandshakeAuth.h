@@ -49,6 +49,7 @@
 #include "./ProxyHandshakeUtils/Socks5ServerImpl.h"
 #include "./ProxyHandshakeUtils/Socks5ClientImpl.h"
 
+#include "./log/Log.h"
 
 class TcpRelaySession;
 
