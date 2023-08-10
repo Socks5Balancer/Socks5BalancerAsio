@@ -258,6 +258,13 @@ void Socks5ClientImpl::do_socks5_connect_write() {
         data_send->push_back(static_cast<uint8_t>(ptr->port >> 8));
         data_send->push_back(static_cast<uint8_t>(ptr->port & 0xff));
 
+        // TODO UDP
+        if (ptr->downside_in_udp_mode()) {
+            // now we don't impl UDP
+            //  data_send->at(1) = 0x03;
+            //  udpEnabled = true;
+        }
+
         boost::asio::async_write(
                 ptr->upstream_socket_,
                 boost::asio::buffer(*data_send),
@@ -309,16 +316,7 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                             // +----+-----+-------+------+----------+----------+
                             // | 1  |  1  | X'00' |  1   | Variable |    2     |
                             // +----+-----+-------+------+----------+----------+
-                            if (bytes_transferred < 6
-                                || socks5_read_buf->at(0) != 5
-                                || socks5_read_buf->at(1) != 0x00
-                                || socks5_read_buf->at(2) != 0x00
-                                || (
-                                        socks5_read_buf->at(3) != 0x01 &&
-                                        socks5_read_buf->at(3) != 0x03 &&
-                                        socks5_read_buf->at(3) != 0x04
-                                )
-                                    ) {
+                            if (bytes_transferred < 6) {
 //                                std::stringstream ss;
 //                                ss << "socks5_connect_read (bytes_transferred < 6)"
 //                                   << " the socks5_read_buf:" << std::hex
@@ -329,6 +327,28 @@ void Socks5ClientImpl::do_socks5_connect_read() {
 //                                        ;
 //                                return fail(ec, ss.str());
                                 return fail(ec, "do_socks5_connect_read (bytes_transferred < 6)");
+                            }
+                            if (socks5_read_buf->at(0) != 5
+                                || socks5_read_buf->at(1) != 0x00
+                                || socks5_read_buf->at(2) != 0x00
+                                || (
+                                        socks5_read_buf->at(3) != 0x01 &&
+                                        socks5_read_buf->at(3) != 0x03 &&
+                                        socks5_read_buf->at(3) != 0x04
+                                )) {
+                                ptr->do_whenUpReadyError();
+                                ptr->do_whenUpEnd();
+
+                                std::stringstream ss;
+                                ss << "socks5_connect_read (invalid)"
+                                   << " the socks5_read_buf:" << std::hex
+                                   << socks5_read_buf->at(0)
+                                   << socks5_read_buf->at(1)
+                                   << socks5_read_buf->at(2)
+                                   << socks5_read_buf->at(3);
+                                std::cout << ss.str() << std::endl;
+                                return;
+//                                return fail(ec, ss.str());
                             }
                             if (socks5_read_buf->at(3) == 0x03
                                 && bytes_transferred != (socks5_read_buf->at(4) + 4 + 1 + 2)
@@ -350,7 +370,7 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                 // bind
                                 int bindPort{
                                         socks5_read_buf->at(bytes_transferred - 2) << 8
-                                        ||
+                                        |
                                         socks5_read_buf->at(bytes_transferred - 1)
                                 };
                                 std::string bindAddr;
@@ -378,11 +398,18 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                 }
                                 boost::ignore_unused(bindPort);
                                 boost::ignore_unused(bindAddr);
+                                // if bindPort != 0 , we not support multi-homed socks5 server
+                                if (bindPort != 0) {
+                                    std::cout <<
+                                              "do_socks5_connect_read (bindPort != 0), we not support multi-homed socks5 server"
+                                              << std::endl;
+                                }
                             }
 
                             // std::cout << "do_socks5_connect_read()" << std::endl;
                             // socks5 handshake now complete
-                            ptr->do_whenCompleteUp();
+                            ptr->do_whenUpReady();
+                            ptr->do_whenUpEnd();
                         }));
 
     } else {

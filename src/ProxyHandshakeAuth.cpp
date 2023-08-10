@@ -94,7 +94,8 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                 default:
                                     std::cout << "is default..." << std::endl;
                                     connectType = ConnectType::unknown;
-                                    break;
+                                    fail({}, "ConnectType::unknown");
+                                    return;
                             }
                             // debug
                             // do http handshake with client (downside)
@@ -107,5 +108,191 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                 });
     } else {
         badParentPtr();
+    }
+}
+
+void ProxyHandshakeAuth::start() {
+    util_HttpClientImpl_ = std::make_shared<decltype(util_HttpClientImpl_)::element_type>(shared_from_this());
+    util_HttpServerImpl_ = std::make_shared<decltype(util_HttpServerImpl_)::element_type>(shared_from_this());
+    util_Socks5ClientImpl_ = std::make_shared<decltype(util_Socks5ClientImpl_)::element_type>(shared_from_this());
+    util_Socks5ServerImpl_ = std::make_shared<decltype(util_Socks5ServerImpl_)::element_type>(shared_from_this());
+
+    auto ptr = tcpRelaySession.lock();
+    if (ptr) {
+        do_read_client_first_3_byte();
+    } else {
+        badParentPtr();
+    }
+}
+
+void ProxyHandshakeAuth::do_whenUpReady() {
+    if (readyUp) {
+        // never go there
+        BOOST_ASSERT_MSG(false, "do_whenUpReady");
+        fail({}, "do_whenUpReady , (readyUp), never go there");
+        return;
+    }
+    readyUp = true;
+    // do send last ok package to client in downside
+    switch (connectType) {
+        case ConnectType::socks5:
+            util_Socks5ServerImpl_->to_send_last_ok_package();
+            break;
+        case ConnectType::httpConnect:
+        case ConnectType::httpOther:
+            util_HttpServerImpl_->to_send_last_ok_package();
+            break;
+        case ConnectType::unknown:
+        default:
+            // never go there
+            BOOST_ASSERT_MSG(false, "do_whenDownReady");
+            fail({}, "do_whenUpReady (connectType invalid), never go there.");
+            return;
+    }
+}
+
+void ProxyHandshakeAuth::do_whenUpReadyError() {
+    if (readyUp) {
+        // never go there
+        BOOST_ASSERT_MSG(false, "do_whenUpReadyError");
+        fail({}, "do_whenUpReadyError , (readyUp), never go there");
+        return;
+    }
+    readyUp = true;
+    completeUpError = true;
+    // do send last error package to client in downside
+    switch (connectType) {
+        case ConnectType::socks5:
+            util_Socks5ServerImpl_->to_send_last_error_package();
+            break;
+        case ConnectType::httpConnect:
+        case ConnectType::httpOther:
+            util_HttpServerImpl_->to_send_last_error_package();
+            break;
+        case ConnectType::unknown:
+        default:
+            // never go there
+            BOOST_ASSERT_MSG(false, "do_whenUpReadyError");
+            fail({}, "do_whenUpReadyError (connectType invalid), never go there.");
+            return;
+    }
+}
+
+void ProxyHandshakeAuth::do_whenDownReady() {
+    // downside ready for send last ok package
+    if (readyDown) {
+        // never go there
+        BOOST_ASSERT_MSG(false, "do_whenDownReady");
+        fail({}, "do_whenDownReady , (readyDown), never go there");
+        return;
+    }
+    if (completeUp) {
+        // never go there
+        BOOST_ASSERT_MSG(false, "completeUp");
+        fail({}, "do_whenDownReady , (completeUp), never go there");
+        return;
+    }
+    readyDown = true;
+    // start upside handshake
+    util_Socks5ClientImpl_->start();
+    // util_HttpClientImpl_->start();
+}
+
+void ProxyHandshakeAuth::do_whenUpEnd() {
+    do_whenCompleteUp();
+}
+
+void ProxyHandshakeAuth::do_whenDownEnd(bool error) {
+    if (error) {
+        completeDownError = true;
+    }
+    do_whenCompleteDown();
+}
+
+void ProxyHandshakeAuth::do_whenCompleteUp() {
+    if (completeUp) {
+        // never go there
+        BOOST_ASSERT_MSG(!(completeUp), "do_whenCompleteUp (completeUp)");
+        fail({}, "do_whenCompleteUp (completeUp), never go there.");
+        return;
+    }
+    completeUp = true;
+    check_whenComplete();
+}
+
+void ProxyHandshakeAuth::do_whenCompleteDown() {
+    if (completeDown) {
+        // never go there
+        BOOST_ASSERT_MSG(!(completeDown), "do_whenCompleteDown (completeDown)");
+        fail({}, "do_whenCompleteDown (completeDown), never go there.");
+        return;
+    }
+    completeDown = true;
+    check_whenComplete();
+}
+
+void ProxyHandshakeAuth::check_whenComplete() {
+    if (completeDown && completeUp) {
+        if (completeDownError || completeUpError) {
+            fail({}, "check_whenComplete (completeDownError || completeUpError)");
+            return;
+        } else {
+            auto ptr = tcpRelaySession.lock();
+            if (ptr) {
+                // all ok
+                whenComplete();
+            }
+        }
+    }
+}
+
+bool ProxyHandshakeAuth::upside_support_udp_mode() {
+    switch (connectType) {
+        case ConnectType::socks5:
+            return true;
+            break;
+        case ConnectType::httpConnect:
+            return false;
+            break;
+        case ConnectType::httpOther:
+            return false;
+            break;
+        case ConnectType::unknown:
+        default:
+            return false;
+            break;
+    }
+}
+
+bool ProxyHandshakeAuth::upside_in_udp_mode() {
+    switch (upsideConnectType) {
+        case UpsideConnectType::socks5:
+            return util_Socks5ClientImpl_->udpEnabled;
+            break;
+        case UpsideConnectType::http:
+            return false;
+            break;
+        case UpsideConnectType::none:
+        default:
+            return false;
+            break;
+    }
+}
+
+bool ProxyHandshakeAuth::downside_in_udp_mode() {
+    switch (connectType) {
+        case ConnectType::socks5:
+            return util_Socks5ServerImpl_->udpEnabled;
+            break;
+        case ConnectType::httpConnect:
+            return false;
+            break;
+        case ConnectType::httpOther:
+            return false;
+            break;
+        case ConnectType::unknown:
+        default:
+            return false;
+            break;
     }
 }

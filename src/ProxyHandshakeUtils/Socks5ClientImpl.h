@@ -45,6 +45,8 @@ class Socks5ClientImpl : public std::enable_shared_from_this<Socks5ClientImpl> {
 public:
     std::weak_ptr<ProxyHandshakeAuth> parents;
 
+    bool udpEnabled = false;
+
 public:
     Socks5ClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
 

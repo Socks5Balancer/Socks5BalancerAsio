@@ -73,15 +73,30 @@ public:
     std::function<void()> whenComplete;
     std::function<void(boost::system::error_code error)> whenError;
 
-    int beforeCompleteUp = 1;
-    int beforeCompleteDown = 1;
+private:
 
-    // Useless
+    bool readyUp = false;
+    bool readyDown = false;
+    bool completeUp = false;
+    bool completeDown = false;
+    bool completeUpError = false;
+    bool completeDownError = false;
+
     ConnectType connectType = ConnectType::unknown;
+
+    enum class UpsideConnectType {
+        socks5,
+        http,
+        none,
+    };
+    UpsideConnectType upsideConnectType = UpsideConnectType::none;
+
+public:
 
     std::string host{};
     uint16_t port{0};
-public:
+
+private:
     std::shared_ptr<HttpClientImpl> util_HttpClientImpl_;
     std::shared_ptr<HttpServerImpl> util_HttpServerImpl_;
     std::shared_ptr<Socks5ClientImpl> util_Socks5ClientImpl_;
@@ -108,23 +123,7 @@ public:
             whenComplete(std::move(whenComplete)),
             whenError(std::move(whenError)) {}
 
-    void start() {
-        util_HttpClientImpl_ = std::make_shared<decltype(util_HttpClientImpl_)::element_type>(shared_from_this());
-        util_HttpServerImpl_ = std::make_shared<decltype(util_HttpServerImpl_)::element_type>(shared_from_this());
-        util_Socks5ClientImpl_ = std::make_shared<decltype(util_Socks5ClientImpl_)::element_type>(shared_from_this());
-        util_Socks5ServerImpl_ = std::make_shared<decltype(util_Socks5ServerImpl_)::element_type>(shared_from_this());
-
-        // we must keep strong ptr when running, until call the whenComplete,
-        // to keep parent TcpRelaySession but dont make circle ref
-        auto ptr = tcpRelaySession.lock();
-        if (ptr) {
-            do_read_client_first_3_byte();
-            // debug
-//        do_prepare_whenComplete();
-        } else {
-            badParentPtr();
-        }
-    }
+    void start();
 
 private:
 
@@ -132,56 +131,44 @@ private:
 
 public:
 
-    void do_whenUpReady() {
-        // do send last ok package to client in downside
-        util_HttpServerImpl_->to_send_last_ok_package();
-        //
-        do_whenCompleteUp();
+    ConnectType getConnectType() {
+        return connectType;
     }
 
-    void do_whenCompleteUp() {
-        --beforeCompleteUp;
-        if (beforeCompleteUp < 0) {
-            // never go there
-            BOOST_ASSERT_MSG(!(beforeCompleteUp < 0), "do_whenCompleteUp (beforeCompleteUp < 0)");
-        }
-        check_whenComplete();
-    }
+public:
 
-    void do_whenDownReady() {
-        // downside ready for send last ok package
-        if (beforeCompleteDown == 0 && beforeCompleteUp > 0) {
-            // start upside handshake
-            util_Socks5ClientImpl_->start();
-        } else {
-            // never go there
-            BOOST_ASSERT_MSG(false, "do_whenDownReady");
-        }
-    }
+    bool upside_support_udp_mode();
 
-    void do_whenCompleteDown() {
-        --beforeCompleteDown;
-        if (beforeCompleteDown < 0) {
-            // never go there
-            BOOST_ASSERT_MSG(!(beforeCompleteDown < 0), "do_whenCompleteDown (beforeCompleteDown < 0)");
-        }
-        check_whenComplete();
-    }
+    bool upside_in_udp_mode();
+
+    bool downside_in_udp_mode();
+
+public:
+
+    void do_whenUpReady();
+
+    void do_whenUpReadyError();
+
+    void do_whenDownReady();
+
+    void do_whenUpEnd();
+
+    void do_whenDownEnd(bool error = false);
+
+private:
+
+    void do_whenCompleteUp();
+
+    void do_whenCompleteDown();
+
+public:
 
     void do_whenError(boost::system::error_code error) {
         whenError(error);
     }
 
 private:
-    void check_whenComplete() {
-        if (0 == beforeCompleteUp && 0 == beforeCompleteDown) {
-            auto ptr = tcpRelaySession.lock();
-            if (ptr) {
-                // all ok
-                whenComplete();
-            }
-        }
-    }
+    void check_whenComplete();
 
 public:
     void fail(boost::system::error_code ec, const std::string &what) {
@@ -197,7 +184,7 @@ public:
     }
 
     void badParentPtr() {
-        if (!(0 == beforeCompleteUp && 0 == beforeCompleteDown)) {
+        if (!(completeDown && completeUp)) {
             do_whenError({});
         }
     }

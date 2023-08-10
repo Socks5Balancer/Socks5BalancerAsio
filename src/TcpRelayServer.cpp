@@ -38,7 +38,7 @@ std::shared_ptr<ConnectionTracker> TcpRelaySession::getConnectionTracker() {
             // read state from firstPackAnalyzer
             connectionTracker = std::make_shared<ConnectionTracker>(
                     weak_from_this(),
-                    firstPackAnalyzer->connectType,
+                    firstPackAnalyzer->getConnectType(),
                     firstPackAnalyzer->host,
                     firstPackAnalyzer->port
             );

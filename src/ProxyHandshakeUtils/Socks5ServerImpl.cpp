@@ -25,3 +25,543 @@ void Socks5ServerImpl::do_whenError(boost::system::error_code error) {
         ptr->do_whenError(error);
     }
 }
+
+void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
+    // do_downstream_read
+    auto ptr = parents.lock();
+    if (ptr) {
+        auto data = ptr->downstream_buf_.data();
+        size_t len = data.size();
+        auto d = reinterpret_cast<const unsigned char *>(data.data());
+        if (len < 3) {
+            // never go there
+            fail({}, "do_analysis_client_first_socks5_header (len < 3), never go there");
+            return;
+        }
+        // https://datatracker.ietf.org/doc/html/rfc1928
+        //  client to server
+        //  +-----+----------+----------+
+        //  | VER | NMETHODS | METHODS  |
+        //  +-----+----------+----------+
+        //  |  1  |    1     | 1 to 255 |
+        //  +-----+----------+----------+
+        //
+        if (d[0] == 0x05 &&
+            d[1] == 0x01 &&
+            d[2] == 0x00) {
+            // is socks5 no auth
+            std::cout << "is socks5 no auth" << std::endl;
+//            connectType = ConnectType::socks5;
+            ptr->downstream_buf_.consume(3);
+            if (ptr->authClientManager->needAuth()) {
+                // do socks5 auth with client (downside)
+//                do_auth_client_write();
+                fail({}, "do_analysis_client_first_socks5_header (ptr->authClientManager->needAuth()) ,no auth");
+                return;
+            } else {
+                // do socks5 handshake with client (downside)
+                do_handshake_client_read();
+                return;
+            }
+        } else if (d[0] == 0x05 &&
+                   (d[1] == 0x02 || d[1] == 0x01 || d[1] == 0x00) &&
+                   (d[2] == 0x02)) {
+            // is socks5 with username/passwd auth
+            std::cout << "is socks5 with username/passwd auth" << std::endl;
+//            connectType = ConnectType::socks5;
+            ptr->downstream_buf_.consume(3);
+
+            if (ptr->authClientManager->needAuth()) {
+                // do socks5 auth with client (downside)
+                do_auth_client_write();
+                return;
+            } else {
+                // do socks5 handshake with client (downside)
+                do_handshake_client_read();
+                return;
+            }
+        } else {
+            std::cout << "do_analysis_client_first_socks5_header do_handshake_client_header_error" << std::endl;
+            do_handshake_client_header_error();
+            return;
+        }
+
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_auth_client_write() {
+    // https://datatracker.ietf.org/doc/html/rfc1928
+    // server auth request
+    //  +----+---------+
+    //  |VER | METHOD  |
+    //  +----+---------+
+    //  | 1  | 1(0x02) |
+    //  +----+---------+
+    //
+    // 0x02 means user/passwd auth
+
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+
+        auto data_send = std::make_shared<std::string>(
+                "\x05\x02", 2
+        );
+
+        boost::asio::async_write(
+                ptr->upstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_auth_client_error");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_auth_client_error with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    do_auth_client_read();
+                }
+        );
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_auth_client_read() {
+    // https://datatracker.ietf.org/doc/html/rfc1929
+    // client auth response
+    //  +----+------+----------+------+----------+
+    //  |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+    //  +----+------+----------+------+----------+
+    //  | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+    //  +----+------+----------+------+----------+
+    //
+
+    // do_downstream_read
+    auto ptr = parents.lock();
+    if (ptr) {
+        do_auth_client_ok();
+//    do_auth_client_error();
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_auth_client_ok() {
+    // https://datatracker.ietf.org/doc/html/rfc1929
+    // auth ok
+    //   +----+---------+
+    //   |VER | STATUS  |
+    //   +----+---------+
+    //   | 1  | 1(0x00) |
+    //   +----+---------+
+    //
+
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+        auto data_send = std::make_shared<std::string>(
+                "\x01\x00", 2
+        );
+
+        boost::asio::async_write(
+                ptr->upstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_auth_client_error");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_auth_client_error with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    do_handshake_client_read();
+                }
+        );
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_auth_client_error() {
+    // https://datatracker.ietf.org/doc/html/rfc1929
+    // auth error
+    //   +----+---------+
+    //   |VER | STATUS  |
+    //   +----+---------+
+    //   | 1  | 1(0xff) |
+    //   +----+---------+
+    //
+    //
+    //
+
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+        auto data_send = std::make_shared<std::string>(
+                "\x01\xff", 2
+        );
+
+        boost::asio::async_write(
+                ptr->upstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_auth_client_error");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_auth_client_error with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    fail({}, "auth_client_error");
+                }
+        );
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_handshake_client_read() {
+    // do_downstream_read
+    auto ptr = parents.lock();
+    if (ptr) {
+        // https://datatracker.ietf.org/doc/html/rfc1928
+        //
+        //  +----+-----+-------+------+----------+----------+
+        //  |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
+        //  +----+-----+-------+------+----------+----------+
+        //  | 1  |  1  | X'00' |  1   | Variable |    2     |
+        //  +----+-----+-------+------+----------+----------+
+        //
+
+        // TODO set udpEnabled if user need UDP
+        //    udpEnabled = true;
+
+        const size_t MAX_LENGTH = 8196;
+        auto socks5_read_buf = std::make_shared<std::vector<uint8_t>>(MAX_LENGTH);
+
+        ptr->downstream_socket_.async_read_some(
+                boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+                boost::beast::bind_front_handler(
+                        [this, self = shared_from_this(), socks5_read_buf, ptr](
+                                boost::beast::error_code ec,
+                                const size_t &bytes_transferred) {
+                            if (ec) {
+                                return fail(ec, "do_handshake_client_read");
+                            }
+
+                            if (bytes_transferred < (4 + 2)) {
+                                return fail(ec, "do_handshake_client_read (bytes_transferred < 4)");
+                            }
+                            if (socks5_read_buf->at(0) != 5
+                                || (
+                                        socks5_read_buf->at(1) != 0x01    // CONNECT
+                                        && socks5_read_buf->at(1) != 0x02    // BIND
+                                        && socks5_read_buf->at(1) != 0x03    // UDP
+                                )
+                                || socks5_read_buf->at(2) != 0x00) {
+                                return fail(ec, "do_handshake_client_read (invalid)");
+                            }
+                            switch (socks5_read_buf->at(1)) {
+                                case 0x01:
+                                    // CONNECT
+                                    break;
+                                case 0x02:
+                                    // BIND
+                                    // we not impl this, never
+                                    do_handshake_client_end_error(0x07);
+                                    return;
+                                    break;
+                                case 0x03:
+                                    // UDP
+                                    if (!ptr->upside_support_udp_mode()) {
+                                        // upside not support UDP
+                                        do_handshake_client_end_error(0x07);
+                                        return;
+                                    }
+                                    // we not impl this, only NOW
+                                    do_handshake_client_end_error(0x07);
+                                    return;
+                                    break;
+                                default:
+                                    // never go there
+                                    return fail(
+                                            ec,
+                                            "do_handshake_client_read switch (socks5_read_buf->at(1)), never go there");
+                                    break;
+                            }
+                            if (socks5_read_buf->at(3) == 0x01) {
+                                // IPv4
+                                if (bytes_transferred < (4 + 4 + 2)) {
+                                    return fail(ec, "do_handshake_client_read (invalid IPv4)");
+                                }
+                                // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
+                                // We need an unsigned char* pointer to the IP address
+                                auto addr = reinterpret_cast<unsigned char *>(
+                                        socks5_read_buf->data() + 4 + 1
+                                );
+                                boost::asio::ip::address_v4::bytes_type ipV4Byte;
+                                // Copy the address into our array
+                                std::copy(addr, addr + ipV4Byte.size(), ipV4Byte.data());
+                                // Finally, initialize.
+                                boost::asio::ip::address_v4 ipv4(ipV4Byte);
+                                ptr->host = ipv4.to_string();
+                                ptr->port = (
+                                        socks5_read_buf->at(bytes_transferred - 2) << 8
+                                        |
+                                        socks5_read_buf->at(bytes_transferred - 1)
+                                );
+                            } else if (socks5_read_buf->at(3) == 0x03) {
+                                // domain
+                                if (bytes_transferred < (4 + 1 + socks5_read_buf->at(4) + 2)) {
+                                    return fail(ec, "do_handshake_client_read (invalid domain)");
+                                }
+                                ptr->host = std::string{
+                                        socks5_read_buf->begin() + 4 + 1,
+                                        socks5_read_buf->begin() + 4 + 1 + socks5_read_buf->at(4)};
+                                ptr->port = (
+                                        socks5_read_buf->at(bytes_transferred - 2) << 8
+                                        |
+                                        socks5_read_buf->at(bytes_transferred - 1)
+                                );
+                            } else if (socks5_read_buf->at(3) == 0x04) {
+                                // IPv6
+                                if (bytes_transferred < (4 + 16 + 2)) {
+                                    return fail(ec, "do_handshake_client_read (invalid IPv6)");
+                                }
+                                // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
+                                // We need an unsigned char* pointer to the IP address
+                                auto addr = reinterpret_cast<unsigned char *>(
+                                        socks5_read_buf->data() + 4 + 1
+                                );
+                                boost::asio::ip::address_v6::bytes_type ipV6Byte;
+                                // Copy the address into our array
+                                std::copy(addr, addr + ipV6Byte.size(), ipV6Byte.data());
+                                // Finally, initialize.
+                                boost::asio::ip::address_v6 ipv6(ipV6Byte);
+                                ptr->host = ipv6.to_string();
+                                ptr->port = (
+                                        socks5_read_buf->at(bytes_transferred - 2) << 8
+                                        |
+                                        socks5_read_buf->at(bytes_transferred - 1)
+                                );
+                            } else {
+                                // invalid
+                                return fail(ec, "do_handshake_client_read (socks5_read_buf->at(3) invalid)");
+                            }
+
+
+                            do_ready_to_send_last_ok_package(ptr);
+
+//        do_handshake_client_end_error();
+                        }));
+
+
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_handshake_client_header_error() {
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+        // https://datatracker.ietf.org/doc/html/rfc1928
+        // unsupported auth OR handshake error
+        //   +----+------------------+
+        //   |VER | STATUS or METHOD |
+        //   +----+------------------+
+        //   | 1  |     1 (0xff)     |
+        //   +----+------------------+
+        //
+        // 0xff means error
+        //
+
+        auto data_send = std::make_shared<std::string>(
+                "\x05\xff", 2
+        );
+
+        boost::asio::async_write(
+                ptr->upstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_handshake_client_end_error");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_handshake_client_end_error with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    fail({}, "do_handshake_client_end_error end.");
+                }
+        );
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_ready_to_send_last_ok_package(
+        const std::shared_ptr<decltype(parents)::element_type> &ptr
+) {
+    ptr->do_whenDownReady();
+}
+
+void Socks5ServerImpl::do_handshake_client_end_error(uint8_t errorType) {
+
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+        // https://datatracker.ietf.org/doc/html/rfc1928
+        //
+        // server response, the connect error
+        //  +----+---------+-------+---------+---------------+-----------+
+        //  |VER |   REP   |  RSV  |  ATYP   |   BND.ADDR    | BND.PORT  |
+        //  +----+---------+-------+---------+---------------+-----------+
+        //  | 1  | 1(0x01) | X'00' | 1(0x01) | 0x00,00,00,00 |  0x00,00  |
+        //  +----+---------+-------+---------+---------------+-----------+
+        //
+        //
+        //   X'00' succeeded
+        //   X'01' general SOCKS server failure
+        //   X'02' connection not allowed by ruleset
+        //   X'03' Network unreachable
+        //   X'04' Host unreachable
+        //   X'05' Connection refused
+        //   X'06' TTL expired
+        //   X'07' Command not supported
+        //   X'08' Address type not supported
+        //   X'09' to X'FF' unassigned
+        //
+        //
+        // fill BND info as 0.0.0.0:0  (0x00,00,00,00, 0x00,00)
+
+        switch (errorType) {
+            case 0x01:
+            case 0x07:
+                break;
+            default:
+                // never go there
+                BOOST_ASSERT_MSG(false, "do_handshake_client_end_error switch (errorType) default, never go there");
+                return fail({}, "do_handshake_client_end_error switch (errorType) default, never go there");
+                break;
+        }
+
+        auto data_send = std::make_shared<std::string>(
+                "\x05\x01\x00\x01\x00\x00\x00\x00\x00\x00", 10
+        );
+
+        data_send->at(1) = static_cast<char>(errorType);
+
+        boost::asio::async_write(
+                ptr->upstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_handshake_client_end_error");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_handshake_client_end_error with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    ptr->do_whenDownEnd(true);
+                }
+        );
+
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::do_handshake_client_end() {
+
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+        // https://datatracker.ietf.org/doc/html/rfc1928
+        //
+        // server response, the connect ok
+        //  +----+---------+-------+---------+---------------+-----------+
+        //  |VER |   REP   |  RSV  |  ATYP   |   BND.ADDR    | BND.PORT  |
+        //  +----+---------+-------+---------+---------------+-----------+
+        //  | 1  | 1(0x00) | X'00' | 1(0x01) | 0x00,00,00,00 |  0x00,00  |
+        //  +----+---------+-------+---------+---------------+-----------+
+        //
+        // now we not impl UDP
+        //
+        // get BND info from upside
+        // OR
+        // fill BND info as 0.0.0.0:0  (0x00,00,00,00, 0x00,00)
+
+
+        auto data_send = std::make_shared<std::string>(
+                "\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10
+        );
+
+        // TODO load BND info from upside
+        //    AND impl UDP
+
+        // client request UDP but upside cannot provide
+        if (udpEnabled && !ptr->upside_in_udp_mode()) {
+            do_handshake_client_end_error(0x07);
+            return;
+        }
+
+        boost::asio::async_write(
+                ptr->upstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_handshake_client_end_error");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_handshake_client_end_error with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    ptr->do_whenDownEnd();
+                }
+        );
+
+    } else {
+        badParentPtr();
+    }
+}
+
+void Socks5ServerImpl::to_send_last_ok_package() {
+    do_handshake_client_end();
+}
+
+void Socks5ServerImpl::to_send_last_error_package() {
+    do_handshake_client_end_error(0x01);
+}

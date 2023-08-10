@@ -165,13 +165,13 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                     // is "connect"
                     std::cout << "do_analysis_client_first_http_header is connect trim" << std::endl;
 
-                    ptr->connectType = ConnectType::httpConnect;
+//                    ptr->connectType = ConnectType::httpConnect;
 
                     // remove connect request
                     ptr->downstream_buf_.consume(it + 4);
 
                     // ready to send Connection Established
-                    do_ready_to_send_Connection_Established(ptr);
+                    do_ready_to_send_last_ok_package(ptr);
                     return;
                 }
 
@@ -179,13 +179,13 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                     // TODO debug  ???  seems never go there
                     BOOST_ASSERT(false);
 
-                    ptr->connectType = ConnectType::httpOther;
+//                    ptr->connectType = ConnectType::httpOther;
 
                     // remove connect request
                     ptr->downstream_buf_.consume(it + 4);
 
                     // ready to send Connection Established
-                    do_ready_to_send_Connection_Established(ptr);
+                    do_ready_to_send_last_ok_package(ptr);
                 }
 
                 return;
@@ -290,7 +290,7 @@ void HttpServerImpl::do_send_Connection_Established() {
 
                     // std::cout << "do_send_Connection_Established()" << std::endl;
 
-                    ptr->do_whenCompleteDown();
+                    ptr->do_whenDownEnd();
                 }
         );
 
@@ -300,12 +300,51 @@ void HttpServerImpl::do_send_Connection_Established() {
     }
 }
 
-void HttpServerImpl::do_ready_to_send_Connection_Established(
+void HttpServerImpl::do_send_Connection_Failed() {
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+        auto data_send = std::make_shared<std::string>(
+                "HTTP/1.1 503 Service Unavailable\r\n\r\n"
+        );
+
+        boost::asio::async_write(
+                ptr->downstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_send_Connection_Failed");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_send_Connection_Failed with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    fail({}, "do_send_Connection_Failed 503 end.");
+                    return;
+                }
+        );
+
+
+    } else {
+        badParentPtr();
+    }
+}
+
+void HttpServerImpl::do_ready_to_send_last_ok_package(
         const std::shared_ptr<decltype(parents)::element_type> &ptr) {
     ptr->do_whenDownReady();
 }
 
 void HttpServerImpl::to_send_last_ok_package() {
     do_send_Connection_Established();
+}
+
+void HttpServerImpl::to_send_last_error_package() {
+    do_send_Connection_Failed();
 }
 

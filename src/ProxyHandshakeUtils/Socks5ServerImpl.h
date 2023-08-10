@@ -45,14 +45,36 @@ class Socks5ServerImpl : public std::enable_shared_from_this<Socks5ServerImpl> {
 public:
     std::weak_ptr<ProxyHandshakeAuth> parents;
 
+    bool udpEnabled = false;
+
 public:
     Socks5ServerImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
 
 public:
 
-    void do_analysis_client_first_socks5_header() {
+    void do_analysis_client_first_socks5_header();
 
-    }
+    void do_auth_client_write();
+
+    void do_auth_client_read();
+
+    void do_auth_client_ok();
+
+    void do_auth_client_error();
+
+    void do_handshake_client_read();
+
+    void do_ready_to_send_last_ok_package(const std::shared_ptr<decltype(parents)::element_type> &ptr);
+
+    void do_handshake_client_header_error();
+
+    void do_handshake_client_end_error(uint8_t errorType = 0x01);
+
+    void do_handshake_client_end();
+
+    void to_send_last_ok_package();
+
+    void to_send_last_error_package();
 
 public:
     void fail(boost::system::error_code ec, const std::string &what) {

@@ -57,11 +57,15 @@ public:
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#the_general_http_authentication_framework
     void do_send_407();
 
-    void do_ready_to_send_Connection_Established(const std::shared_ptr<decltype(parents)::element_type> &ptr);
+    void do_ready_to_send_last_ok_package(const std::shared_ptr<decltype(parents)::element_type> &ptr);
 
     void do_send_Connection_Established();
 
+    void do_send_Connection_Failed();
+
     void to_send_last_ok_package();
+
+    void to_send_last_error_package();
 
     struct ParsedURI {
         std::string protocol;
