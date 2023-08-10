@@ -317,7 +317,7 @@ otherwise, try to get the backend config from page server path `backend` .
 
 ---
 ## Struct Info
-now the main server write with pure c++ (c++17) , powered by Boost.Asio/Boost.Beast . 
+now the main server write with pure c++ (c++20) , powered by Boost.Asio/Boost.Beast . 
 and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) . 
 
 if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config. 
