@@ -186,15 +186,15 @@ auto UpstreamPool::getServerByHint(
     switch (__upstreamSelectRule) {
         case RuleEnum::force_only_one:
             s = _pool[_lastUseUpstreamIndex]->shared_from_this();
-            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
+            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::loop:
             s = getNextServer(_lastUseUpstreamIndex);
-            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
+            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::one_by_one:
             s = tryGetLastServer(_lastUseUpstreamIndex);
-            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
+            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::change_by_time: {
             UpstreamTimePoint t = UpstreamTimePointNow();
@@ -205,7 +205,7 @@ auto UpstreamPool::getServerByHint(
             } else {
                 s = tryGetLastServer(_lastUseUpstreamIndex);
             }
-            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
+            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         }
         case RuleEnum::inherit:
@@ -220,7 +220,7 @@ auto UpstreamPool::getServerByHint(
             } else {
                 s.reset();
             }
-            std::cout << "getServerByHint:" << (s ? s->print() : "nullptr") << "\n";
+            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         }
     }
@@ -296,6 +296,8 @@ std::string UpstreamPool::print() {
            << "\t" << "name :" << r->name << "\n"
            << "\t" << "host :" << r->host << "\n"
            << "\t" << "port :" << r->port << "\n"
+           << "\t" << "authUser :" << r->authUser << "\n"
+           << "\t" << "authPwd :" << r->authPwd << "\n"
            << "\t" << "isOffline :" << r->isOffline << "\n"
            << "\t" << "lastConnectFailed :" << r->lastConnectFailed << "\n"
            << "\t" << "lastOnlineTime :" << (
@@ -385,7 +387,7 @@ void UpstreamPool::do_AdditionTimer() {
         if (e) {
             return;
         }
-//        std::cout << "do_AdditionTimer()" << std::endl;
+//        BOOST_LOG_S5B(trace) << "do_AdditionTimer()";
 
         bool isAllDown = std::all_of(
                 _pool.begin(),
@@ -414,7 +416,7 @@ void UpstreamPool::do_AdditionTimer_impl() {
     if (!isAdditionTimerRunning.compare_exchange_strong(old, true)) {
         return;
     }
-    std::cout << "do_AdditionTimer_impl()" << std::endl;
+    BOOST_LOG_S5B(trace) << "do_AdditionTimer_impl()";
     auto ct = std::make_shared<boost::asio::steady_timer>(ex, _configLoader->config.additionCheckPeriod * 3);
     ct->async_wait([this, self = shared_from_this(), ct](const boost::system::error_code &ex) {
         boost::ignore_unused(ex);
@@ -433,8 +435,8 @@ void UpstreamPool::do_tcpCheckerTimer() {
         if (e) {
             return;
         }
-//        std::cout << "do_tcpCheckerTimer()" << std::endl;
-//        std::cout << print() << std::endl;
+//        BOOST_LOG_S5B(trace) << "do_tcpCheckerTimer()";
+//        BOOST_LOG_S5B(trace) << print();
 
         if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
             do_tcpCheckerTimer_impl();
@@ -472,7 +474,7 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
             );
             t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
                        // on ok
-                       // std::cout << "SuccessfulInfo:" << info << std::endl;
+                       // BOOST_LOG_S5B(trace) << "SuccessfulInfo:" << info;
                        a->lastConnectTime = UpstreamTimePointNow();
                        a->lastConnectFailed = false;
 
@@ -503,7 +505,7 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
     );
     t->run([t, a](ConnectTestHttpsSession::SuccessfulInfo info) {
                // on ok
-               // std::cout << "SuccessfulInfo:" << info << std::endl;
+               // BOOST_LOG_S5B(trace) << "SuccessfulInfo:" << info;
                a->lastConnectTime = UpstreamTimePointNow();
                a->lastConnectFailed = false;
 
@@ -526,7 +528,7 @@ void UpstreamPool::do_connectCheckerTimer() {
         if (e) {
             return;
         }
-//        std::cout << "do_connectCheckerTimer()" << std::endl;
+//        BOOST_LOG_S5B(trace) << "do_connectCheckerTimer()";
 
         if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
             do_connectCheckerTimer_impl();
@@ -572,7 +574,7 @@ void UpstreamPool::do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceChec
         if (e) {
             return;
         }
-        std::cout << "do_forceCheckNow()" << std::endl;
+        BOOST_LOG_S5B(trace) << "do_forceCheckNow()";
 
         do_tcpCheckerTimer_impl();
         do_connectCheckerTimer_impl();

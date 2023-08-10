@@ -39,6 +39,8 @@
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
 
+#include "./log/Log.h"
+
 using UpstreamTimePoint = std::chrono::time_point<std::chrono::system_clock>;
 
 UpstreamTimePoint UpstreamTimePointNow();
