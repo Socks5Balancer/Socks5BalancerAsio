@@ -265,6 +265,13 @@ void Socks5ClientImpl::do_socks5_connect_write() {
             //  udpEnabled = true;
         }
 
+        BOOST_LOG_S5B(trace)
+            << "do_socks5_connect_write()"
+            << " downside_in_udp_mode:" << ptr->downside_in_udp_mode()
+            << " host:" << ptr->host
+            << " port:" << ptr->port
+            << " is_domain:" << ec.operator bool();
+
         boost::asio::async_write(
                 ptr->upstream_socket_,
                 boost::asio::buffer(*data_send),

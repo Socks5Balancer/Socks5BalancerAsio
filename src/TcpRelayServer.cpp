@@ -162,6 +162,9 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         };
                         auto whenError = [self = shared_from_this()](boost::system::error_code error) {
                             if (auto ptr = self) {
+                                BOOST_LOG_S5B(trace)
+                                    << "TcpRelaySession whenError call close(error) error:"
+                                    << error.what();
                                 ptr->close(error);
                             } else {
                                 BOOST_LOG_S5B(error) << "firstPackAnalyzer whenError failed. what:" << error.what();
@@ -192,6 +195,9 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
 #endif // Need_ProxyHandshakeAuth
                             firstPackAnalyzer->start();
                         } else {
+                            BOOST_LOG_S5B(trace)
+                                << "TcpRelaySession do_connect_upstream call close(error) error:"
+                                << error.what();
                             // wrong
                             close(error);
                         }
@@ -225,6 +231,9 @@ void TcpRelaySession::do_upstream_read() {
                     // write it to server
                     do_downstream_write(bytes_transferred);
                 } else {
+                    BOOST_LOG_S5B(trace)
+                        << "TcpRelaySession do_upstream_read call close(error) error:"
+                        << error.what();
                     close(error);
                 }
             });
@@ -243,6 +252,9 @@ void TcpRelaySession::do_downstream_write(const size_t &bytes_transferred) {
                     // read more again
                     do_upstream_read();
                 } else {
+                    BOOST_LOG_S5B(trace)
+                        << "TcpRelaySession do_downstream_write call close(error) error:"
+                        << error.what();
                     close(error);
                 }
             });
@@ -263,6 +275,9 @@ void TcpRelaySession::do_downstream_read() {
                     // write it to server
                     do_upstream_write(bytes_transferred);
                 } else {
+                    BOOST_LOG_S5B(trace)
+                        << "TcpRelaySession do_downstream_read call close(error) error:"
+                        << error.what();
                     close(error);
                 }
             });
@@ -281,12 +296,16 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
                     // read more again
                     do_downstream_read();
                 } else {
+                    BOOST_LOG_S5B(trace)
+                        << "TcpRelaySession do_upstream_write call close(error) error:"
+                        << error.what();
                     close(error);
                 }
             });
 }
 
 void TcpRelaySession::close(boost::system::error_code error) {
+    BOOST_LOG_S5B(trace) << "TcpRelaySession::close error:" << error.what();
     if (error == boost::asio::error::eof) {
         // Rationale:
         // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
@@ -328,6 +347,7 @@ void TcpRelaySession::close(boost::system::error_code error) {
 
 void TcpRelaySession::forceClose() {
     boost::asio::post(ex, [this, self = shared_from_this()]() {
+        BOOST_LOG_S5B(trace) << "TcpRelaySession forceClose call close(error)";
         close();
     });
 }
