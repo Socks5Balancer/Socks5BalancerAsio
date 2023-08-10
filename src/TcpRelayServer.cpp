@@ -162,7 +162,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                             if (auto ptr = self.lock()) {
                                 ptr->close(error);
                             } else {
-                                BOOST_LOG_S5B(error) << "firstPackAnalyzer whenError ptr lock failed.";
+                                BOOST_LOG_S5B(error) << "firstPackAnalyzer whenError failed. what:" << error.what();
                             }
                         };
 
