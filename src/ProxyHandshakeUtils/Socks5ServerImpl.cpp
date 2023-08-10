@@ -170,7 +170,7 @@ void Socks5ServerImpl::do_auth_client_read() {
                                    << " [*]:"
                                    << "[0]" << (int) socks5_read_buf->at(0)
                                    << "[1]" << (int) socks5_read_buf->at(1)
-                                   << "[2]" << (int) socks5_read_buf->at(2);
+                                   << "[2]" << (int) socks5_read_buf->at(2 + socks5_read_buf->at(1));
                                 BOOST_LOG_S5B(trace) << ss.str();
                             }
 
@@ -408,8 +408,8 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 return fail(ec, "do_handshake_client_read (socks5_read_buf->at(3) invalid)");
                             }
                             BOOST_LOG_S5B(trace) << "do_handshake_client_read after read target:"
-                                                   << " host:" << ptr->host
-                                                   << " port:" << ptr->port;
+                                                 << " host:" << ptr->host
+                                                 << " port:" << ptr->port;
                             switch (socks5_read_buf->at(1)) {
                                 case 0x01:
                                     // CONNECT
