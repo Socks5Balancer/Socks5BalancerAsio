@@ -25,8 +25,10 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/parsers.hpp>
+#include <boost/lexical_cast.hpp>
 #include <memory>
 #include <exception>
+#include "./log/Log.h"
 #include "ConfigLoader.h"
 #include "AuthClientManager.h"
 #include "TcpTest.h"
@@ -48,6 +50,10 @@
 
 int main(int argc, const char *argv[]) {
 
+    s5ba_log::threadName = "main";
+
+    s5ba_log::init_logging();
+
     std::string config_file;
     boost::program_options::options_description desc("options");
     desc.add_options()
@@ -66,30 +72,24 @@ int main(int argc, const char *argv[]) {
                     .run(), vMap);
     boost::program_options::notify(vMap);
     if (vMap.count("help")) {
-        std::cout << "usage: " << argv[0] << " [[-c] CONFIG]" << "\n" << std::endl;
+        BOOST_LOG_S5B(info_VSERION) << "usage: " << argv[0] << " [[-c] CONFIG]" << "\n";
 
-        std::cout << "    Socks5BalancerAsio  Copyright (C) <2020>  <Jeremie>\n"
-                  << "    This program comes with ABSOLUTELY NO WARRANTY; \n"
-                  << "    This is free software, and you are welcome to redistribute it\n"
-                  << "    under certain conditions; \n"
-                  << "         GNU GENERAL PUBLIC LICENSE , Version 3 "
-                  << "\n" << std::endl;
+        BOOST_LOG_S5B(info_VSERION) << "    Socks5BalancerAsio  Copyright (C) <2020>  <Jeremie>\n"
+                                    << "    This program comes with ABSOLUTELY NO WARRANTY; \n"
+                                    << "    This is free software, and you are welcome to redistribute it\n"
+                                    << "    under certain conditions; \n"
+                                    << "         GNU GENERAL PUBLIC LICENSE , Version 3 "
+                                    << "\n";
 
-        std::cout << desc << std::endl;
+        BOOST_LOG_S5B(info_VSERION) << desc << std::endl;
         return 0;
     }
     if (vMap.count("version")) {
-        std::cout << std::string("Boost ") + BOOST_LIB_VERSION + ", " + OpenSSL_version(OPENSSL_VERSION) << std::endl;
-        std::cout << "OpenSSL Information:" << "\n";
-        if (OpenSSL_version_num() != OPENSSL_VERSION_NUMBER) {
-            std::cout << std::string("\tCompile-time Version: ") + OPENSSL_VERSION_TEXT << "\n";
-        }
-        std::cout << std::string("\tBuild Flags: ") + OpenSSL_version(OPENSSL_CFLAGS) << "\n";
-        std::cout << std::endl;
+        BOOST_LOG_S5B(info_VSERION) << s5ba_log::versionInfo();
         return 0;
     }
 
-    std::cout << "config_file: " << config_file << std::endl;
+    BOOST_LOG_S5B(info) << "config_file: " << config_file << std::endl;
 
     try {
         boost::asio::io_context ioc;
@@ -148,7 +148,7 @@ int main(int argc, const char *argv[]) {
             if (error) {
                 return;
             }
-            std::cerr << "got signal: " << signum << std::endl;
+            BOOST_LOG_S5B(warning) << "got signal: " << signum;
             switch (signum) {
                 case SIGINT:
                 case SIGTERM: {
@@ -175,28 +175,28 @@ int main(int argc, const char *argv[]) {
 
 #ifdef USE_BOOST_THEAD
         size_t processor_count = boost::thread::hardware_concurrency();
-        std::cout << "processor_count:" << processor_count << std::endl;
-        std::cout << "config.threadNum:" << configLoader->config.threadNum << std::endl;
+        BOOST_LOG_S5B(info) << "processor_count:" << processor_count;
+        BOOST_LOG_S5B(info) << "config.threadNum:" << configLoader->config.threadNum;
         processor_count = std::min(processor_count, configLoader->config.threadNum);
-        std::cout << "processor_count:" << processor_count << std::endl;
+        BOOST_LOG_S5B(info) << "processor_count:" << processor_count;
         if (processor_count > 2) {
             boost::thread_group tg;
             for (unsigned i = 0; i < processor_count - 1; ++i) {
-                tg.create_thread([&ioc, &tg]() {
+                tg.create_thread([&ioc, &tg, i = i]() {
                     try {
+                        s5ba_log::threadName = std::string{"Thread-"} + boost::lexical_cast<std::string>(i);
                         ioc.run();
                     } catch (int) {
                         tg.interrupt_all();
-                        std::cerr << "catch (int) exception" << "\n";
+                        BOOST_LOG_S5B(error) << "catch (int) exception";
                         return -1;
-                    }
-                    catch (const std::exception &e) {
+                    } catch (const std::exception &e) {
                         tg.interrupt_all();
-                        std::cerr << "catch std::exception: " << e.what() << "\n";
+                        BOOST_LOG_S5B(error) << "catch std::exception: " << e.what();
                         return -1;
                     } catch (...) {
                         tg.interrupt_all();
-                        std::cerr << "catch (...) exception" << "\n";
+                        BOOST_LOG_S5B(error) << "catch (...) exception";
                         return -1;
                     }
                     return 0;
@@ -211,14 +211,14 @@ int main(int argc, const char *argv[]) {
 #endif // USE_BOOST_THEAD
 
     } catch (int) {
-        std::cerr << "catch (int) exception" << "\n";
+        BOOST_LOG_S5B(error) << "catch (int) exception";
         return -1;
     }
     catch (const std::exception &e) {
-        std::cerr << "catch std::exception: " << e.what() << "\n";
+        BOOST_LOG_S5B(error) << "catch std::exception: " << e.what();
         return -1;
     } catch (...) {
-        std::cerr << "catch (...) exception" << "\n";
+        BOOST_LOG_S5B(error) << "catch (...) exception";
         return -1;
     }
 

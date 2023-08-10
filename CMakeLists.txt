@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 set(ProjectMainName Socks5BalancerAsio)
 project(${ProjectMainName})
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 if (MSVC)
 
     # recommend config
@@ -15,9 +15,16 @@ if (MSVC)
     add_definitions(-DMSVC)
     if (COMMAND _WIN32_WINNT)
     else ()
+        # https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
         # if _WIN32_WINNT not set. set the _WIN32_WINNT to 0x0A00 (Windows 10)
         # you can add " /D_WIN32_WINNT=0x0601" in CMAKE_CXX_FLAGS to set it to 0x0601 (win7)
-        add_definitions(-D_WIN32_WINNT=0x0A00)
+        #add_definitions(-D_WIN32_WINNT=0x0A00)
+        add_definitions(-D_WIN32_WINNT=0x0601)
+        #add_definitions(-D_WIN32_WINNT=0x0602)
+
+        # if the boost log tell you link error, set the _WIN32_WINNT to right version that you build boost
+        # example `boost::log::v2s_mt_nt62` means you should set `_WIN32_WINNT=0x0602`
+        # see: https://github.com/boostorg/log/issues/172
     endif ()
     add_compile_options(/bigobj)
 
@@ -75,6 +82,15 @@ endif ()
 
 option(USE_DYNAMIC_BOOST "Config USE_DYNAMIC_BOOST")
 
+
+
+if (DEBUG_BOOST_ASIO)
+    add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
+endif (DEBUG_BOOST_ASIO)
+# https://www.boost.org/doc/libs/1_81_0/libs/assert/doc/html/assert.html
+add_definitions(-DBOOST_ENABLE_ASSERT_HANDLER)  #
+
+
 if (USE_DYNAMIC_BOOST)
     message(STATUS "USE DYNAMIC BOOST !!!")
     add_definitions(-DBOOST_ALL_DYN_LINK=1)
@@ -84,7 +100,7 @@ else ()
     set(Boost_USE_STATIC_RUNTIME OFF)
 endif ()
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.81.0 REQUIRED COMPONENTS system filesystem program_options ${BOOST_THEAD_MODULE} REQUIRED)
+find_package(Boost 1.81.0 REQUIRED COMPONENTS system filesystem program_options log log_setup ${BOOST_THEAD_MODULE} REQUIRED)
 
 
 message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
