@@ -132,9 +132,7 @@ if (Need_ProxyHandshakeAuth)
             src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
             src/ProxyHandshakeUtils/Socks5ClientImpl.h
             src/ProxyHandshakeAuth.cpp
-            src/ProxyHandshakeAuth.h
-            src/AuthClientManager.cpp
-            src/AuthClientManager.h)
+            src/ProxyHandshakeAuth.h)
 else ()
     message(STATUS "Enable ProxyHandshakeAuth OFF.")
     set(ProxyHandshakeAuthHeader "")
@@ -235,6 +233,8 @@ add_executable(${ProjectMainName}
         src/log/Log.cpp
         src/log/Log.h
         src/log/BoostAssertionFailed.cpp
+        src/AuthClientManager.cpp
+        src/AuthClientManager.h
         ${ProxyHandshakeAuthHeader})
 
 
