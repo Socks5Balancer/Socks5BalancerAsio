@@ -119,3 +119,7 @@ _deps
 *.out
 *.app
 
+
+src/VERSION/CodeVersion.h
+
+
