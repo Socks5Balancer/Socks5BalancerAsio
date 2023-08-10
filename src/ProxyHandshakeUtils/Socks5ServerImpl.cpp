@@ -18,6 +18,7 @@
 
 #include "Socks5ServerImpl.h"
 #include "../ProxyHandshakeAuth.h"
+#include <algorithm>
 
 void Socks5ServerImpl::do_whenError(boost::system::error_code error) {
     auto ptr = parents.lock();
@@ -38,6 +39,11 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
             fail({}, "do_analysis_client_first_socks5_header (len < 3), never go there");
             return;
         }
+        if (len != (2 + (uint8_t) d[1])) {
+            BOOST_LOG_S5B(error) << "do_analysis_client_first_socks5_header (len != (2 + (uint8_t) d[1]))";
+            fail({}, std::string{"do_analysis_client_first_socks5_header (len != (2 + (uint8_t) d[1]))"});
+            return;
+        }
         // https://datatracker.ietf.org/doc/html/rfc1928
         //  client to server
         //  +-----+----------+----------+
@@ -51,7 +57,6 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
             d[2] == 0x00) {
             // is socks5 no auth
             BOOST_LOG_S5B(trace) << "is socks5 no auth";
-//            connectType = ConnectType::socks5;
             ptr->downstream_buf_.consume(3);
             if (ptr->authClientManager->needAuth()) {
                 // do socks5 auth with client (downside)
@@ -63,23 +68,29 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 do_handshake_client_read();
                 return;
             }
-        } else if (d[0] == 0x05 &&
-                   (d[1] == 0x02 || d[1] == 0x01 || d[1] == 0x00) &&
-                   (d[2] == 0x02)) {
+        } else if (d[0] == 0x05 && d[1] > 0) {
             // is socks5 with username/passwd auth
             BOOST_LOG_S5B(trace) << "is socks5 with username/passwd auth";
-//            connectType = ConnectType::socks5;
-            ptr->downstream_buf_.consume(3);
+            std::string authMethodList{reinterpret_cast<const char *>(d) + 2, (uint8_t) d[1]};
+            ptr->downstream_buf_.consume((2 + (uint8_t) d[1]));
 
-            if (ptr->authClientManager->needAuth()) {
-                // do socks5 auth with client (downside)
-                do_auth_client_write();
-                return;
+            if (authMethodList.find('\x02')) {
+                // client support user/pwd auth method
+                if (ptr->authClientManager->needAuth()) {
+                    // do socks5 auth with client (downside)
+                    do_auth_client_write();
+                    return;
+                } else {
+                    // do socks5 handshake with client (downside)
+                    do_handshake_client_read();
+                    return;
+                }
             } else {
-                // do socks5 handshake with client (downside)
-                do_handshake_client_read();
+                BOOST_LOG_S5B(error) << "do_analysis_client_first_socks5_header no support auth";
+                do_handshake_client_header_error();
                 return;
             }
+
         } else {
             BOOST_LOG_S5B(error) << "do_analysis_client_first_socks5_header do_handshake_client_header_error";
             do_handshake_client_header_error();

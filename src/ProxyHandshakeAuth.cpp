@@ -29,13 +29,26 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                 [this, self = shared_from_this(), ptr](
                         const boost::system::error_code &error,
                         const size_t &bytes_transferred) {
+                    if (error) {
+                        fail(error, "ProxyHandshakeAuth::do_read_client_first_3_byte() (error)");
+                        return;
+                    }
                     if (!error && bytes_transferred >= 3 && downstream_buf_.size() >= 3) {
                         // check first 3 byte
 
                         auto d = reinterpret_cast<const unsigned char *>(downstream_buf_.data().data());
                         if (d[0] == 0x05 &&
-                            (d[1] == 0x02 || d[1] == 0x01 || d[1] == 0x00) &&
+                            (d[1] == 0x02 || d[1] == 0x01) &&
                             (d[2] == 0x02 || d[2] == 0x00)) {
+                            if (downstream_buf_.size() != (2 + (uint8_t) d[1])) {
+                                BOOST_LOG_S5B(error) << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
+                                                     << " (downstream_buf_.size() != (2 + (uint8_t) d[1]))";
+                                fail(error,
+                                     std::string{"ProxyHandshakeAuth::do_read_client_first_3_byte()"} +
+                                     std::string{" (downstream_buf_.size() != (2 + (uint8_t) d[1]))"}
+                                );
+                                return;
+                            }
                             // is socks5
                             BOOST_LOG_S5B(trace) << "is socks5";
                             connectType = ConnectType::socks5;
@@ -106,7 +119,13 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                         }
 
                     } else {
-                        do_whenError(error);
+                        BOOST_LOG_S5B(error)
+                            << "ProxyHandshakeAuth::do_read_client_first_3_byte():"
+                            << " error:" << error.what()
+                            << " bytes_transferred:" << bytes_transferred
+                            << " downstream_buf_.size():" << downstream_buf_.size();
+                        fail(error, "!(!error && bytes_transferred >= 3 && downstream_buf_.size() >= 3)");
+                        return;
                     }
                 });
     } else {
