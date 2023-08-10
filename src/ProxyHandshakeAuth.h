@@ -55,7 +55,9 @@ class TcpRelaySession;
 
 class ProxyHandshakeAuth : public std::enable_shared_from_this<ProxyHandshakeAuth> {
 public:
-    std::weak_ptr<TcpRelaySession> tcpRelaySession;
+    // this is a circle ref, to keep parents valid
+    // must reset this ref, after complete or error, to make sure circle break
+    std::shared_ptr<TcpRelaySession> tcpRelaySession;
 
     // Client --> Proxy --> Remove Server
     boost::asio::streambuf downstream_buf_;
@@ -164,8 +166,16 @@ private:
 
 public:
 
+    void do_whenComplete() {
+        BOOST_ASSERT(tcpRelaySession);
+        whenComplete();
+        tcpRelaySession.reset();
+    }
+
     void do_whenError(boost::system::error_code error) {
+        BOOST_ASSERT(tcpRelaySession);
         whenError(error);
+        tcpRelaySession.reset();
     }
 
 private:

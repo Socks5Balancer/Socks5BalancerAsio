@@ -20,7 +20,7 @@
 
 void ProxyHandshakeAuth::do_read_client_first_3_byte() {
     // do_downstream_read
-    auto ptr = tcpRelaySession.lock();
+    auto ptr = tcpRelaySession;
     if (ptr) {
         boost::asio::async_read(
                 downstream_socket_,
@@ -120,7 +120,7 @@ void ProxyHandshakeAuth::start() {
     util_Socks5ClientImpl_ = std::make_shared<decltype(util_Socks5ClientImpl_)::element_type>(shared_from_this());
     util_Socks5ServerImpl_ = std::make_shared<decltype(util_Socks5ServerImpl_)::element_type>(shared_from_this());
 
-    auto ptr = tcpRelaySession.lock();
+    auto ptr = tcpRelaySession;
     if (ptr) {
         do_read_client_first_3_byte();
     } else {
@@ -240,10 +240,10 @@ void ProxyHandshakeAuth::check_whenComplete() {
             fail({}, "check_whenComplete (completeDownError || completeUpError)");
             return;
         } else {
-            auto ptr = tcpRelaySession.lock();
+            auto ptr = tcpRelaySession;
             if (ptr) {
                 // all ok
-                whenComplete();
+                do_whenComplete();
             }
         }
     }
