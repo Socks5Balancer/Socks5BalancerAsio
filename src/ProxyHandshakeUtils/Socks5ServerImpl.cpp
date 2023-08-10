@@ -173,13 +173,13 @@ void Socks5ServerImpl::do_auth_client_read() {
                             if (socks5_read_buf->at(0) != 0x01) {
                                 return fail(ec, "do_auth_client_read (socks5_read_buf->at(0) != 0x01)");
                             }
-                            if (socks5_read_buf->at(1) != 0) {
-                                return fail(ec, "do_auth_client_read (socks5_read_buf->at(1) != 0)");
+                            if (socks5_read_buf->at(1) == 0) {
+                                return fail(ec, "do_auth_client_read (socks5_read_buf->at(1) == 0)");
                             }
-                            if (socks5_read_buf->at(2 + socks5_read_buf->at(1)) != 0) {
+                            if (socks5_read_buf->at(2 + socks5_read_buf->at(1)) == 0) {
                                 return fail(
                                         ec,
-                                        "do_auth_client_read (socks5_read_buf->at(2 + socks5_read_buf->at(1)) != 0)");
+                                        "do_auth_client_read (socks5_read_buf->at(2 + socks5_read_buf->at(1)) == 0)");
                             }
 
                             std::string_view user{
@@ -331,37 +331,6 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 || socks5_read_buf->at(2) != 0x00) {
                                 return fail(ec, "do_handshake_client_read (invalid)");
                             }
-                            switch (socks5_read_buf->at(1)) {
-                                case 0x01:
-                                    // CONNECT
-                                    break;
-                                case 0x02:
-                                    // BIND
-                                    // we not impl this, never
-                                    do_handshake_client_end_error(0x07);
-                                    return;
-                                    break;
-                                case 0x03:
-                                    // UDP
-                                    if (!ptr->upside_support_udp_mode()) {
-                                        // upside not support UDP
-                                        do_handshake_client_end_error(0x07);
-                                        return;
-                                    }
-                                    // we not impl this, only NOW
-                                    do_handshake_client_end_error(0x07);
-
-                                    // TODO set udpEnabled if user need UDP (when we impl UDP)
-                                    //    udpEnabled = true;
-                                    return;
-                                    break;
-                                default:
-                                    // never go there
-                                    return fail(
-                                            ec,
-                                            "do_handshake_client_read switch (socks5_read_buf->at(1)), never go there");
-                                    break;
-                            }
                             if (socks5_read_buf->at(3) == 0x01) {
                                 // IPv4
                                 if (bytes_transferred < (4 + 4 + 2)) {
@@ -421,8 +390,45 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 // invalid
                                 return fail(ec, "do_handshake_client_read (socks5_read_buf->at(3) invalid)");
                             }
+                            BOOST_LOG_S5B(warning) << "do_handshake_client_read after read target:"
+                                                   << " host:" << ptr->host
+                                                   << " port:" << ptr->port;
+                            switch (socks5_read_buf->at(1)) {
+                                case 0x01:
+                                    // CONNECT
+                                    break;
+                                case 0x02:
+                                    // BIND
+                                    // we not impl this, never
+                                    BOOST_LOG_S5B(warning) << "do_handshake_client_read BIND not impl";
+                                    do_handshake_client_end_error(0x07);
+                                    return;
+                                    break;
+                                case 0x03:
+                                    // UDP
+                                    if (!ptr->upside_support_udp_mode()) {
+                                        // upside not support UDP
+                                        do_handshake_client_end_error(0x07);
+                                        return;
+                                    }
+                                    // we not impl this, only NOW
+                                    BOOST_LOG_S5B(warning) << "do_handshake_client_read UDP not impl";
+                                    do_handshake_client_end_error(0x07);
+
+                                    // TODO set udpEnabled if user need UDP (when we impl UDP)
+                                    //    udpEnabled = true;
+                                    return;
+                                    break;
+                                default:
+                                    // never go there
+                                    return fail(
+                                            ec,
+                                            "do_handshake_client_read switch (socks5_read_buf->at(1)), never go there");
+                                    break;
+                            }
 
 
+                            BOOST_LOG_S5B(trace) << "do_handshake_client_read call do_ready_to_send_last_ok_package";
                             do_ready_to_send_last_ok_package(ptr);
 
                         }));
