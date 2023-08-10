@@ -69,12 +69,38 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 return;
             }
         } else if (d[0] == 0x05 && d[1] > 0) {
+            {
+                std::stringstream ss;
+                ss << "do_analysis_client_first_socks5_header (d[0] == 0x05 && d[1] > 0):"
+                   << " len:" << len
+                   << " data:"
+                   << std::string{(char *) d, len}
+                   << " [*]:";
+                for (size_t i = 0; i != len; ++i) {
+                    ss << "[" << i << "]" << (int) d[i];
+                }
+                BOOST_LOG_S5B(trace) << ss.str();
+            }
             // is socks5 with username/passwd auth
             BOOST_LOG_S5B(trace) << "is socks5 with username/passwd auth";
             std::string authMethodList{reinterpret_cast<const char *>(d) + 2, (uint8_t) d[1]};
             ptr->downstream_buf_.consume((2 + (uint8_t) d[1]));
+            BOOST_ASSERT(ptr->downstream_buf_.size() == 0);
+            {
+                std::stringstream ss;
+                ss << "do_analysis_client_first_socks5_header authMethodList:"
+                   << " size:" << authMethodList.size()
+                   << " data:" << authMethodList
+                   << " (authMethodList.find(0x02) != std::string::npos):"
+                   << (authMethodList.find(0x02) != std::string::npos)
+                   << " [*]:";
+                for (size_t i = 0; i != authMethodList.size(); ++i) {
+                    ss << "[" << i << "]" << (int) authMethodList[i];
+                }
+                BOOST_LOG_S5B(trace) << ss.str();
+            }
 
-            if (authMethodList.find('\x02')) {
+            if (authMethodList.find(0x02) != std::string::npos) {
                 // client support user/pwd auth method
                 if (ptr->authClientManager->needAuth()) {
                     // do socks5 auth with client (downside)
