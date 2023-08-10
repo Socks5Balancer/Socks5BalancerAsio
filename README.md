@@ -39,6 +39,7 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 1. `random` \: every connect will random connect a live backend
 1. `one_by_one` \: every new connect will try to use last connect backend, if that backend dead, will try next live one
 1. `change_by_time` \: similar `one_by_one` , but will force change server to next after a specific time (in config)
+1. `force_only_one` \: force only use one backend server, never auto change, it useful if you need test a backend, or the backend not stable, but you still want use it.
 
 ## config
 config is a json, the template config is `config.json`
