@@ -129,7 +129,8 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                             auto startCheck = boost::starts_with(pa, std::string{"Basic "});
                             BOOST_LOG_S5B(trace) << "===== proxy_authorization startCheck:" << startCheck;
 
-                            const std::string_view base64Part(s.begin() + 6, s.size() - 6);
+                            const std::string_view base64Part(pa.begin() + 6, pa.size() - 6);
+                            BOOST_LOG_S5B(trace) << "===== base64Part:" << base64Part;
                             if (!checkHeaderAuthString(base64Part, ptr)) {
                                 // goto 407 to let user retry
                                 do_send_407();
@@ -141,7 +142,8 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                             auto startCheck = boost::starts_with(pa, std::string{"Basic "});
                             BOOST_LOG_S5B(trace) << "===== authorization startCheck:" << startCheck;
 
-                            const std::string_view base64Part(s.begin() + 6, s.size() - 6);
+                            const std::string_view base64Part(pa.begin() + 6, pa.size() - 6);
+                            BOOST_LOG_S5B(trace) << "===== base64Part:" << base64Part;
                             if (!checkHeaderAuthString(base64Part, ptr)) {
                                 // goto 407 to let user retry
                                 do_send_407();
