@@ -132,7 +132,7 @@ if (Need_ProxyHandshakeAuth)
             src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
             src/ProxyHandshakeUtils/Socks5ClientImpl.h
             src/ProxyHandshakeAuth.cpp
-            src/ProxyHandshakeAuth.h)
+            src/ProxyHandshakeAuth.h src/ProxyHandshakeUtils/ProxyRelayMode.h)
 else ()
     message(STATUS "Enable ProxyHandshakeAuth OFF.")
     set(ProxyHandshakeAuthHeader "")

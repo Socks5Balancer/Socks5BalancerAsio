@@ -48,6 +48,7 @@
 #include "./ProxyHandshakeUtils/HttpClientImpl.h"
 #include "./ProxyHandshakeUtils/Socks5ServerImpl.h"
 #include "./ProxyHandshakeUtils/Socks5ClientImpl.h"
+#include "./ProxyHandshakeUtils/ProxyRelayMode.h"
 
 #include "./log/Log.h"
 
@@ -75,6 +76,8 @@ public:
 
     std::function<void()> whenComplete;
     std::function<void(boost::system::error_code error)> whenError;
+
+    ProxyRelayMode proxyRelayMode = ProxyRelayMode::none;
 
 private:
 
