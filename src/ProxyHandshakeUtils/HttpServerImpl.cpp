@@ -235,6 +235,7 @@ void HttpServerImpl::do_send_407() {
     // do_downstream_write
     auto ptr = parents.lock();
     if (ptr) {
+        // https://datatracker.ietf.org/doc/html/rfc7617
         auto data_send = std::make_shared<std::string>(
                 "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"Access to internal site\"\r\n\r\n"
         );
