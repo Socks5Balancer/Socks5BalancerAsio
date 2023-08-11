@@ -112,7 +112,7 @@ it must encode with `UTF-8 no BOM`
   ],
   "AuthClientInfo": [                       // the User Auth username/password config, (if not empty, all the proxy access MUST need auth, (include http-proxy/sock5-proxy))
     {                                       //    NOTE:  please see follow ``##Auth Support`` section to see how to **Enable Auth Support**, and other more information
-      "user": "111",                        // the User Auth username, (NOTE: don't use `:` in your username, otherwise, because the http-proxy defined , everything after first `:` will be marked as part of pwd)
+      "user": "111",                        // the User Auth username, (NOTE: don't use `:` or `"` in your username, otherwise, because the http-proxy defined rfc7617 , everything after first `:` will be marked as part of pwd. In other side, `"` will break json config. )
       "pwd": "abc"                          // the User Auth Password, (NOTE: don't use none ascii char in username/password, this project not optimization with Unicode, use Unicode may be case unpredictable problems .)
     },
     {
