@@ -236,8 +236,13 @@ void HttpServerImpl::do_send_407() {
     auto ptr = parents.lock();
     if (ptr) {
         // https://datatracker.ietf.org/doc/html/rfc7617
+        // add `charset="UTF-8"` ,
+        //      ours username/passwd direct read from json file as raw byte format (std::string == std::base_string<char>),
+        //      so in the memory of `AuthClientManager`, the username/passwd is encoded as UTF-8 format,
+        //      (because json file is encode with `UTF-8 no BOM` ),
+        //      then, we simply tell the client we need UTF-8 encode, after that, all will work well.
         auto data_send = std::make_shared<std::string>(
-                "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"Access to internal site\"\r\n\r\n"
+                "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"Access to internal site\", charset=\"UTF-8\"\r\n\r\n"
         );
 
         boost::asio::async_write(
