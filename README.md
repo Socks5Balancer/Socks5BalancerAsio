@@ -211,7 +211,7 @@ WantedBy=multi-user.target
 ## Auth Support [update 2023-08-11]
 
 now support Auth (UserName/Password) in http AND socks5 mode.  
-BUT need Enable option flag when building, and will **lost** UDP support, **NOW**, **Temporary**.
+BUT need Enable option flag `-DNeed_ProxyHandshakeAuth=ON` when building, and will **lost** UDP support, **NOW**, **Temporary**.
 
 use ```AuthClientInfo``` section in config file to config username/password.
 
@@ -320,16 +320,6 @@ otherwise, try to get the backend config from page server path `backend` .
 now the main server write with pure c++ (c++20) , powered by Boost.Asio/Boost.Beast . 
 and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) . 
 
-if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config. 
-then, it will get server info json from main server , and control it with a `/op?xxx` path on same place. 
-
-if you think the simple Monitor html looks so ugly, you can re-write it with any other tools, 
-only need to follow the data process way on the simple Monitor html. 
-
-BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date. 
-
-_(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)_
-
 ---
 
 ## how to build & dev
@@ -337,16 +327,16 @@ _(`Vue.js` is a good replace for jQ at small project , i only use it's data and 
 ### Dependencies
 
 **CMake** >= 3.16  
-**Boost** >= 1.74
+**Boost** >= 1.81
 > For older versions Boost v1.70+ (v1.73 is recommended as last working version)
 > Checkout at tag "v1.0" or commit "e6c491ce56f6de21423c5d780d1c8865714fabe3"
 
 **OpenSSL** >= 1.1.0 recommend 1.1.1h  
-**MSVC** or **GCC** , required C++17 support  
+**MSVC** or **GCC** , required C++20 support  
 
 #### Build on Windows
 
-install VS2019
+install VS2022
 
 if you dont want build Boost and OpenSSL by yourself , download Prebuild version from follow :
 
@@ -359,7 +349,7 @@ OpenSSL Prebuild :
 
 
 ```
-cmake -DBOOST_INCLUDEDIR=<path_to>/boost_1_73_0 -DOPENSSL_ROOT_DIR=<path_to>\openssl-1.1.1h\x64
+cmake -DBOOST_INCLUDEDIR=<path_to>/boost_1_81_0 -DOPENSSL_ROOT_DIR=<path_to>\openssl-1.1.1h\x64
 ```
 
 then build it
