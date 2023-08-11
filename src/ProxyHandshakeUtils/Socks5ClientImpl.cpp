@@ -258,11 +258,28 @@ void Socks5ClientImpl::do_socks5_connect_write() {
         data_send->push_back(static_cast<uint8_t>(ptr->port >> 8));
         data_send->push_back(static_cast<uint8_t>(ptr->port & 0xff));
 
-        // TODO UDP
-        if (ptr->downside_in_udp_mode()) {
-            // now we don't impl UDP
-            //  data_send->at(1) = 0x03;
-            //  udpEnabled = true;
+        BOOST_ASSERT((ptr->downside_in_udp_mode() ? ptr->proxyRelayMode == ProxyRelayMode::udp : true));
+
+        switch (ptr->proxyRelayMode) {
+            case ProxyRelayMode::connect:
+                BOOST_LOG_S5B(trace) << "do_socks5_connect_write case ProxyRelayMode::connect";
+                data_send->at(1) = 0x01;
+                break;
+            case ProxyRelayMode::bind:
+                BOOST_LOG_S5B(trace) << "do_socks5_connect_write case ProxyRelayMode::bind";
+                data_send->at(1) = 0x02;
+                break;
+            case ProxyRelayMode::udp:
+                BOOST_LOG_S5B(trace) << "do_socks5_connect_write case ProxyRelayMode::udp";
+                data_send->at(1) = 0x03;
+                udpEnabled = true;
+                break;
+            case ProxyRelayMode::none:
+            default:
+                // never go there
+                BOOST_LOG_S5B(error) << "do_socks5_connect_write case ProxyRelayMode::none";
+                return fail(ec, "do_socks5_connect_write case ProxyRelayMode::none");
+                break;
         }
 
         BOOST_LOG_S5B(trace)
@@ -335,6 +352,14 @@ void Socks5ClientImpl::do_socks5_connect_read() {
 //                                return fail(ec, ss.str());
                                 return fail(ec, "do_socks5_connect_read (bytes_transferred < 6)");
                             }
+                            if (socks5_read_buf->at(1) != 0x0) {
+                                BOOST_LOG_S5B(trace)
+                                    << "do_socks5_connect_read (socks5_read_buf->at(1) != 0x0) backend server failed"
+                                    << " with error code:" << static_cast<int>(socks5_read_buf->at(1));
+                                ptr->do_whenUpReadyError();
+                                ptr->do_whenUpEnd();
+                                return;
+                            }
                             if (socks5_read_buf->at(0) != 5
                                 || socks5_read_buf->at(1) != 0x00
                                 || socks5_read_buf->at(2) != 0x00
@@ -381,20 +406,37 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                         |
                                         socks5_read_buf->at(bytes_transferred - 1)
                                 };
+
+                                ptr->bindPort = std::string{
+                                        static_cast<char>(socks5_read_buf->at(bytes_transferred - 2)),
+                                        static_cast<char>(socks5_read_buf->at(bytes_transferred - 1)),
+                                };
+                                BOOST_ASSERT(ptr->bindPort.size() == 2);
+
                                 std::string bindAddr;
                                 switch (socks5_read_buf->at(3)) {
                                     case 0x03:
+                                        // domain
                                         bindAddr = std::string{
-                                                (char *) (socks5_read_buf->data()) + 4 + 1 + 1,
+                                                (char *) (socks5_read_buf->data()) + 4 + 1,
+                                                socks5_read_buf->at(4)
+                                        };
+                                        ptr->bindHost = std::string{
+                                                (char *) (socks5_read_buf->data()) + 4 + 1,
                                                 socks5_read_buf->at(4)
                                         };
                                         break;
                                     case 0x01: {
+                                        // ipv4
                                         // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
                                         // We need an unsigned char* pointer to the IP address
                                         auto addr = reinterpret_cast<unsigned char *>(
-                                                socks5_read_buf->data() + 4 + 1
+                                                socks5_read_buf->data() + 4
                                         );
+                                        ptr->bindHost = std::string{
+                                                (char *) (socks5_read_buf->data()) + 4,
+                                                4
+                                        };
                                         boost::asio::ip::address_v4::bytes_type ipV4Byte;
                                         // Copy the address into our array
                                         std::copy(addr, addr + ipV4Byte.size(), ipV4Byte.data());
@@ -408,11 +450,16 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                     }
                                         break;
                                     case 0x04: {
+                                        // ipv6
                                         // https://stackoverflow.com/questions/10220912/quickest-way-to-initialize-asioipaddress-v6
                                         // We need an unsigned char* pointer to the IP address
                                         auto addr = reinterpret_cast<unsigned char *>(
-                                                socks5_read_buf->data() + 4 + 1
+                                                socks5_read_buf->data() + 4
                                         );
+                                        ptr->bindHost = std::string{
+                                                (char *) (socks5_read_buf->data()) + 4,
+                                                16
+                                        };
                                         boost::asio::ip::address_v6::bytes_type ipV6Byte;
                                         // Copy the address into our array
                                         std::copy(addr, addr + ipV6Byte.size(), ipV6Byte.data());
@@ -430,11 +477,11 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                 }
                                 boost::ignore_unused(bindPort);
                                 boost::ignore_unused(bindAddr);
-                                // if bindPort != 0 , we not support multi-homed socks5 server
-                                if (bindPort != 0) {
-                                    BOOST_LOG_S5B(warning)
-                                        << "do_socks5_connect_read (bindPort != 0), we not support multi-homed socks5 server";
-                                }
+//                                // if bindPort != 0 , we not support multi-homed socks5 server
+//                                if (bindPort != 0) {
+//                                    BOOST_LOG_S5B(warning)
+//                                        << "do_socks5_connect_read (bindPort != 0), we not support multi-homed socks5 server";
+//                                }
                             }
 
                             BOOST_LOG_S5B(trace) << "do_socks5_connect_read()";

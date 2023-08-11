@@ -83,7 +83,6 @@ endif ()
 option(USE_DYNAMIC_BOOST "Config USE_DYNAMIC_BOOST")
 
 
-
 if (DEBUG_BOOST_ASIO)
     add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
 endif (DEBUG_BOOST_ASIO)
@@ -132,7 +131,8 @@ if (Need_ProxyHandshakeAuth)
             src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
             src/ProxyHandshakeUtils/Socks5ClientImpl.h
             src/ProxyHandshakeAuth.cpp
-            src/ProxyHandshakeAuth.h src/ProxyHandshakeUtils/ProxyRelayMode.h)
+            src/ProxyHandshakeAuth.h
+            src/ProxyHandshakeUtils/ProxyRelayMode.h)
 else ()
     message(STATUS "Enable ProxyHandshakeAuth OFF.")
     set(ProxyHandshakeAuthHeader "")
@@ -198,7 +198,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 
 # ============================================================================================
-
 
 
 add_executable(${ProjectMainName}

@@ -78,6 +78,10 @@ public:
     std::function<void(boost::system::error_code error)> whenError;
 
     ProxyRelayMode proxyRelayMode = ProxyRelayMode::none;
+    // bindHost bytes (4,16,N<256)
+    std::string bindHost;
+    // bindPort bytes (2)
+    std::string bindPort;
 
 private:
 

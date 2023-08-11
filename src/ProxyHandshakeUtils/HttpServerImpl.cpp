@@ -167,7 +167,7 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                     // is "connect"
                     BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header is connect trim";
 
-//                    ptr->connectType = ConnectType::httpConnect;
+                    ptr->proxyRelayMode = ProxyRelayMode::connect;
 
                     // remove connect request
                     ptr->downstream_buf_.consume(it + 4);
@@ -179,9 +179,12 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
 
                 {
                     // TODO debug  ???  seems never go there
-                    BOOST_ASSERT(false);
+                    // BOOST_ASSERT(false);
+                    BOOST_LOG_S5B(warning) << "do_analysis_client_first_http_header"
+                                           << " (method() != boost::beast::http::verb::connect)"
+                                           << " seems never go there ???";
 
-//                    ptr->connectType = ConnectType::httpOther;
+                    ptr->proxyRelayMode = ProxyRelayMode::connect;
 
                     // remove connect request
                     ptr->downstream_buf_.consume(it + 4);

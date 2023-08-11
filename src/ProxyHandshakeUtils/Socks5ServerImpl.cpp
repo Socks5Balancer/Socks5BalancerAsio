@@ -466,29 +466,31 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 case 0x01:
                                     // CONNECT
                                     BOOST_LOG_S5B(trace) << "do_handshake_client_read CONNECT";
+                                    ptr->proxyRelayMode = ProxyRelayMode::connect;
                                     break;
                                 case 0x02:
                                     // BIND
                                     // we not impl this, never
-                                    BOOST_LOG_S5B(warning) << "do_handshake_client_read BIND not impl";
+                                    BOOST_LOG_S5B(trace) << "do_handshake_client_read BIND";
                                     do_handshake_client_end_error(0x07);
-                                    return;
+                                    ptr->proxyRelayMode = ProxyRelayMode::bind;
                                     break;
                                 case 0x03:
                                     // UDP
                                     if (!ptr->upside_support_udp_mode()) {
                                         // upside not support UDP
-                                        do_handshake_client_end_error(0x07);
                                         BOOST_LOG_S5B(warning) << "do_handshake_client_read ( upside not support UDP)";
+                                        do_handshake_client_end_error(0x07);
                                         return;
                                     }
-                                    // we not impl this, only NOW
-                                    BOOST_LOG_S5B(warning) << "do_handshake_client_read UDP not impl";
-                                    do_handshake_client_end_error(0x07);
+//                                    // we not impl this, only NOW
+//                                    BOOST_LOG_S5B(warning) << "do_handshake_client_read UDP not impl";
+//                                    do_handshake_client_end_error(0x07);
 
-                                    // TODO set udpEnabled if user need UDP (when we impl UDP)
-                                    //    udpEnabled = true;
-                                    return;
+                                    // set udpEnabled=true if user need UDP
+                                    BOOST_LOG_S5B(trace) << "do_handshake_client_read UDP";
+                                    udpEnabled = true;
+                                    ptr->proxyRelayMode = ProxyRelayMode::udp;
                                     break;
                                 default:
                                     // never go there
@@ -654,13 +656,54 @@ void Socks5ServerImpl::do_handshake_client_end() {
         // fill BND info as 0.0.0.0:0  (0x00,00,00,00, 0x00,00)
 
 
-        auto data_send = std::make_shared<std::string>(
-                "\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10
-        );
 
-        // TODO load BND info from upside
-        //    AND impl UDP
+        auto data_send = std::make_shared<std::vector<uint8_t>>();
+        data_send->push_back(0x05);
+        data_send->push_back(0x00);
+        data_send->push_back(0x00);
+        // load BND info from upside AND impl UDP
+        switch (ptr->bindHost.size()) {
+            case 0: {
+                // normal connect
+                BOOST_ASSERT(ptr->proxyRelayMode == ProxyRelayMode::connect);
+                const char *const tc = "\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00";
+                //std::string t{tc, 10};
+                //  auto data_send = std::make_shared<std::string>(
+                //      "\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10
+                //  );
+                auto tt = std::vector<uint8_t>{tc, tc + 10};
+                data_send->swap(tt);
+            }
+                break;
+            case 4: {
+                // IP V4
+                data_send->push_back(0x01);
+                data_send->insert(data_send->end(), ptr->bindHost.begin(), ptr->bindHost.end());
+                data_send->insert(data_send->end(), ptr->bindPort.begin(), ptr->bindPort.end());
+            }
+                break;
+            case 16: {
+                // IP V6
+                data_send->push_back(0x04);
+                data_send->insert(data_send->end(), ptr->bindHost.begin(), ptr->bindHost.end());
+                data_send->insert(data_send->end(), ptr->bindPort.begin(), ptr->bindPort.end());
+            }
+                break;
+            default: {
+                // domain
+                data_send->push_back(0x03);
+                if (ptr->host.size() > 255) {
+                    return fail({}, "do_handshake_client_end (ptr->host.size() > 255)");
+                }
+                BOOST_ASSERT(ptr->bindHost.size() <= 255);
+                data_send->push_back((uint8_t) ptr->bindHost.size());
+                data_send->insert(data_send->end(), ptr->bindHost.begin(), ptr->bindHost.end());
+                data_send->insert(data_send->end(), ptr->bindPort.begin(), ptr->bindPort.end());
+            }
+                break;
+        }
 
+        BOOST_ASSERT((udpEnabled ? ptr->proxyRelayMode == ProxyRelayMode::udp : true));
         // client request UDP but upside cannot provide
         if (udpEnabled) {
             if (!ptr->upside_in_udp_mode()) {
