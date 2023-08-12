@@ -29,6 +29,7 @@
 #include <list>
 #include <map>
 #include <atomic>
+#include <mutex>
 #include "ConfigRuleEnum.h"
 
 #include <boost/multi_index_container.hpp>
@@ -51,17 +52,17 @@ public:
     struct SessionInfo {
         struct UpstreamIndex {
         };
-        struct ClientAddr {
+        struct ClientAddrPort {
         };
         struct ListenAddr {
         };
-        struct ListenClientAddrPair {
+        struct ListenClientAddrPortPair {
         };
         struct RawPtr {
         };
 
         const size_t upstreamIndex;
-        const std::string clientEndpointAddrString;
+        const std::string clientEndpointAddrPortString;
         const std::string listenEndpointAddrString;
 
         const TcpRelaySession *rawPtr{nullptr};
@@ -79,8 +80,8 @@ public:
             // https://zh.cppreference.com/w/cpp/language/default_comparisons
             if ((upstreamIndex <=> o.upstreamIndex) != std::strong_ordering::equal) {
                 return upstreamIndex <=> o.upstreamIndex;
-            } else if ((clientEndpointAddrString <=> o.clientEndpointAddrString) != std::strong_ordering::equal) {
-                return clientEndpointAddrString <=> o.clientEndpointAddrString;
+            } else if ((clientEndpointAddrPortString <=> o.clientEndpointAddrPortString) != std::strong_ordering::equal) {
+                return clientEndpointAddrPortString <=> o.clientEndpointAddrPortString;
             } else if ((listenEndpointAddrString <=> o.listenEndpointAddrString) != std::strong_ordering::equal) {
                 return listenEndpointAddrString <=> o.listenEndpointAddrString;
             } else if ((rawPtr <=> o.rawPtr) != std::strong_ordering::equal) {
@@ -109,18 +110,18 @@ public:
                             boost::multi_index::member<SessionInfo, const size_t, &SessionInfo::upstreamIndex>
                     >,
                     boost::multi_index::hashed_non_unique<
-                            boost::multi_index::tag<SessionInfo::ClientAddr>,
-                            boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::clientEndpointAddrString>
+                            boost::multi_index::tag<SessionInfo::ClientAddrPort>,
+                            boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::clientEndpointAddrPortString>
                     >,
                     boost::multi_index::hashed_non_unique<
                             boost::multi_index::tag<SessionInfo::ListenAddr>,
                             boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::listenEndpointAddrString>
                     >,
                     boost::multi_index::hashed_unique<
-                            boost::multi_index::tag<SessionInfo::ListenClientAddrPair>,
+                            boost::multi_index::tag<SessionInfo::ListenClientAddrPortPair>,
                             boost::multi_index::composite_key<
                                     SessionInfo,
-                                    boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::clientEndpointAddrString>,
+                                    boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::clientEndpointAddrPortString>,
                                     boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::listenEndpointAddrString>
                             >
                     >,
@@ -135,6 +136,7 @@ public:
 
     struct Info : public std::enable_shared_from_this<Info> {
 
+        std::recursive_mutex sessionsMtx;
         TcpRelayStatisticsInfo::SessionInfoContainer sessions{};
 
         std::atomic_size_t byteUp = 0;
@@ -173,18 +175,21 @@ public:
     std::atomic_size_t lastConnectServerIndex{0};
 
 public:
+    // nowServer->index
     std::map<size_t, std::shared_ptr<Info>> &getUpstreamIndex();
 
+    // ClientEndpointAddrString : (127.0.0.1)
     std::map<std::string, std::shared_ptr<Info>> &getClientIndex();
 
+    // ListenEndpointAddrString : (127.0.0.1:661133)
     std::map<std::string, std::shared_ptr<Info>> &getListenIndex();
 
 public:
-    void addSession(size_t index, const std::weak_ptr<TcpRelaySession>& s);
+    void addSession(size_t index, const std::shared_ptr<TcpRelaySession>& s);
 
-    void addSessionClient(const std::string& addr, const std::weak_ptr<TcpRelaySession>& s);
+    void addSessionClient(const std::shared_ptr<TcpRelaySession>& s);
 
-    void addSessionListen(const std::string& addr, const std::weak_ptr<TcpRelaySession>& s);
+    void addSessionListen(const std::shared_ptr<TcpRelaySession>& s);
 
     void updateSessionInfo(std::shared_ptr<TcpRelaySession> s);
 

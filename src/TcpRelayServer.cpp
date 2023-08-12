@@ -17,6 +17,8 @@ void TcpRelaySession::start() {
     boost::system::error_code ec;
     clientEndpoint = downstream_socket().remote_endpoint(ec);
     clientEndpointAddrString = clientEndpoint.address().to_string();
+    clientEndpointAddrPortString = clientEndpoint.address().to_string() + ":" +
+                                   boost::lexical_cast<std::string>(clientEndpoint.port());
     listenEndpoint = downstream_socket().local_endpoint();
     listenEndpointAddrString = listenEndpoint.address().to_string() + ":" +
                                boost::lexical_cast<std::string>(listenEndpoint.port());
@@ -127,9 +129,9 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                     nowServer->updateOnlineTime();
                     auto pSI = statisticsInfo.lock();
                     if (pSI) {
-                        pSI->addSession(nowServer->index, weak_from_this());
-                        pSI->addSessionClient(clientEndpointAddrString, weak_from_this());
-                        pSI->addSessionListen(listenEndpointAddrString, weak_from_this());
+                        pSI->addSession(nowServer->index, shared_from_this());
+                        pSI->addSessionClient(shared_from_this());
+                        pSI->addSessionListen(shared_from_this());
                         pSI->lastConnectServerIndex.store(nowServer->index);
                         pSI->connectCountAdd(nowServer->index);
                         pSI->connectCountAddClient(clientEndpointAddrString);
@@ -342,9 +344,11 @@ void TcpRelaySession::close(boost::system::error_code error) {
         std::lock_guard<std::mutex> g{nowServerMtx};
         if (nowServer && refAdded) {
             isDeCont = true;
+            BOOST_LOG_S5B(trace) << "TcpRelaySession::close --nowServer->connectCount";
             --nowServer->connectCount;
             auto pSI = statisticsInfo.lock();
             if (pSI) {
+                BOOST_LOG_S5B(trace) << "TcpRelaySession::close --connectCountSub";
                 pSI->connectCountSub(nowServer->index);
                 pSI->connectCountSubClient(clientEndpointAddrString);
                 pSI->connectCountSubListen(listenEndpointAddrString);

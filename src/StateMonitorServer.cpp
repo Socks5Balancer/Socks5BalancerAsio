@@ -49,7 +49,7 @@ std::string HttpConnectSession::createJsonString() {
         config.put("additionCheckPeriod", c.additionCheckPeriod.count());
 
         boost::property_tree::ptree pUS;
-        for (const auto &a:c.upstream) {
+        for (const auto &a: c.upstream) {
             boost::property_tree::ptree n;
             n.put("name", a.name);
             n.put("host", a.host);
@@ -94,7 +94,7 @@ std::string HttpConnectSession::createJsonString() {
         }
 
         boost::property_tree::ptree pS;
-        for (const auto &a : upstreamPool->pool()) {
+        for (const auto &a: upstreamPool->pool()) {
             boost::property_tree::ptree n;
             n.put("index", a->index);
             n.put("name", a->name);
@@ -464,7 +464,7 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
             if (queryPairs.count("newRule") > 0) {
                 auto q = *queryPairs.find("newRule");
                 std::optional<decltype(RuleEnumList)::value_type> n;
-                for (const auto &a : RuleEnumList) {
+                for (const auto &a: RuleEnumList) {
                     if (a == q.second) {
                         n = a;
                         break;
@@ -543,7 +543,7 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                     boost::property_tree::ptree root;
 
                     boost::property_tree::ptree pool;
-                    for (const auto &a : upstreamPool->pool()) {
+                    for (const auto &a: upstreamPool->pool()) {
                         boost::property_tree::ptree n;
                         n.put("index", a->index);
                         n.put("name", a->name);
@@ -622,21 +622,24 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                             valid = true;
 
                             boost::property_tree::ptree pC;
-                            for (const auto &wp: in->sessions) {
-                                if (auto a = wp.ptr.lock()) {
-                                    boost::property_tree::ptree n;
+                            {
+                                std::lock_guard lg{in->sessionsMtx};
+                                for (const auto &wp: in->sessions) {
+                                    if (auto a = wp.ptr.lock()) {
+                                        boost::property_tree::ptree n;
 
-                                    if (auto s = a->getNowServer()) {
-                                        n.put("serverIndex", s->index);
+                                        if (auto s = a->getNowServer()) {
+                                            n.put("serverIndex", s->index);
+                                        }
+                                        n.put("ClientEndpoint", a->getClientEndpointAddrString());
+                                        n.put("ListenEnd", a->getListenEndpointAddrString());
+                                        n.put("TargetEndpoint", a->getTargetEndpointAddrString());
+                                        n.put("TargetHost", wp.host);
+                                        n.put("TargetPort", wp.post);
+                                        n.put("StartTime", wp.startTime);
+
+                                        pC.push_back(std::make_pair("", n));
                                     }
-                                    n.put("ClientEndpoint", a->getClientEndpointAddrString());
-                                    n.put("ListenEnd", a->getListenEndpointAddrString());
-                                    n.put("TargetEndpoint", a->getTargetEndpointAddrString());
-                                    n.put("TargetHost", wp.host);
-                                    n.put("TargetPort", wp.post);
-                                    n.put("StartTime", wp.startTime);
-
-                                    pC.push_back(std::make_pair("", n));
                                 }
                             }
                             root.add_child("ClientIndex", pC);
@@ -662,21 +665,24 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                             valid = true;
 
                             boost::property_tree::ptree pL;
-                            for (const auto &wp: in->sessions) {
-                                if (auto a = wp.ptr.lock()) {
-                                    boost::property_tree::ptree n;
+                            {
+                                std::lock_guard lg{in->sessionsMtx};
+                                for (const auto &wp: in->sessions) {
+                                    if (auto a = wp.ptr.lock()) {
+                                        boost::property_tree::ptree n;
 
-                                    if (auto s = a->getNowServer()) {
-                                        n.put("serverIndex", s->index);
+                                        if (auto s = a->getNowServer()) {
+                                            n.put("serverIndex", s->index);
+                                        }
+                                        n.put("ClientEndpoint", a->getClientEndpointAddrString());
+                                        n.put("ListenEnd", a->getListenEndpointAddrString());
+                                        n.put("TargetEndpoint", a->getTargetEndpointAddrString());
+                                        n.put("TargetHost", wp.host);
+                                        n.put("TargetPort", wp.post);
+                                        n.put("StartTime", wp.startTime);
+
+                                        pL.push_back(std::make_pair("", n));
                                     }
-                                    n.put("ClientEndpoint", a->getClientEndpointAddrString());
-                                    n.put("ListenEnd", a->getListenEndpointAddrString());
-                                    n.put("TargetEndpoint", a->getTargetEndpointAddrString());
-                                    n.put("TargetHost", wp.host);
-                                    n.put("TargetPort", wp.post);
-                                    n.put("StartTime", wp.startTime);
-
-                                    pL.push_back(std::make_pair("", n));
                                 }
                             }
                             root.add_child("ListenIndex", pL);
@@ -751,7 +757,7 @@ void HttpConnectSession::create_response() {
         boost::split(queryList, query, boost::is_any_of("&"));
 
         HttpConnectSession::QueryPairsType queryPairs;
-        for (const auto &a : queryList) {
+        for (const auto &a: queryList) {
             std::vector<std::string> p;
             boost::split(p, a, boost::is_any_of("="));
             if (p.size() == 1) {
@@ -771,12 +777,12 @@ void HttpConnectSession::create_response() {
 
         std::cout << "query:" << query << std::endl;
         std::cout << "queryList:" << "\n";
-        for (const auto &a : queryList) {
+        for (const auto &a: queryList) {
             std::cout << "\t" << a;
         }
         std::cout << std::endl;
         std::cout << "queryPairs:" << "\n";
-        for (const auto &a : queryPairs) {
+        for (const auto &a: queryPairs) {
             std::cout << "\t" << a.first << " = " << a.second;
         }
         std::cout << std::endl;

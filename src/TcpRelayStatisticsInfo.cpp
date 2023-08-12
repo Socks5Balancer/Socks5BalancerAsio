@@ -22,6 +22,7 @@
 #include <limits>
 
 void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
+    std::lock_guard lg{sessionsMtx};
     auto it = sessions.begin();
     while (it != sessions.end()) {
         if ((*it).ptr.expired()) {
@@ -33,6 +34,7 @@ void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
 }
 
 void TcpRelayStatisticsInfo::Info::closeAllSession() {
+    std::lock_guard lg{sessionsMtx};
     auto it = sessions.begin();
     while (it != sessions.end()) {
         auto p = (*it).ptr.lock();
@@ -69,13 +71,16 @@ void TcpRelayStatisticsInfo::Info::connectCountSub() {
 }
 
 size_t TcpRelayStatisticsInfo::Info::calcSessionsNumber() {
+    std::lock_guard lg{sessionsMtx};
+    BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::Info::calcSessionsNumber() Before:" << sessions.size();
     removeExpiredSession();
+    BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::Info::calcSessionsNumber() After:" << sessions.size();
     return sessions.size();
 }
 
 TcpRelayStatisticsInfo::SessionInfo::SessionInfo(const std::shared_ptr<TcpRelaySession> &s) :
         upstreamIndex(s ? s->getNowServer()->index : std::numeric_limits<decltype(upstreamIndex)>::max()),
-        clientEndpointAddrString(s ? s->getClientEndpointAddrString() : ""),
+        clientEndpointAddrPortString(s ? s->getClientEndpointAddrPortString() : ""),
         listenEndpointAddrString(s ? s->getListenEndpointAddrString() : ""),
         rawPtr(s ? s.get() : nullptr),
         ptr(s ? s : nullptr),
@@ -98,39 +103,80 @@ void TcpRelayStatisticsInfo::SessionInfo::updateTargetInfo(const std::shared_ptr
     }
 }
 
-void TcpRelayStatisticsInfo::addSession(size_t index, const std::weak_ptr<TcpRelaySession> &s) {
-    if (upstreamIndex.find(index) == upstreamIndex.end()) {
-        upstreamIndex.try_emplace(index, std::make_shared<Info>());
-    }
-    auto n = upstreamIndex.at(index);
-    n->sessions.emplace_back(s);
-    if (auto ptr = s.lock()) {
+void TcpRelayStatisticsInfo::addSession(size_t index, const std::shared_ptr<TcpRelaySession> &s) {
+    BOOST_ASSERT(s);
+    if (auto ptr = s) {
+        if (upstreamIndex.find(index) == upstreamIndex.end()) {
+            upstreamIndex.try_emplace(index, std::make_shared<Info>());
+        }
+        auto n = upstreamIndex.at(index);
+        std::lock_guard lg{n->sessionsMtx};
+        BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::addSession()"
+                             << " getClientEndpointAddrString:"
+                             << ptr->getClientEndpointAddrString()
+                             << " getClientEndpointAddrPortString:"
+                             << ptr->getClientEndpointAddrPortString()
+                             << " getListenEndpointAddrString:"
+                             << ptr->getListenEndpointAddrString();
+        BOOST_ASSERT(n->sessions.get<SessionInfo::ListenClientAddrPortPair>().find(std::make_tuple(
+                ptr->getClientEndpointAddrPortString(),
+                ptr->getListenEndpointAddrString()
+        )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
+        n->sessions.emplace_back(s);
         if (auto ns = ptr->getNowServer()) {
             n->lastUseUpstreamIndex = ns->index;
         }
     }
 }
 
-void TcpRelayStatisticsInfo::addSessionClient(const std::string &addr, const std::weak_ptr<TcpRelaySession> &s) {
-    if (clientIndex.find(addr) == clientIndex.end()) {
-        clientIndex.try_emplace(addr, std::make_shared<Info>());
-    }
-    auto n = clientIndex.at(addr);
-    n->sessions.emplace_back(s);
-    if (auto ptr = s.lock()) {
+void TcpRelayStatisticsInfo::addSessionClient(const std::shared_ptr<TcpRelaySession> &s) {
+    BOOST_ASSERT(s);
+    if (auto ptr = s) {
+        const std::string &addr = ptr->getClientEndpointAddrString();
+        if (clientIndex.find(addr) == clientIndex.end()) {
+            clientIndex.try_emplace(addr, std::make_shared<Info>());
+        }
+        auto n = clientIndex.at(addr);
+        std::lock_guard lg{n->sessionsMtx};
+        BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::addSessionClient()"
+                             << " getClientEndpointAddrString:"
+                             << ptr->getClientEndpointAddrString()
+                             << " getClientEndpointAddrPortString:"
+                             << ptr->getClientEndpointAddrPortString()
+                             << " getListenEndpointAddrString:"
+                             << ptr->getListenEndpointAddrString();
+        BOOST_ASSERT(n->sessions.get<SessionInfo::ListenClientAddrPortPair>().find(std::make_tuple(
+                ptr->getClientEndpointAddrPortString(),
+                ptr->getListenEndpointAddrString()
+        )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
+        n->sessions.emplace_back(s);
         if (auto ns = ptr->getNowServer()) {
             n->lastUseUpstreamIndex = ns->index;
         }
     }
 }
 
-void TcpRelayStatisticsInfo::addSessionListen(const std::string &addr, const std::weak_ptr<TcpRelaySession> &s) {
-    if (listenIndex.find(addr) == listenIndex.end()) {
-        listenIndex.try_emplace(addr, std::make_shared<Info>());
-    }
-    auto n = listenIndex.at(addr);
-    n->sessions.emplace_back(s);
-    if (auto ptr = s.lock()) {
+void TcpRelayStatisticsInfo::addSessionListen(const std::shared_ptr<TcpRelaySession> &s) {
+    BOOST_ASSERT(s);
+    if (auto ptr = s) {
+        const std::string &addr = ptr->getListenEndpointAddrString();
+        if (listenIndex.find(addr) == listenIndex.end()) {
+            listenIndex.try_emplace(addr, std::make_shared<Info>());
+        }
+        auto n = listenIndex.at(addr);
+        std::lock_guard lg{n->sessionsMtx};
+        BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::addSessionListen()"
+                             << " getClientEndpointAddrString:"
+                             << ptr->getClientEndpointAddrString()
+                             << " getClientEndpointAddrPortString:"
+                             << ptr->getClientEndpointAddrPortString()
+                             << " getListenEndpointAddrString:"
+                             << ptr->getListenEndpointAddrString();
+        BOOST_ASSERT(n->sessions.get<SessionInfo::ListenClientAddrPortPair>().find(std::make_tuple(
+                ptr->getClientEndpointAddrPortString(),
+                ptr->getListenEndpointAddrString()
+        )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
+        n->sessions.emplace_back(s);
         if (auto ns = ptr->getNowServer()) {
             n->lastUseUpstreamIndex = ns->index;
         }
@@ -143,9 +189,10 @@ void TcpRelayStatisticsInfo::updateSessionInfo(std::shared_ptr<TcpRelaySession> 
         {
             auto ui = upstreamIndex.find(s->getNowServer()->index);
             if (ui == upstreamIndex.end()) {
-                auto &kp = ui->second->sessions.get<SessionInfo::ListenClientAddrPair>();
+                std::lock_guard lg{ui->second->sessionsMtx};
+                auto &kp = ui->second->sessions.get<SessionInfo::ListenClientAddrPortPair>();
                 auto it = kp.find(std::make_tuple(
-                        s->getClientEndpointAddrString(),
+                        s->getClientEndpointAddrPortString(),
                         s->getListenEndpointAddrString()
                 ));
                 if (it != kp.end()) {
@@ -158,9 +205,10 @@ void TcpRelayStatisticsInfo::updateSessionInfo(std::shared_ptr<TcpRelaySession> 
         {
             auto ci = clientIndex.find(s->getClientEndpointAddrString());
             if (ci == clientIndex.end()) {
-                auto &kp = ci->second->sessions.get<SessionInfo::ListenClientAddrPair>();
+                std::lock_guard lg{ci->second->sessionsMtx};
+                auto &kp = ci->second->sessions.get<SessionInfo::ListenClientAddrPortPair>();
                 auto it = kp.find(std::make_tuple(
-                        s->getClientEndpointAddrString(),
+                        s->getClientEndpointAddrPortString(),
                         s->getListenEndpointAddrString()
                 ));
                 if (it != kp.end()) {
@@ -173,9 +221,10 @@ void TcpRelayStatisticsInfo::updateSessionInfo(std::shared_ptr<TcpRelaySession> 
         {
             auto li = listenIndex.find(s->getListenEndpointAddrString());
             if (li == listenIndex.end()) {
-                auto &kp = li->second->sessions.get<SessionInfo::ListenClientAddrPair>();
+                std::lock_guard lg{li->second->sessionsMtx};
+                auto &kp = li->second->sessions.get<SessionInfo::ListenClientAddrPortPair>();
                 auto it = kp.find(std::make_tuple(
-                        s->getClientEndpointAddrString(),
+                        s->getClientEndpointAddrPortString(),
                         s->getListenEndpointAddrString()
                 ));
                 if (it != kp.end()) {

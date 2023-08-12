@@ -62,6 +62,7 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
 
     boost::asio::ip::tcp::endpoint clientEndpoint;
     std::string clientEndpointAddrString;
+    std::string clientEndpointAddrPortString;
     boost::asio::ip::tcp::endpoint listenEndpoint;
     std::string listenEndpointAddrString;
     std::string targetEndpointAddrString;
@@ -133,6 +134,10 @@ public:
 
     std::string getClientEndpointAddrString() {
         return clientEndpointAddrString;
+    }
+
+    std::string getClientEndpointAddrPortString() {
+        return clientEndpointAddrPortString;
     }
 
     std::string getListenEndpointAddrString() {
