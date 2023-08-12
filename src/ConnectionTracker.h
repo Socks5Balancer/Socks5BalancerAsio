@@ -32,6 +32,8 @@
 #include <utility>
 #include "ConnectType.h"
 
+#include "./log/Log.h"
+
 class TcpRelaySession;
 
 class ConnectionTracker : public std::enable_shared_from_this<ConnectionTracker> {

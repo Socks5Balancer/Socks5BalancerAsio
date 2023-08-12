@@ -107,15 +107,20 @@ ConnectionTracker::AnalysisResult ConnectionTracker::analysisData(const std::str
             }
             break;
         case ConnectType::socks5:
+            if (!host.empty() && port != 0) {
+                // all the base info now we have
+                // only the ProxyHandshakeAuth mode go there.
+                break;
+            }
+            break;
         case ConnectType::unknown:
         default:
-            // TODO try to analysis protocol & host & port
+            BOOST_LOG_S5B(warning) << "ConnectionTracker::analysisData ConnectType::unknown, never go there.";
             break;
     }
 
     if (!host.empty() && port != 0 && connectType != ConnectType::unknown) {
-
-        // TODO do protocol delay analysis
+        // TODO start protocol delay analysis
     }
 
     return ConnectionTracker::AnalysisResult::ok;
