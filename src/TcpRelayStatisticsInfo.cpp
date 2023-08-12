@@ -18,11 +18,13 @@
 
 #include "TcpRelayStatisticsInfo.h"
 #include "TcpRelayServer.h"
+#include <chrono>
+#include <limits>
 
 void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
     auto it = sessions.begin();
     while (it != sessions.end()) {
-        if ((*it).expired()) {
+        if ((*it).ptr.expired()) {
             it = sessions.erase(it);
         } else {
             ++it;
@@ -33,7 +35,7 @@ void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
 void TcpRelayStatisticsInfo::Info::closeAllSession() {
     auto it = sessions.begin();
     while (it != sessions.end()) {
-        auto p = (*it).lock();
+        auto p = (*it).ptr.lock();
         if (p) {
             p->forceClose();
             ++it;
@@ -71,12 +73,37 @@ size_t TcpRelayStatisticsInfo::Info::calcSessionsNumber() {
     return sessions.size();
 }
 
-void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySession> s) {
+TcpRelayStatisticsInfo::SessionInfo::SessionInfo(const std::shared_ptr<TcpRelaySession> &s) :
+        upstreamIndex(s ? s->getNowServer()->index : std::numeric_limits<decltype(upstreamIndex)>::max()),
+        clientEndpointAddrString(s ? s->getClientEndpointAddrString() : ""),
+        listenEndpointAddrString(s ? s->getListenEndpointAddrString() : ""),
+        rawPtr(s ? s.get() : nullptr),
+        ptr(s ? s : nullptr),
+        startTime(duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count()
+        ) {
+    BOOST_ASSERT(s);
+    updateTargetInfo(s);
+}
+
+TcpRelayStatisticsInfo::SessionInfo::SessionInfo(const std::weak_ptr<TcpRelaySession> &s) : SessionInfo(s.lock()) {
+}
+
+void TcpRelayStatisticsInfo::SessionInfo::updateTargetInfo(const std::shared_ptr<TcpRelaySession> &s) {
+    if (const auto &p = s) {
+        auto pp = p->getTargetEndpointAddr();
+        host = pp.first;
+        post = pp.second;
+        targetEndpointAddrString = p->getTargetEndpointAddrString();
+    }
+}
+
+void TcpRelayStatisticsInfo::addSession(size_t index, const std::weak_ptr<TcpRelaySession> &s) {
     if (upstreamIndex.find(index) == upstreamIndex.end()) {
         upstreamIndex.try_emplace(index, std::make_shared<Info>());
     }
     auto n = upstreamIndex.at(index);
-    n->sessions.push_back(s);
+    n->sessions.emplace_back(s);
     if (auto ptr = s.lock()) {
         if (auto ns = ptr->getNowServer()) {
             n->lastUseUpstreamIndex = ns->index;
@@ -84,12 +111,12 @@ void TcpRelayStatisticsInfo::addSession(size_t index, std::weak_ptr<TcpRelaySess
     }
 }
 
-void TcpRelayStatisticsInfo::addSessionClient(std::string addr, std::weak_ptr<TcpRelaySession> s) {
+void TcpRelayStatisticsInfo::addSessionClient(const std::string &addr, const std::weak_ptr<TcpRelaySession> &s) {
     if (clientIndex.find(addr) == clientIndex.end()) {
         clientIndex.try_emplace(addr, std::make_shared<Info>());
     }
     auto n = clientIndex.at(addr);
-    n->sessions.push_back(s);
+    n->sessions.emplace_back(s);
     if (auto ptr = s.lock()) {
         if (auto ns = ptr->getNowServer()) {
             n->lastUseUpstreamIndex = ns->index;
@@ -97,15 +124,66 @@ void TcpRelayStatisticsInfo::addSessionClient(std::string addr, std::weak_ptr<Tc
     }
 }
 
-void TcpRelayStatisticsInfo::addSessionListen(std::string addr, std::weak_ptr<TcpRelaySession> s) {
+void TcpRelayStatisticsInfo::addSessionListen(const std::string &addr, const std::weak_ptr<TcpRelaySession> &s) {
     if (listenIndex.find(addr) == listenIndex.end()) {
         listenIndex.try_emplace(addr, std::make_shared<Info>());
     }
     auto n = listenIndex.at(addr);
-    n->sessions.push_back(s);
+    n->sessions.emplace_back(s);
     if (auto ptr = s.lock()) {
         if (auto ns = ptr->getNowServer()) {
             n->lastUseUpstreamIndex = ns->index;
+        }
+    }
+}
+
+void TcpRelayStatisticsInfo::updateSessionInfo(std::shared_ptr<TcpRelaySession> s) {
+    BOOST_ASSERT(s);
+    if (s) {
+        {
+            auto ui = upstreamIndex.find(s->getNowServer()->index);
+            if (ui == upstreamIndex.end()) {
+                auto &kp = ui->second->sessions.get<SessionInfo::ListenClientAddrPair>();
+                auto it = kp.find(std::make_tuple(
+                        s->getClientEndpointAddrString(),
+                        s->getListenEndpointAddrString()
+                ));
+                if (it != kp.end()) {
+                    kp.modify(it, [&](SessionInfo &a) {
+                        a.updateTargetInfo(s);
+                    });
+                }
+            }
+        }
+        {
+            auto ci = clientIndex.find(s->getClientEndpointAddrString());
+            if (ci == clientIndex.end()) {
+                auto &kp = ci->second->sessions.get<SessionInfo::ListenClientAddrPair>();
+                auto it = kp.find(std::make_tuple(
+                        s->getClientEndpointAddrString(),
+                        s->getListenEndpointAddrString()
+                ));
+                if (it != kp.end()) {
+                    kp.modify(it, [&](SessionInfo &a) {
+                        a.updateTargetInfo(s);
+                    });
+                }
+            }
+        }
+        {
+            auto li = listenIndex.find(s->getListenEndpointAddrString());
+            if (li == listenIndex.end()) {
+                auto &kp = li->second->sessions.get<SessionInfo::ListenClientAddrPair>();
+                auto it = kp.find(std::make_tuple(
+                        s->getClientEndpointAddrString(),
+                        s->getListenEndpointAddrString()
+                ));
+                if (it != kp.end()) {
+                    kp.modify(it, [&](SessionInfo &a) {
+                        a.updateTargetInfo(s);
+                    });
+                }
+            }
         }
     }
 }
@@ -119,7 +197,7 @@ std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(si
     }
 }
 
-std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoClient(std::string addr) {
+std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoClient(const std::string &addr) {
     auto n = clientIndex.find(addr);
     if (n != clientIndex.end()) {
         return n->second;
@@ -128,7 +206,7 @@ std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoCli
     }
 }
 
-std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoListen(std::string addr) {
+std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoListen(const std::string &addr) {
     auto n = listenIndex.find(addr);
     if (n != listenIndex.end()) {
         return n->second;
@@ -144,14 +222,14 @@ void TcpRelayStatisticsInfo::removeExpiredSession(size_t index) {
     }
 }
 
-void TcpRelayStatisticsInfo::removeExpiredSessionClient(std::string addr) {
+void TcpRelayStatisticsInfo::removeExpiredSessionClient(const std::string &addr) {
     auto p = getInfoClient(addr);
     if (p) {
         p->removeExpiredSession();
     }
 }
 
-void TcpRelayStatisticsInfo::removeExpiredSessionListen(std::string addr) {
+void TcpRelayStatisticsInfo::removeExpiredSessionListen(const std::string &addr) {
     auto p = getInfoListen(addr);
     if (p) {
         p->removeExpiredSession();
@@ -165,14 +243,14 @@ void TcpRelayStatisticsInfo::addByteUp(size_t index, size_t b) {
     }
 }
 
-void TcpRelayStatisticsInfo::addByteUpClient(std::string addr, size_t b) {
+void TcpRelayStatisticsInfo::addByteUpClient(const std::string &addr, size_t b) {
     auto p = getInfoClient(addr);
     if (p) {
         p->byteUp += b;
     }
 }
 
-void TcpRelayStatisticsInfo::addByteUpListen(std::string addr, size_t b) {
+void TcpRelayStatisticsInfo::addByteUpListen(const std::string &addr, size_t b) {
     auto p = getInfoListen(addr);
     if (p) {
         p->byteUp += b;
@@ -186,14 +264,14 @@ void TcpRelayStatisticsInfo::addByteDown(size_t index, size_t b) {
     }
 }
 
-void TcpRelayStatisticsInfo::addByteDownClient(std::string addr, size_t b) {
+void TcpRelayStatisticsInfo::addByteDownClient(const std::string &addr, size_t b) {
     auto p = getInfoClient(addr);
     if (p) {
         p->byteDown += b;
     }
 }
 
-void TcpRelayStatisticsInfo::addByteDownListen(std::string addr, size_t b) {
+void TcpRelayStatisticsInfo::addByteDownListen(const std::string &addr, size_t b) {
     auto p = getInfoListen(addr);
     if (p) {
         p->byteDown += b;
@@ -231,14 +309,14 @@ void TcpRelayStatisticsInfo::closeAllSession(size_t index) {
     }
 }
 
-void TcpRelayStatisticsInfo::closeAllSessionClient(std::string addr) {
+void TcpRelayStatisticsInfo::closeAllSessionClient(const std::string &addr) {
     auto p = getInfoClient(addr);
     if (p) {
         p->closeAllSession();
     }
 }
 
-void TcpRelayStatisticsInfo::closeAllSessionListen(std::string addr) {
+void TcpRelayStatisticsInfo::closeAllSessionListen(const std::string &addr) {
     auto p = getInfoListen(addr);
     if (p) {
         p->closeAllSession();
@@ -252,14 +330,14 @@ void TcpRelayStatisticsInfo::connectCountAdd(size_t index) {
     }
 }
 
-void TcpRelayStatisticsInfo::connectCountAddClient(std::string addr) {
+void TcpRelayStatisticsInfo::connectCountAddClient(const std::string &addr) {
     auto p = getInfoClient(addr);
     if (p) {
         p->connectCountAdd();
     }
 }
 
-void TcpRelayStatisticsInfo::connectCountAddListen(std::string addr) {
+void TcpRelayStatisticsInfo::connectCountAddListen(const std::string &addr) {
     auto p = getInfoListen(addr);
     if (p) {
         p->connectCountAdd();
@@ -273,14 +351,14 @@ void TcpRelayStatisticsInfo::connectCountSub(size_t index) {
     }
 }
 
-void TcpRelayStatisticsInfo::connectCountSubClient(std::string addr) {
+void TcpRelayStatisticsInfo::connectCountSubClient(const std::string &addr) {
     auto p = getInfoClient(addr);
     if (p) {
         p->connectCountSub();
     }
 }
 
-void TcpRelayStatisticsInfo::connectCountSubListen(std::string addr) {
+void TcpRelayStatisticsInfo::connectCountSubListen(const std::string &addr) {
     auto p = getInfoListen(addr);
     if (p) {
         p->connectCountSub();

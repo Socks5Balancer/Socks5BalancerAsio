@@ -623,7 +623,7 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
 
                             boost::property_tree::ptree pC;
                             for (const auto &wp: in->sessions) {
-                                if (auto a = wp.lock()) {
+                                if (auto a = wp.ptr.lock()) {
                                     boost::property_tree::ptree n;
 
                                     if (auto s = a->getNowServer()) {
@@ -631,6 +631,10 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                                     }
                                     n.put("ClientEndpoint", a->getClientEndpointAddrString());
                                     n.put("ListenEnd", a->getListenEndpointAddrString());
+                                    n.put("TargetEndpoint", a->getTargetEndpointAddrString());
+                                    n.put("TargetHost", wp.host);
+                                    n.put("TargetPort", wp.post);
+                                    n.put("StartTime", wp.startTime);
 
                                     pC.push_back(std::make_pair("", n));
                                 }
@@ -659,7 +663,7 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
 
                             boost::property_tree::ptree pL;
                             for (const auto &wp: in->sessions) {
-                                if (auto a = wp.lock()) {
+                                if (auto a = wp.ptr.lock()) {
                                     boost::property_tree::ptree n;
 
                                     if (auto s = a->getNowServer()) {
@@ -667,6 +671,10 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                                     }
                                     n.put("ClientEndpoint", a->getClientEndpointAddrString());
                                     n.put("ListenEnd", a->getListenEndpointAddrString());
+                                    n.put("TargetEndpoint", a->getTargetEndpointAddrString());
+                                    n.put("TargetHost", wp.host);
+                                    n.put("TargetPort", wp.post);
+                                    n.put("StartTime", wp.startTime);
 
                                     pL.push_back(std::make_pair("", n));
                                 }

@@ -31,12 +31,111 @@
 #include <atomic>
 #include "ConfigRuleEnum.h"
 
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index/key.hpp>
+
+
 class TcpRelaySession;
 
 class TcpRelayStatisticsInfo : public std::enable_shared_from_this<TcpRelayStatisticsInfo> {
 public:
+
+    struct SessionInfo {
+        struct UpstreamIndex {
+        };
+        struct ClientAddr {
+        };
+        struct ListenAddr {
+        };
+        struct ListenClientAddrPair {
+        };
+        struct RawPtr {
+        };
+
+        const size_t upstreamIndex;
+        const std::string clientEndpointAddrString;
+        const std::string listenEndpointAddrString;
+
+        const TcpRelaySession *rawPtr{nullptr};
+        const std::weak_ptr<TcpRelaySession> ptr;
+
+        const uint64_t startTime;
+
+        explicit SessionInfo(const std::weak_ptr<TcpRelaySession>& s);
+
+        explicit SessionInfo(const std::shared_ptr<TcpRelaySession>& s);
+
+        SessionInfo(const SessionInfo &o) = default;
+
+        std::strong_ordering operator<=>(const SessionInfo &o) const {
+            // https://zh.cppreference.com/w/cpp/language/default_comparisons
+            if ((upstreamIndex <=> o.upstreamIndex) != std::strong_ordering::equal) {
+                return upstreamIndex <=> o.upstreamIndex;
+            } else if ((clientEndpointAddrString <=> o.clientEndpointAddrString) != std::strong_ordering::equal) {
+                return clientEndpointAddrString <=> o.clientEndpointAddrString;
+            } else if ((listenEndpointAddrString <=> o.listenEndpointAddrString) != std::strong_ordering::equal) {
+                return listenEndpointAddrString <=> o.listenEndpointAddrString;
+            } else if ((rawPtr <=> o.rawPtr) != std::strong_ordering::equal) {
+                return rawPtr <=> o.rawPtr;
+            }
+            return std::strong_ordering::equal;
+        }
+
+        std::string host;
+        uint16_t post{};
+        std::string targetEndpointAddrString;
+
+        void updateTargetInfo(const std::shared_ptr<TcpRelaySession>& s);
+    };
+
+    using SessionInfoContainer = boost::multi_index_container<
+//            boost::shared_ptr<SessionInfo>,
+            SessionInfo,
+            boost::multi_index::indexed_by<
+                    boost::multi_index::sequenced<>,
+                    boost::multi_index::ordered_unique<
+                            boost::multi_index::identity<SessionInfo>
+                    >,
+                    boost::multi_index::hashed_non_unique<
+                            boost::multi_index::tag<SessionInfo::UpstreamIndex>,
+                            boost::multi_index::member<SessionInfo, const size_t, &SessionInfo::upstreamIndex>
+                    >,
+                    boost::multi_index::hashed_non_unique<
+                            boost::multi_index::tag<SessionInfo::ClientAddr>,
+                            boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::clientEndpointAddrString>
+                    >,
+                    boost::multi_index::hashed_non_unique<
+                            boost::multi_index::tag<SessionInfo::ListenAddr>,
+                            boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::listenEndpointAddrString>
+                    >,
+                    boost::multi_index::hashed_unique<
+                            boost::multi_index::tag<SessionInfo::ListenClientAddrPair>,
+                            boost::multi_index::composite_key<
+                                    SessionInfo,
+                                    boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::clientEndpointAddrString>,
+                                    boost::multi_index::member<SessionInfo, const std::string, &SessionInfo::listenEndpointAddrString>
+                            >
+                    >,
+                    boost::multi_index::hashed_unique<
+                            boost::multi_index::tag<SessionInfo::RawPtr>,
+                            boost::multi_index::member<SessionInfo, const TcpRelaySession *, &SessionInfo::rawPtr>
+                    >,
+                    boost::multi_index::random_access<>
+            >/*,
+            SessionInfo*/
+    >;
+
     struct Info : public std::enable_shared_from_this<Info> {
-        std::list<std::weak_ptr<TcpRelaySession>> sessions;
+
+        TcpRelayStatisticsInfo::SessionInfoContainer sessions{};
 
         std::atomic_size_t byteUp = 0;
         std::atomic_size_t byteDown = 0;
@@ -81,47 +180,49 @@ public:
     std::map<std::string, std::shared_ptr<Info>> &getListenIndex();
 
 public:
-    void addSession(size_t index, std::weak_ptr<TcpRelaySession> s);
+    void addSession(size_t index, const std::weak_ptr<TcpRelaySession>& s);
 
-    void addSessionClient(std::string addr, std::weak_ptr<TcpRelaySession> s);
+    void addSessionClient(const std::string& addr, const std::weak_ptr<TcpRelaySession>& s);
 
-    void addSessionListen(std::string addr, std::weak_ptr<TcpRelaySession> s);
+    void addSessionListen(const std::string& addr, const std::weak_ptr<TcpRelaySession>& s);
+
+    void updateSessionInfo(std::shared_ptr<TcpRelaySession> s);
 
     std::shared_ptr<Info> getInfo(size_t index);
 
-    std::shared_ptr<Info> getInfoClient(std::string addr);
+    std::shared_ptr<Info> getInfoClient(const std::string& addr);
 
-    std::shared_ptr<Info> getInfoListen(std::string addr);
+    std::shared_ptr<Info> getInfoListen(const std::string& addr);
 
     void removeExpiredSession(size_t index);
 
-    void removeExpiredSessionClient(std::string addr);
+    void removeExpiredSessionClient(const std::string& addr);
 
-    void removeExpiredSessionListen(std::string addr);
+    void removeExpiredSessionListen(const std::string& addr);
 
     void addByteUp(size_t index, size_t b);
 
-    void addByteUpClient(std::string addr, size_t b);
+    void addByteUpClient(const std::string& addr, size_t b);
 
-    void addByteUpListen(std::string addr, size_t b);
+    void addByteUpListen(const std::string& addr, size_t b);
 
     void addByteDown(size_t index, size_t b);
 
-    void addByteDownClient(std::string addr, size_t b);
+    void addByteDownClient(const std::string& addr, size_t b);
 
-    void addByteDownListen(std::string addr, size_t b);
+    void addByteDownListen(const std::string& addr, size_t b);
 
     void connectCountAdd(size_t index);
 
-    void connectCountAddClient(std::string addr);
+    void connectCountAddClient(const std::string& addr);
 
-    void connectCountAddListen(std::string addr);
+    void connectCountAddListen(const std::string& addr);
 
     void connectCountSub(size_t index);
 
-    void connectCountSubClient(std::string addr);
+    void connectCountSubClient(const std::string& addr);
 
-    void connectCountSubListen(std::string addr);
+    void connectCountSubListen(const std::string& addr);
 
     void calcByteAll();
 
@@ -129,9 +230,9 @@ public:
 
     void closeAllSession(size_t index);
 
-    void closeAllSessionClient(std::string addr);
+    void closeAllSessionClient(const std::string& addr);
 
-    void closeAllSessionListen(std::string addr);
+    void closeAllSessionListen(const std::string& addr);
 
 };
 

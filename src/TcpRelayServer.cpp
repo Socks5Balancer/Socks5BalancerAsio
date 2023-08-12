@@ -151,6 +151,14 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                 // impl: insert protocol analysis on here
                                 auto ct = ptr->getConnectionTracker();
 
+                                ptr->targetEndpointAddrString =
+                                        ptr->firstPackAnalyzer->host + ":" +
+                                        boost::lexical_cast<std::string>(ptr->firstPackAnalyzer->port);
+                                auto pSI = ptr->statisticsInfo.lock();
+                                if (pSI) {
+                                    pSI->updateSessionInfo(ptr);
+                                }
+
                                 // Setup async read from remote server (upstream)
                                 ptr->do_upstream_read();
 

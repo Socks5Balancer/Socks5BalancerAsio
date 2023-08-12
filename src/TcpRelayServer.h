@@ -64,6 +64,7 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     std::string clientEndpointAddrString;
     boost::asio::ip::tcp::endpoint listenEndpoint;
     std::string listenEndpointAddrString;
+    std::string targetEndpointAddrString;
 
     enum {
         max_data_length = 8192
@@ -136,6 +137,19 @@ public:
 
     std::string getListenEndpointAddrString() {
         return listenEndpointAddrString;
+    }
+
+    std::string getTargetEndpointAddrString() {
+        return targetEndpointAddrString;
+    }
+
+    std::pair<std::string, uint16_t> getTargetEndpointAddr() {
+        auto p = firstPackAnalyzer;
+        if (p) {
+            return {p->host, p->port};
+        } else {
+            return {};
+        }
     }
 
     void start();
