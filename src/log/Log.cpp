@@ -126,6 +126,9 @@ namespace s5ba_log {
                         << boost::log::expressions::format_date_time<boost::posix_time::ptime>(
                                 "TimeStamp", "%Y-%m-%d %H:%M:%S.%f")
                         << "]"
+                        << "[G:"
+                        << CodeVersion_GIT_REV_F
+                        << "]"
                         // << "["
                         // << boost::log::expressions::attr<boost::log::attributes::current_process_id::value_type>(
                         //         "ProcessID")
@@ -139,7 +142,7 @@ namespace s5ba_log {
                                 "ThreadID")
                         << "]"
                         << "["
-                        << std::setw(15)
+                        << std::setw(6)
                         << boost::log::expressions::attr<thread_name::value_type>("ThreadName")
                         << "]"
                         //                        << "[" << boost::log::trivial::severity << "] "
@@ -188,6 +191,7 @@ namespace s5ba_log {
         ss << "Socks5BalancerAsio"
            << "\n   ProgramVersion " << ProgramVersion
            << "\n   CodeVersion_GIT_REV " << CodeVersion_GIT_REV
+           << "\n   CodeVersion_GIT_REV_F " << CodeVersion_GIT_REV_F
            << "\n   CodeVersion_GIT_TAG " << CodeVersion_GIT_TAG
            << "\n   CodeVersion_GIT_BRANCH " << CodeVersion_GIT_BRANCH
            << "\n   Boost " << BOOST_LIB_VERSION

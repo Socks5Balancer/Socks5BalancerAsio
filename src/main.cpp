@@ -50,7 +50,7 @@
 
 int main(int argc, const char *argv[]) {
 
-    s5ba_log::threadName = "main";
+    s5ba_log::threadName = "Main";
 
     s5ba_log::init_logging();
 
@@ -184,7 +184,7 @@ int main(int argc, const char *argv[]) {
             for (unsigned i = 0; i < processor_count - 1; ++i) {
                 tg.create_thread([&ioc, &tg, i = i]() {
                     try {
-                        s5ba_log::threadName = std::string{"Thread-"} + boost::lexical_cast<std::string>(i);
+                        s5ba_log::threadName = std::string{"Th-"} + boost::lexical_cast<std::string>(i);
                         ioc.run();
                     } catch (int) {
                         tg.interrupt_all();

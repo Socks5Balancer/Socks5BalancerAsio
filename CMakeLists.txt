@@ -170,7 +170,7 @@ else ()
             OUTPUT_VARIABLE GIT_BRANCH)
 
     string(STRIP "${GIT_REV}" GIT_REV)
-    #    string(SUBSTRING "${GIT_REV}" 1 7 GIT_REV)
+    string(SUBSTRING "${GIT_REV}" 1 8 GIT_REV_F)
     string(STRIP "${GIT_DIFF}" GIT_DIFF)
     string(STRIP "${GIT_TAG}" GIT_TAG)
     string(STRIP "${GIT_BRANCH}" GIT_BRANCH)
