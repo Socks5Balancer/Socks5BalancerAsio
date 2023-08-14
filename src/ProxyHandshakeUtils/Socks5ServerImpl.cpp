@@ -65,7 +65,8 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 return;
             } else {
                 // do socks5 handshake with client (downside)
-                do_handshake_client_read();
+                BOOST_LOG_S5B(trace) << "do socks5 handshake with client (downside)";
+                do_handshake_client_write();
                 return;
             }
         } else if (d[0] == 0x05 && d[1] > 0) {
@@ -104,11 +105,13 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 // client support user/pwd auth method
                 if (ptr->authClientManager->needAuth()) {
                     // do socks5 auth with client (downside)
+                    BOOST_LOG_S5B(trace) << "do socks5 auth with client (downside)";
                     do_auth_client_write();
                     return;
                 } else {
                     // do socks5 handshake with client (downside)
-                    do_handshake_client_read();
+                    BOOST_LOG_S5B(trace) << "do socks5 handshake with client (downside)";
+                    do_handshake_client_write();
                     return;
                 }
             } else {
@@ -154,11 +157,11 @@ void Socks5ServerImpl::do_auth_client_write() {
                         const boost::system::error_code &ec,
                         std::size_t bytes_transferred_) {
                     if (ec) {
-                        return fail(ec, "do_auth_client_error");
+                        return fail(ec, "do_auth_client_write");
                     }
                     if (bytes_transferred_ != data_send->size()) {
                         std::stringstream ss;
-                        ss << "do_auth_client_error with bytes_transferred_:"
+                        ss << "do_auth_client_write with bytes_transferred_:"
                            << bytes_transferred_ << " but data_send->size():" << data_send->size();
                         return fail(ec, ss.str());
                     }
@@ -288,11 +291,11 @@ void Socks5ServerImpl::do_auth_client_ok() {
                         const boost::system::error_code &ec,
                         std::size_t bytes_transferred_) {
                     if (ec) {
-                        return fail(ec, "do_auth_client_error");
+                        return fail(ec, "do_auth_client_ok");
                     }
                     if (bytes_transferred_ != data_send->size()) {
                         std::stringstream ss;
-                        ss << "do_auth_client_error with bytes_transferred_:"
+                        ss << "do_auth_client_ok with bytes_transferred_:"
                            << bytes_transferred_ << " but data_send->size():" << data_send->size();
                         return fail(ec, ss.str());
                     }
@@ -351,6 +354,48 @@ void Socks5ServerImpl::do_auth_client_error() {
     }
 }
 
+void Socks5ServerImpl::do_handshake_client_write() {
+    // https://datatracker.ietf.org/doc/html/rfc1928
+    // server auth none
+    //  +----+---------+
+    //  |VER | METHOD  |
+    //  +----+---------+
+    //  | 1  | 1(0x02) |
+    //  +----+---------+
+    //
+    // 0x00 means no auth
+
+    // do_downstream_write
+    auto ptr = parents.lock();
+    if (ptr) {
+
+        auto data_send = std::make_shared<std::string>(
+                "\x05\x00", 2
+        );
+
+        boost::asio::async_write(
+                ptr->downstream_socket_,
+                boost::asio::buffer(*data_send),
+                [this, self = shared_from_this(), data_send, ptr](
+                        const boost::system::error_code &ec,
+                        std::size_t bytes_transferred_) {
+                    if (ec) {
+                        return fail(ec, "do_handshake_client_write");
+                    }
+                    if (bytes_transferred_ != data_send->size()) {
+                        std::stringstream ss;
+                        ss << "do_handshake_client_write with bytes_transferred_:"
+                           << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                        return fail(ec, ss.str());
+                    }
+
+                    do_handshake_client_read();
+                }
+        );
+    } else {
+        badParentPtr();
+    }
+}
 void Socks5ServerImpl::do_handshake_client_read() {
     // do_downstream_read
     auto ptr = parents.lock();

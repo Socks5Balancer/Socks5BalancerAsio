@@ -68,6 +68,8 @@ public:
 
     void do_auth_client_error();
 
+    void do_handshake_client_write();
+
     void do_handshake_client_read();
 
     void do_ready_to_send_last_ok_package(const std::shared_ptr<decltype(parents)::element_type> &ptr);
