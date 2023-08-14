@@ -59,4 +59,8 @@ namespace s5ba_log{
 #define BOOST_LOG_S5B(lvl) BOOST_LOG_SEV(::s5ba_log::slg, ::s5ba_log::severity_level::lvl )
 #endif // BOOST_LOG_S5B
 
+#ifndef BOOST_LOG_S5B_ID
+#define BOOST_LOG_S5B_ID(id,lvl) BOOST_LOG_S5B(lvl) << "[R:" << std::setw(6) << id << "] "
+#endif // BOOST_LOG_S5B_ID
+
 #endif //SOCKS5BALANCERASIO_LOG_H

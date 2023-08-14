@@ -3,6 +3,42 @@
 
 #include <boost/lexical_cast.hpp>
 
+std::mutex mtxLastRelayId{};
+size_t lastRelayId{0};
+
+size_t getNextRelayId() {
+    std::lock_guard lg{mtxLastRelayId};
+    if (lastRelayId > std::numeric_limits<decltype(lastRelayId)>::max() / 2) {
+        lastRelayId = 0;
+    }
+    return ++lastRelayId;
+}
+
+TcpRelaySession::TcpRelaySession(
+        boost::asio::any_io_executor ex,
+        std::shared_ptr<UpstreamPool> upstreamPool,
+        std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo,
+        std::shared_ptr<ConfigLoader> configLoader,
+        std::shared_ptr<AuthClientManager> authClientManager,
+        size_t retryLimit,
+        bool traditionTcpRelay,
+        bool disableConnectionTracker
+) :
+        ex(ex),
+        downstream_socket_(ex),
+        upstream_socket_(ex),
+        resolver_(ex),
+        upstreamPool(std::move(upstreamPool)),
+        statisticsInfo(std::move(statisticsInfo)),
+        configLoader(std::move(configLoader)),
+        authClientManager(std::move(authClientManager)),
+        retryLimit(retryLimit),
+        traditionTcpRelay(traditionTcpRelay),
+        disableConnectionTracker(disableConnectionTracker),
+        relayId(getNextRelayId()) {
+//        std::cout << "TcpRelaySession create" << std::endl;
+}
+
 boost::asio::ip::tcp::socket &TcpRelaySession::downstream_socket() {
     // Client socket
     return downstream_socket_;
@@ -23,7 +59,7 @@ void TcpRelaySession::start() {
     listenEndpointAddrString = listenEndpoint.address().to_string() + ":" +
                                boost::lexical_cast<std::string>(listenEndpoint.port());
 
-    BOOST_LOG_S5B(trace) << "TcpRelaySession start()";
+    BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession start()";
     try_connect_upstream();
 }
 
@@ -73,17 +109,19 @@ void TcpRelaySession::try_connect_upstream() {
             s = upstreamPool->getServerGlobal();
         }
         if (s) {
-            BOOST_LOG_S5B(trace) << "TcpRelaySession try_connect_upstream()" << " " << s->host << ":" << s->port;
+            BOOST_LOG_S5B_ID(relayId, trace)
+                << "TcpRelaySession try_connect_upstream()"
+                << " " << s->host << ":" << s->port;
             {
                 std::lock_guard<std::mutex> g{nowServerMtx};
                 nowServer = s;
             }
             do_resolve(s->host, s->port);
         } else {
-            BOOST_LOG_S5B(error) << "try_connect_upstream error:" << "No Valid Server.";
+            BOOST_LOG_S5B_ID(relayId, error) << "try_connect_upstream error:" << "No Valid Server.";
         }
     } else {
-        BOOST_LOG_S5B(error) << "try_connect_upstream error:" << "(retryCount > retryLimit)";
+        BOOST_LOG_S5B_ID(relayId, error) << "try_connect_upstream error:" << "(retryCount > retryLimit)";
     }
 }
 
@@ -98,15 +136,16 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
                     boost::asio::ip::tcp::resolver::results_type results) {
                 if (error) {
                     if (error != boost::asio::error::operation_aborted) {
-                        BOOST_LOG_S5B(error) << "do_resolve error:" << error.message();
+                        BOOST_LOG_S5B_ID(relayId, error) << "do_resolve error:" << error.message();
                         nowServer->isOffline = true;
                         // try next
                         try_connect_upstream();
                     }
                 } else {
 
-                    BOOST_LOG_S5B(trace) << "TcpRelaySession do_resolve()"
-                                         << " " << results->endpoint().address() << ":" << results->endpoint().port();
+                    BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession do_resolve()"
+                                                     << " " << results->endpoint().address() << ":"
+                                                     << results->endpoint().port();
 
                     do_connect_upstream(results);
                 }
@@ -122,7 +161,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
             [this, self = shared_from_this()](const boost::system::error_code &error) {
                 if (!error) {
 
-                    BOOST_LOG_S5B(trace) << "TcpRelaySession do_connect_upstream()";
+                    BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession do_connect_upstream()";
 
                     refAdded = true;
                     ++nowServer->connectCount;
@@ -148,7 +187,8 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         auto whenComplete = [self = shared_from_this()]() {
                             // start relay
                             if (auto ptr = self) {
-                                BOOST_LOG_S5B(trace) << "firstPackAnalyzer whenComplete start relay";
+                                BOOST_LOG_S5B_ID(ptr->relayId, trace)
+                                    << "firstPackAnalyzer whenComplete start relay";
 
                                 // impl: insert protocol analysis on here
                                 auto ct = ptr->getConnectionTracker();
@@ -167,17 +207,20 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                                 // Setup async read from client (downstream)
                                 ptr->do_downstream_read();
                             } else {
-                                BOOST_LOG_S5B(error) << "firstPackAnalyzer whenComplete ptr lock failed.";
+                                BOOST_LOG_S5B_ID(ptr->relayId, error)
+                                    << "firstPackAnalyzer whenComplete ptr lock failed.";
                             }
                         };
                         auto whenError = [self = shared_from_this()](boost::system::error_code error) {
                             if (auto ptr = self) {
-                                BOOST_LOG_S5B(trace)
+                                BOOST_LOG_S5B_ID(ptr->relayId, trace)
                                     << "TcpRelaySession whenError call close(error) error:"
                                     << error.what();
                                 ptr->close(error);
                             } else {
-                                BOOST_LOG_S5B(error) << "firstPackAnalyzer whenError failed. what:" << error.what();
+                                BOOST_LOG_S5B_ID(ptr->relayId, error)
+                                    << "firstPackAnalyzer whenError failed. what:"
+                                    << error.what();
                             }
                         };
 
@@ -205,7 +248,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
 #endif // Need_ProxyHandshakeAuth
                             firstPackAnalyzer->start();
                         } else {
-                            BOOST_LOG_S5B(trace)
+                            BOOST_LOG_S5B_ID(relayId, trace)
                                 << "TcpRelaySession do_connect_upstream call close(error) error:"
                                 << error.what();
                             // wrong
@@ -215,7 +258,7 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
 
                 } else {
                     if (error != boost::asio::error::operation_aborted) {
-                        BOOST_LOG_S5B(error) << "do_connect_upstream error:" << error.message();
+                        BOOST_LOG_S5B_ID(relayId, error) << "do_connect_upstream error:" << error.message();
                         nowServer->isOffline = true;
                         // try next
                         try_connect_upstream();
@@ -241,7 +284,7 @@ void TcpRelaySession::do_upstream_read() {
                     // write it to server
                     do_downstream_write(bytes_transferred);
                 } else {
-                    BOOST_LOG_S5B(trace)
+                    BOOST_LOG_S5B_ID(relayId, trace)
                         << "TcpRelaySession do_upstream_read call close(error) error:"
                         << error.what();
                     close(error);
@@ -262,7 +305,7 @@ void TcpRelaySession::do_downstream_write(const size_t &bytes_transferred) {
                     // read more again
                     do_upstream_read();
                 } else {
-                    BOOST_LOG_S5B(trace)
+                    BOOST_LOG_S5B_ID(relayId, trace)
                         << "TcpRelaySession do_downstream_write call close(error) error:"
                         << error.what();
                     close(error);
@@ -285,7 +328,7 @@ void TcpRelaySession::do_downstream_read() {
                     // write it to server
                     do_upstream_write(bytes_transferred);
                 } else {
-                    BOOST_LOG_S5B(trace)
+                    BOOST_LOG_S5B_ID(relayId, trace)
                         << "TcpRelaySession do_downstream_read call close(error) error:"
                         << error.what();
                     close(error);
@@ -306,7 +349,7 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
                     // read more again
                     do_downstream_read();
                 } else {
-                    BOOST_LOG_S5B(trace)
+                    BOOST_LOG_S5B_ID(relayId, trace)
                         << "TcpRelaySession do_upstream_write call close(error) error:"
                         << error.what();
                     close(error);
@@ -315,7 +358,7 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
 }
 
 void TcpRelaySession::close(boost::system::error_code error) {
-    BOOST_LOG_S5B(trace) << "TcpRelaySession::close error:" << error.what();
+    BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession::close error:" << error.what();
     if (error == boost::asio::error::eof) {
         // Rationale:
         // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
@@ -344,11 +387,11 @@ void TcpRelaySession::close(boost::system::error_code error) {
         std::lock_guard<std::mutex> g{nowServerMtx};
         if (nowServer && refAdded) {
             isDeCont = true;
-            BOOST_LOG_S5B(trace) << "TcpRelaySession::close --nowServer->connectCount";
+            BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession::close --nowServer->connectCount";
             --nowServer->connectCount;
             auto pSI = statisticsInfo.lock();
             if (pSI) {
-                BOOST_LOG_S5B(trace) << "TcpRelaySession::close --connectCountSub";
+                BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession::close --connectCountSub";
                 pSI->connectCountSub(nowServer->index);
                 pSI->connectCountSubClient(clientEndpointAddrString);
                 pSI->connectCountSubListen(listenEndpointAddrString);
@@ -359,7 +402,7 @@ void TcpRelaySession::close(boost::system::error_code error) {
 
 void TcpRelaySession::forceClose() {
     boost::asio::post(ex, [this, self = shared_from_this()]() {
-        BOOST_LOG_S5B(trace) << "TcpRelaySession forceClose call close(error)";
+        BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession forceClose call close(error)";
         close();
     });
 }
@@ -488,7 +531,7 @@ void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
                         session->start();
                     }
                 }
-                BOOST_LOG_S5B(trace) << "async_accept next.";
+                BOOST_LOG_S5B(trace) << "TcpRelayServer::async_accept() async_accept next.";
                 async_accept(sa);
             });
 }

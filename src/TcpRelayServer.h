@@ -93,6 +93,10 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     bool isDeCont = false;
 
     std::shared_ptr<ConfigLoader> configLoader;
+
+public:
+    const size_t relayId;
+
 public:
     TcpRelaySession(
             boost::asio::any_io_executor ex,
@@ -103,20 +107,7 @@ public:
             size_t retryLimit,
             bool traditionTcpRelay,
             bool disableConnectionTracker
-    ) :
-            ex(ex),
-            downstream_socket_(ex),
-            upstream_socket_(ex),
-            resolver_(ex),
-            upstreamPool(std::move(upstreamPool)),
-            statisticsInfo(std::move(statisticsInfo)),
-            configLoader(std::move(configLoader)),
-            authClientManager(std::move(authClientManager)),
-            retryLimit(retryLimit),
-            traditionTcpRelay(traditionTcpRelay),
-            disableConnectionTracker(disableConnectionTracker) {
-//        std::cout << "TcpRelaySession create" << std::endl;
-    }
+    );
 
     ~TcpRelaySession() {
         BOOST_LOG_S5B(trace) << "~TcpRelaySession()";

@@ -17,3 +17,28 @@
  */
 
 #include "HttpClientImpl.h"
+#include "../ProxyHandshakeAuth.h"
+
+
+void HttpClientImpl::do_whenError(boost::system::error_code error) {
+    auto ptr = parents.lock();
+    if (ptr) {
+        ptr->do_whenError(error);
+    }
+}
+
+HttpClientImpl::HttpClientImpl(
+        const std::shared_ptr<ProxyHandshakeAuth> &parents_
+) : parents(parents_), relayId(parents_->relayId) {}
+
+void HttpClientImpl::fail(boost::system::error_code ec, const std::string &what) {
+    std::string r;
+    {
+        std::stringstream ss;
+        ss << what << ": [" << ec.message() << "] . ";
+        r = ss.str();
+    }
+    BOOST_LOG_S5B_ID(relayId, error) << r;
+
+    do_whenError(ec);
+}

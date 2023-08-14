@@ -20,6 +20,7 @@
 #define OWLACCESSTERMINAL_CODEVERSION_H
 
 #define CodeVersion_GIT_REV "@GIT_REV@"
+#define CodeVersion_GIT_REV_F "@GIT_REV_F@"
 #define CodeVersion_GIT_TAG "@GIT_TAG@"
 #define CodeVersion_GIT_BRANCH "@GIT_BRANCH@"
 #define CodeVersion_BUILD_DATETIME "@BUILD_DATETIME@"

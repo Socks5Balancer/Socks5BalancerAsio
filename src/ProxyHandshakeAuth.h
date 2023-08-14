@@ -83,6 +83,8 @@ public:
     // bindPort bytes (2)
     std::string bindPort;
 
+    const size_t relayId;
+
 private:
 
     bool readyUp = false;
@@ -123,18 +125,10 @@ public:
             UpstreamServerRef nowServer,
             std::function<void()> whenComplete,
             std::function<void(boost::system::error_code error)> whenError
-    ) :
-            tcpRelaySession(std::move(tcpRelaySession)),
-            downstream_socket_(downstream_socket_),
-            upstream_socket_(upstream_socket_),
-            configLoader(std::move(configLoader)),
-            authClientManager(std::move(authClientManager)),
-            nowServer(std::move(nowServer)),
-            whenComplete(std::move(whenComplete)),
-            whenError(std::move(whenError)) {}
+    );
 
     ~ProxyHandshakeAuth() {
-        BOOST_LOG_S5B(trace) << "~ProxyHandshakeAuth()";
+        BOOST_LOG_S5B_ID(relayId, trace) << "~ProxyHandshakeAuth()";
     }
 
     void start();
@@ -178,7 +172,7 @@ private:
 public:
 
     void do_whenComplete() {
-        BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenComplete()";
+        BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenComplete()";
         BOOST_ASSERT(tcpRelaySession);
         BOOST_ASSERT(whenComplete);
         whenComplete();
@@ -188,7 +182,7 @@ public:
     }
 
     void do_whenError(boost::system::error_code error) {
-        BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenError()";
+        BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenError()";
         BOOST_ASSERT(tcpRelaySession);
         BOOST_ASSERT(whenError);
         whenError(error);
@@ -201,17 +195,7 @@ private:
     void check_whenComplete();
 
 public:
-    void fail(boost::system::error_code ec, const std::string &what) {
-        std::string r;
-        {
-            std::stringstream ss;
-            ss << what << ": [" << ec.message() << "] . ";
-            r = ss.str();
-        }
-        BOOST_LOG_S5B(error) << r;
-
-        do_whenError(ec);
-    }
+    void fail(boost::system::error_code ec, const std::string &what);
 
     void badParentPtr() {
         if (!(completeDown && completeUp)) {

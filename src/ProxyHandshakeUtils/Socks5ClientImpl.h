@@ -49,8 +49,9 @@ public:
 
     bool udpEnabled = false;
 
+    const size_t relayId;
 public:
-    Socks5ClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
+    Socks5ClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_);
 
     ~Socks5ClientImpl() {
         BOOST_LOG_S5B(trace) << "~Socks5ClientImpl()";
@@ -73,17 +74,7 @@ public:
     void do_socks5_connect_read();
 
 public:
-    void fail(boost::system::error_code ec, const std::string &what) {
-        std::string r;
-        {
-            std::stringstream ss;
-            ss << what << ": [" << ec.message() << "] . ";
-            r = ss.str();
-        }
-        BOOST_LOG_S5B(error) << r;
-
-        do_whenError(ec);
-    }
+    void fail(boost::system::error_code ec, const std::string &what);
 
     void do_whenError(boost::system::error_code error);
 

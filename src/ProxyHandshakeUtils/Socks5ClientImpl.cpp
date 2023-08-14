@@ -71,8 +71,7 @@ void Socks5ClientImpl::do_socks5_handshake_write() {
                         return fail(ec, ss.str());
                     }
 
-                    BOOST_LOG_S5B(trace) << "do_socks5_handshake_write()";
-
+                    BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_handshake_write()";
                     do_socks5_handshake_read();
                 }
         );
@@ -124,7 +123,7 @@ void Socks5ClientImpl::do_socks5_handshake_read() {
                                 }
                             }
 
-                            BOOST_LOG_S5B(trace) << "do_socks5_handshake_read()";
+                            BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_handshake_read()";
                             do_socks5_connect_write();
                         }));
     } else {
@@ -170,8 +169,7 @@ void Socks5ClientImpl::do_socks5_auth_write() {
                         return fail(ec, ss.str());
                     }
 
-                    // BOOST_LOG_S5B(trace) << "do_socks5_handshake_write()";
-
+                    BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_handshake_write()";
                     do_socks5_auth_read();
                 }
         );
@@ -262,27 +260,27 @@ void Socks5ClientImpl::do_socks5_connect_write() {
 
         switch (ptr->proxyRelayMode) {
             case ProxyRelayMode::connect:
-                BOOST_LOG_S5B(trace) << "do_socks5_connect_write case ProxyRelayMode::connect";
+                BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_connect_write case ProxyRelayMode::connect";
                 data_send->at(1) = 0x01;
                 break;
             case ProxyRelayMode::bind:
-                BOOST_LOG_S5B(trace) << "do_socks5_connect_write case ProxyRelayMode::bind";
+                BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_connect_write case ProxyRelayMode::bind";
                 data_send->at(1) = 0x02;
                 break;
             case ProxyRelayMode::udp:
-                BOOST_LOG_S5B(trace) << "do_socks5_connect_write case ProxyRelayMode::udp";
+                BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_connect_write case ProxyRelayMode::udp";
                 data_send->at(1) = 0x03;
                 udpEnabled = true;
                 break;
             case ProxyRelayMode::none:
             default:
                 // never go there
-                BOOST_LOG_S5B(error) << "do_socks5_connect_write case ProxyRelayMode::none";
+                BOOST_LOG_S5B_ID(relayId, error) << "do_socks5_connect_write case ProxyRelayMode::none";
                 return fail(ec, "do_socks5_connect_write case ProxyRelayMode::none");
                 break;
         }
 
-        BOOST_LOG_S5B(trace)
+        BOOST_LOG_S5B_ID(relayId, trace)
             << "do_socks5_connect_write()"
             << " downside_in_udp_mode:" << ptr->downside_in_udp_mode()
             << " host:" << ptr->host
@@ -306,7 +304,7 @@ void Socks5ClientImpl::do_socks5_connect_write() {
                                 return fail(ec, ss.str());
                             }
 
-                            BOOST_LOG_S5B(trace) << "do_socks5_connect_write()";
+                            BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_connect_write()";
                             do_socks5_connect_read();
                         })
         );
@@ -324,8 +322,10 @@ void Socks5ClientImpl::do_socks5_connect_read() {
         auto socks5_read_buf = std::make_shared<std::vector<uint8_t>>(MAX_LENGTH);
 
         // Make the connection on the IP address we get from a lookup
-        ptr->upstream_socket_.async_read_some(
+        boost::asio::async_read(
+                ptr->upstream_socket_,
                 boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+                boost::asio::transfer_at_least(4 + 1 + 1 + 2),
                 boost::beast::bind_front_handler(
                         [this, self = shared_from_this(), socks5_read_buf, ptr](
                                 boost::beast::error_code ec,
@@ -340,7 +340,7 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                             // +----+-----+-------+------+----------+----------+
                             // | 1  |  1  | X'00' |  1   | Variable |    2     |
                             // +----+-----+-------+------+----------+----------+
-                            if (bytes_transferred < 6) {
+                            if (bytes_transferred < 7) {
 //                                std::stringstream ss;
 //                                ss << "socks5_connect_read (bytes_transferred < 6)"
 //                                   << " the socks5_read_buf:" << std::hex
@@ -350,10 +350,10 @@ void Socks5ClientImpl::do_socks5_connect_read() {
 //                                   << socks5_read_buf->at(3)
 //                                        ;
 //                                return fail(ec, ss.str());
-                                return fail(ec, "do_socks5_connect_read (bytes_transferred < 6)");
+                                return fail(ec, "do_socks5_connect_read (bytes_transferred < 7)");
                             }
                             if (socks5_read_buf->at(1) != 0x0) {
-                                BOOST_LOG_S5B(trace)
+                                BOOST_LOG_S5B_ID(relayId, trace)
                                     << "do_socks5_connect_read (socks5_read_buf->at(1) != 0x0) backend server failed"
                                     << " with error code:" << static_cast<int>(socks5_read_buf->at(1));
                                 ptr->do_whenUpReadyError();
@@ -376,7 +376,7 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                    << socks5_read_buf->at(1)
                                    << socks5_read_buf->at(2)
                                    << socks5_read_buf->at(3);
-                                BOOST_LOG_S5B(error) << ss.str();
+                                BOOST_LOG_S5B_ID(relayId, error) << ss.str();
 
                                 ptr->do_whenUpReadyError();
                                 ptr->do_whenUpEnd();
@@ -386,16 +386,28 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                             if (socks5_read_buf->at(3) == 0x03
                                 && bytes_transferred != (socks5_read_buf->at(4) + 4 + 1 + 2)
                                     ) {
+                                BOOST_LOG_S5B_ID(relayId, error)
+                                    << "do_socks5_connect_read (socks5_read_buf->at(3) == 0x03)"
+                                    << " bytes_transferred:" << bytes_transferred
+                                    << " != " << (socks5_read_buf->at(4) + 4 + 1 + 2);
                                 return fail(ec, "do_socks5_connect_read (socks5_read_buf->at(3) == 0x03)");
                             }
                             if (socks5_read_buf->at(3) == 0x01
                                 && bytes_transferred != (4 + 4 + 2)
                                     ) {
+                                BOOST_LOG_S5B_ID(relayId, error)
+                                    << "do_socks5_connect_read (socks5_read_buf->at(3) == 0x01)"
+                                    << " bytes_transferred:" << bytes_transferred
+                                    << " != " << (4 + 4 + 2);
                                 return fail(ec, "do_socks5_connect_read (socks5_read_buf->at(3) == 0x01)");
                             }
                             if (socks5_read_buf->at(3) == 0x04
                                 && bytes_transferred != (4 + 16 + 2)
                                     ) {
+                                BOOST_LOG_S5B_ID(relayId, error)
+                                    << "do_socks5_connect_read (socks5_read_buf->at(3) == 0x04)"
+                                    << " bytes_transferred:" << bytes_transferred
+                                    << " != " << (4 + 16 + 2);
                                 return fail(ec, "do_socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
                             }
 
@@ -479,12 +491,12 @@ void Socks5ClientImpl::do_socks5_connect_read() {
                                 boost::ignore_unused(bindAddr);
 //                                // if bindPort != 0 , we not support multi-homed socks5 server
 //                                if (bindPort != 0) {
-//                                    BOOST_LOG_S5B(warning)
+//                                    BOOST_LOG_S5B_ID(relayId, warning)
 //                                        << "do_socks5_connect_read (bindPort != 0), we not support multi-homed socks5 server";
 //                                }
                             }
 
-                            BOOST_LOG_S5B(trace) << "do_socks5_connect_read()";
+                            BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_connect_read()";
                             // socks5 handshake now complete
                             ptr->do_whenUpReady();
                             ptr->do_whenUpEnd();
@@ -493,4 +505,20 @@ void Socks5ClientImpl::do_socks5_connect_read() {
     } else {
         badParentPtr();
     }
+}
+
+Socks5ClientImpl::Socks5ClientImpl(
+        const std::shared_ptr<ProxyHandshakeAuth> &parents_
+) : parents(parents_), relayId(parents_->relayId) {}
+
+void Socks5ClientImpl::fail(boost::system::error_code ec, const std::string &what) {
+    std::string r;
+    {
+        std::stringstream ss;
+        ss << what << ": [" << ec.message() << "] . ";
+        r = ss.str();
+    }
+    BOOST_LOG_S5B_ID(relayId, error) << r;
+
+    do_whenError(ec);
 }

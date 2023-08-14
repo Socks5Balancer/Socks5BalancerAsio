@@ -40,7 +40,7 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
             return;
         }
         if (len != (2 + (uint8_t) d[1])) {
-            BOOST_LOG_S5B(error) << "do_analysis_client_first_socks5_header (len != (2 + (uint8_t) d[1]))";
+            BOOST_LOG_S5B_ID(relayId, error) << "do_analysis_client_first_socks5_header (len != (2 + (uint8_t) d[1]))";
             fail({}, std::string{"do_analysis_client_first_socks5_header (len != (2 + (uint8_t) d[1]))"});
             return;
         }
@@ -56,7 +56,7 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
             d[1] == 0x01 &&
             d[2] == 0x00) {
             // is socks5 no auth
-            BOOST_LOG_S5B(trace) << "is socks5 no auth";
+            BOOST_LOG_S5B_ID(relayId, trace) << "is socks5 no auth";
             ptr->downstream_buf_.consume(3);
             if (ptr->authClientManager->needAuth()) {
                 // do socks5 auth with client (downside)
@@ -65,7 +65,7 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 return;
             } else {
                 // do socks5 handshake with client (downside)
-                BOOST_LOG_S5B(trace) << "do socks5 handshake with client (downside)";
+                BOOST_LOG_S5B_ID(relayId, trace) << "do socks5 handshake with client (downside)";
                 do_handshake_client_write();
                 return;
             }
@@ -80,10 +80,10 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 for (size_t i = 0; i != len; ++i) {
                     ss << "[" << i << "]" << (int) d[i];
                 }
-                BOOST_LOG_S5B(trace) << ss.str();
+                BOOST_LOG_S5B_ID(relayId, trace) << ss.str();
             }
             // is socks5 with username/passwd auth
-            BOOST_LOG_S5B(trace) << "is socks5 with username/passwd auth";
+            BOOST_LOG_S5B_ID(relayId, trace) << "is socks5 with username/passwd auth";
             std::string authMethodList{reinterpret_cast<const char *>(d) + 2, (uint8_t) d[1]};
             ptr->downstream_buf_.consume((2 + (uint8_t) d[1]));
             BOOST_ASSERT(ptr->downstream_buf_.size() == 0);
@@ -98,30 +98,31 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                 for (size_t i = 0; i != authMethodList.size(); ++i) {
                     ss << "[" << i << "]" << (int) authMethodList[i];
                 }
-                BOOST_LOG_S5B(trace) << ss.str();
+                BOOST_LOG_S5B_ID(relayId, trace) << ss.str();
             }
 
             if (authMethodList.find(0x02) != std::string::npos) {
                 // client support user/pwd auth method
                 if (ptr->authClientManager->needAuth()) {
                     // do socks5 auth with client (downside)
-                    BOOST_LOG_S5B(trace) << "do socks5 auth with client (downside)";
+                    BOOST_LOG_S5B_ID(relayId, trace) << "do socks5 auth with client (downside)";
                     do_auth_client_write();
                     return;
                 } else {
                     // do socks5 handshake with client (downside)
-                    BOOST_LOG_S5B(trace) << "do socks5 handshake with client (downside)";
+                    BOOST_LOG_S5B_ID(relayId, trace) << "do socks5 handshake with client (downside)";
                     do_handshake_client_write();
                     return;
                 }
             } else {
-                BOOST_LOG_S5B(error) << "do_analysis_client_first_socks5_header no support auth";
+                BOOST_LOG_S5B_ID(relayId, error) << "do_analysis_client_first_socks5_header no support auth";
                 do_handshake_client_header_error();
                 return;
             }
 
         } else {
-            BOOST_LOG_S5B(error) << "do_analysis_client_first_socks5_header do_handshake_client_header_error";
+            BOOST_LOG_S5B_ID(relayId, error)
+                << "do_analysis_client_first_socks5_header do_handshake_client_header_error";
             do_handshake_client_header_error();
             return;
         }
@@ -211,7 +212,7 @@ void Socks5ServerImpl::do_auth_client_read() {
                                    << "[0]" << (int) socks5_read_buf->at(0)
                                    << "[1]" << (int) socks5_read_buf->at(1)
                                    << "[2]" << (int) socks5_read_buf->at(2 + socks5_read_buf->at(1));
-                                BOOST_LOG_S5B(trace) << ss.str();
+                                BOOST_LOG_S5B_ID(relayId, trace) << ss.str();
                             }
 
                             if (bytes_transferred < (2 + 1 + 1 + 1)) {
@@ -251,11 +252,12 @@ void Socks5ServerImpl::do_auth_client_read() {
                             };
                             auto c = ptr->authClientManager->checkAuth(user, pwd);
                             if (c) {
-                                BOOST_LOG_S5B(trace) << "do_auth_client_read auth ok :[" << user << "]:[" << pwd << "]";
+                                BOOST_LOG_S5B_ID(relayId, trace)
+                                    << "do_auth_client_read auth ok :[" << user << "]:[" << pwd << "]";
                                 do_auth_client_ok();
                             } else {
-                                BOOST_LOG_S5B(trace) << "do_auth_client_read auth error :[" << user << "]:[" << pwd
-                                                     << "]";
+                                BOOST_LOG_S5B_ID(relayId, trace)
+                                    << "do_auth_client_read auth error :[" << user << "]:[" << pwd << "]";
                                 do_auth_client_error();
                             }
                         }));
@@ -283,7 +285,7 @@ void Socks5ServerImpl::do_auth_client_ok() {
                 "\x01\x00", 2
         );
 
-        BOOST_LOG_S5B(trace) << "do do_handshake_client_read";
+        BOOST_LOG_S5B_ID(relayId, trace) << "do do_handshake_client_read";
         boost::asio::async_write(
                 ptr->downstream_socket_,
                 boost::asio::buffer(*data_send),
@@ -300,7 +302,7 @@ void Socks5ServerImpl::do_auth_client_ok() {
                         return fail(ec, ss.str());
                     }
 
-                    BOOST_LOG_S5B(trace) << "call do_handshake_client_read";
+                    BOOST_LOG_S5B_ID(relayId, trace) << "call do_handshake_client_read";
                     do_handshake_client_read();
                 }
         );
@@ -344,7 +346,7 @@ void Socks5ServerImpl::do_auth_client_error() {
                         return fail(ec, ss.str());
                     }
 
-                    BOOST_LOG_S5B(warning) << "auth_client_error end.";
+                    BOOST_LOG_S5B_ID(relayId, warning) << "auth_client_error end.";
                     ptr->do_whenDownEnd(true);
 //                    fail({}, "auth_client_error");
                 }
@@ -396,6 +398,7 @@ void Socks5ServerImpl::do_handshake_client_write() {
         badParentPtr();
     }
 }
+
 void Socks5ServerImpl::do_handshake_client_read() {
     // do_downstream_read
     auto ptr = parents.lock();
@@ -421,8 +424,8 @@ void Socks5ServerImpl::do_handshake_client_read() {
                             if (ec) {
                                 return fail(ec, "do_handshake_client_read");
                             }
-                            BOOST_LOG_S5B(trace) << "do_handshake_client_read get bytes_transferred:"
-                                                 << bytes_transferred;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "do_handshake_client_read get bytes_transferred:"
+                                                             << bytes_transferred;
 
                             if (bytes_transferred < (4 + 2)) {
                                 return fail(ec, "do_handshake_client_read (bytes_transferred < (4 + 2))");
@@ -504,19 +507,19 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                 // invalid
                                 return fail(ec, "do_handshake_client_read (socks5_read_buf->at(3) invalid)");
                             }
-                            BOOST_LOG_S5B(trace) << "do_handshake_client_read after read target:"
-                                                 << " host:" << ptr->host
-                                                 << " port:" << ptr->port;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "do_handshake_client_read after read target:"
+                                                             << " host:" << ptr->host
+                                                             << " port:" << ptr->port;
                             switch (socks5_read_buf->at(1)) {
                                 case 0x01:
                                     // CONNECT
-                                    BOOST_LOG_S5B(trace) << "do_handshake_client_read CONNECT";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "do_handshake_client_read CONNECT";
                                     ptr->proxyRelayMode = ProxyRelayMode::connect;
                                     break;
                                 case 0x02:
                                     // BIND
                                     // we not impl this, never
-                                    BOOST_LOG_S5B(trace) << "do_handshake_client_read BIND";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "do_handshake_client_read BIND";
                                     do_handshake_client_end_error(0x07);
                                     ptr->proxyRelayMode = ProxyRelayMode::bind;
                                     break;
@@ -524,16 +527,17 @@ void Socks5ServerImpl::do_handshake_client_read() {
                                     // UDP
                                     if (!ptr->upside_support_udp_mode()) {
                                         // upside not support UDP
-                                        BOOST_LOG_S5B(warning) << "do_handshake_client_read ( upside not support UDP)";
+                                        BOOST_LOG_S5B_ID(relayId, warning)
+                                            << "do_handshake_client_read ( upside not support UDP)";
                                         do_handshake_client_end_error(0x07);
                                         return;
                                     }
 //                                    // we not impl this, only NOW
-//                                    BOOST_LOG_S5B(warning) << "do_handshake_client_read UDP not impl";
+//                                    BOOST_LOG_S5B_ID(relayId, warning) << "do_handshake_client_read UDP not impl";
 //                                    do_handshake_client_end_error(0x07);
 
                                     // set udpEnabled=true if user need UDP
-                                    BOOST_LOG_S5B(trace) << "do_handshake_client_read UDP";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "do_handshake_client_read UDP";
                                     udpEnabled = true;
                                     ptr->proxyRelayMode = ProxyRelayMode::udp;
                                     break;
@@ -546,7 +550,8 @@ void Socks5ServerImpl::do_handshake_client_read() {
                             }
 
 
-                            BOOST_LOG_S5B(trace) << "do_handshake_client_read call do_ready_to_send_last_ok_package";
+                            BOOST_LOG_S5B_ID(relayId, trace)
+                                << "do_handshake_client_read call do_ready_to_send_last_ok_package";
                             do_ready_to_send_last_ok_package(ptr);
 
                         }));
@@ -592,7 +597,7 @@ void Socks5ServerImpl::do_handshake_client_header_error() {
                         return fail(ec, ss.str());
                     }
 
-                    BOOST_LOG_S5B(warning) << "do_handshake_client_end_error end.";
+                    BOOST_LOG_S5B_ID(relayId, warning) << "do_handshake_client_end_error end.";
                     ptr->do_whenDownEnd(true);
 //                    fail({}, "do_handshake_client_end_error end.");
                 }
@@ -609,7 +614,7 @@ void Socks5ServerImpl::do_ready_to_send_last_ok_package(
 }
 
 void Socks5ServerImpl::do_handshake_client_end_error(uint8_t errorType) {
-    BOOST_LOG_S5B(warning) << "do_handshake_client_end_error errorType:" << errorType;
+    BOOST_LOG_S5B_ID(relayId, warning) << "do_handshake_client_end_error errorType:" << errorType;
 
     // do_downstream_write
     auto ptr = parents.lock();
@@ -752,7 +757,7 @@ void Socks5ServerImpl::do_handshake_client_end() {
         // client request UDP but upside cannot provide
         if (udpEnabled) {
             if (!ptr->upside_in_udp_mode()) {
-                BOOST_LOG_S5B(warning) << "do_handshake_client_end (!ptr->upside_in_udp_mode())";
+                BOOST_LOG_S5B_ID(relayId, warning) << "do_handshake_client_end (!ptr->upside_in_udp_mode())";
                 do_handshake_client_end_error(0x07);
                 return;
             } else {
@@ -779,7 +784,7 @@ void Socks5ServerImpl::do_handshake_client_end() {
                         return fail(ec, ss.str());
                     }
 
-                    BOOST_LOG_S5B(trace) << "do_handshake_client_end";
+                    BOOST_LOG_S5B_ID(relayId, trace) << "do_handshake_client_end";
                     ptr->do_whenDownEnd(false);
                 }
         );
@@ -794,6 +799,22 @@ void Socks5ServerImpl::to_send_last_ok_package() {
 }
 
 void Socks5ServerImpl::to_send_last_error_package() {
-    BOOST_LOG_S5B(warning) << "to_send_last_error_package";
+    BOOST_LOG_S5B_ID(relayId, warning) << "to_send_last_error_package";
     do_handshake_client_end_error(0x01);
+}
+
+Socks5ServerImpl::Socks5ServerImpl(
+        const std::shared_ptr<ProxyHandshakeAuth> &parents_
+) : parents(parents_), relayId(parents_->relayId) {}
+
+void Socks5ServerImpl::fail(boost::system::error_code ec, const std::string &what) {
+    std::string r;
+    {
+        std::stringstream ss;
+        ss << what << ": [" << ec.message() << "] . ";
+        r = ss.str();
+    }
+    BOOST_LOG_S5B_ID(relayId, error) << r;
+
+    do_whenError(ec);
 }

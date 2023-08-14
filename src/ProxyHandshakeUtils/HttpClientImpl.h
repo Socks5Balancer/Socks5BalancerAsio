@@ -48,27 +48,18 @@ class HttpClientImpl : public std::enable_shared_from_this<HttpClientImpl> {
 public:
     std::weak_ptr<ProxyHandshakeAuth> parents;
 
+    const size_t relayId;
 public:
-    HttpClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_) : parents(parents_) {}
+    HttpClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_);
 
     ~HttpClientImpl() {
-        BOOST_LOG_S5B(trace) << "~HttpClientImpl()";
+        BOOST_LOG_S5B_ID(relayId, trace) << "~HttpClientImpl()";
     }
 
 public:
 
 public:
-    void fail(boost::system::error_code ec, const std::string &what) {
-        std::string r;
-        {
-            std::stringstream ss;
-            ss << what << ": [" << ec.message() << "] . ";
-            r = ss.str();
-        }
-        BOOST_LOG_S5B(error) << r;
-
-        do_whenError(ec);
-    }
+    void fail(boost::system::error_code ec, const std::string &what);
 
     void do_whenError(boost::system::error_code error);
 

@@ -60,7 +60,7 @@ void TcpTestSession::do_tcp_connect(
                             const boost::asio::ip::tcp::resolver::results_type::endpoint_type &) {
                         if (ec) {
                             std::stringstream ss;
-                            ss << "do_tcp_connect on :"
+                            ss << "TcpTestSession::do_tcp_connect on :"
                                << results->endpoint().address() << ":" << results->endpoint().port();
                             return fail(ec, ss.str().c_str());
                         }

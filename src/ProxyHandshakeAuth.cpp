@@ -17,6 +17,7 @@
  */
 
 #include "ProxyHandshakeAuth.h"
+#include "TcpRelayServer.h"
 
 void ProxyHandshakeAuth::do_read_client_first_3_byte() {
     // do_downstream_read
@@ -41,8 +42,9 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             (d[1] == 0x02 || d[1] == 0x01) &&
                             (d[2] == 0x02 || d[2] == 0x00)) {
                             if (downstream_buf_.size() != (2 + (uint8_t) d[1])) {
-                                BOOST_LOG_S5B(error) << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
-                                                     << " (downstream_buf_.size() != (2 + (uint8_t) d[1]))";
+                                BOOST_LOG_S5B_ID(relayId, error)
+                                    << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
+                                    << " (downstream_buf_.size() != (2 + (uint8_t) d[1]))";
                                 fail(error,
                                      std::string{"ProxyHandshakeAuth::do_read_client_first_3_byte()"} +
                                      std::string{" (downstream_buf_.size() != (2 + (uint8_t) d[1]))"}
@@ -50,7 +52,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                 return;
                             }
                             // is socks5
-                            BOOST_LOG_S5B(trace) << "is socks5";
+                            BOOST_LOG_S5B_ID(relayId, trace) << "is socks5";
                             connectType = ConnectType::socks5;
                             // do socks5 handshake with client (downside)
                             upsideConnectType = UpsideConnectType::socks5;
@@ -59,7 +61,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                    (d[1] == 'O' || d[1] == 'o') &&
                                    (d[2] == 'N' || d[2] == 'n')) {
                             // is http Connect
-                            BOOST_LOG_S5B(trace) << "is http Connect";
+                            BOOST_LOG_S5B_ID(relayId, trace) << "is http Connect";
                             // analysis downside target server and create upside handshake
                             connectType = ConnectType::httpConnect;
                             // do http handshake with client (downside)
@@ -67,47 +69,47 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         } else {
                             // is other protocol
-                            BOOST_LOG_S5B(trace) << "is other protocol";
+                            BOOST_LOG_S5B_ID(relayId, trace) << "is other protocol";
                             // analysis target server and create socks5 handshake
                             switch (d[0]) {
                                 case 'P':
                                 case 'p':
                                     // POST, PUT, PATCH
-                                    BOOST_LOG_S5B(trace) << "is POST, PUT, PATCH";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is POST, PUT, PATCH";
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'G':
                                 case 'g':
-                                    BOOST_LOG_S5B(trace) << "is GET";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is GET";
                                     // GET
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'H':
                                 case 'h':
-                                    BOOST_LOG_S5B(trace) << "is HEAD";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is HEAD";
                                     // HEAD
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'D':
                                 case 'd':
-                                    BOOST_LOG_S5B(trace) << "is DELETE";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is DELETE";
                                     // DELETE
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'O':
                                 case 'o':
-                                    BOOST_LOG_S5B(trace) << "is OPTIONS";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is OPTIONS";
                                     // OPTIONS
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'T':
                                 case 't':
-                                    BOOST_LOG_S5B(trace) << "is TRACE";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is TRACE";
                                     // TRACE
                                     connectType = ConnectType::httpOther;
                                     break;
                                 default:
-                                    BOOST_LOG_S5B(trace) << "is default...";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is default...";
                                     connectType = ConnectType::unknown;
                                     fail({}, "ConnectType::unknown");
                                     return;
@@ -119,7 +121,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                         }
 
                     } else {
-                        BOOST_LOG_S5B(error)
+                        BOOST_LOG_S5B_ID(relayId, error)
                             << "ProxyHandshakeAuth::do_read_client_first_3_byte():"
                             << " error:" << error.what()
                             << " bytes_transferred:" << bytes_transferred
@@ -155,7 +157,7 @@ void ProxyHandshakeAuth::do_whenUpReady() {
         return;
     }
     readyUp = true;
-    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenUpReady()";
+    BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenUpReady()";
     // do send last ok package to client in downside
     switch (connectType) {
         case ConnectType::socks5:
@@ -183,7 +185,7 @@ void ProxyHandshakeAuth::do_whenUpReadyError() {
     }
     readyUp = true;
     completeUpError = true;
-    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenUpReadyError()";
+    BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenUpReadyError()";
     // do send last error package to client in downside
     switch (connectType) {
         case ConnectType::socks5:
@@ -218,7 +220,7 @@ void ProxyHandshakeAuth::do_whenDownReady() {
     }
     readyDown = true;
     // start upside handshake
-    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenDownReady() start upside handshake";
+    BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenDownReady() start upside handshake";
     util_Socks5ClientImpl_->start();
     // util_HttpClientImpl_->start();
 }
@@ -231,7 +233,7 @@ void ProxyHandshakeAuth::do_whenDownEnd(bool error) {
     if (error) {
         completeDownError = true;
     }
-    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenDownEnd() error:" << error;
+    BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenDownEnd() error:" << error;
     do_whenCompleteDown();
 }
 
@@ -243,7 +245,7 @@ void ProxyHandshakeAuth::do_whenCompleteUp() {
         return;
     }
     completeUp = true;
-    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenCompleteUp()";
+    BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenCompleteUp()";
     check_whenComplete();
 }
 
@@ -255,21 +257,21 @@ void ProxyHandshakeAuth::do_whenCompleteDown() {
         return;
     }
     completeDown = true;
-    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::do_whenCompleteDown()";
+    BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenCompleteDown()";
     check_whenComplete();
 }
 
 void ProxyHandshakeAuth::check_whenComplete() {
-    BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::check_whenComplete() check";
+    BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::check_whenComplete() check";
     if (completeDownError || completeUpError) {
-        BOOST_LOG_S5B(warning) << "check_whenComplete (completeDownError || completeUpError)";
+        BOOST_LOG_S5B_ID(relayId, warning) << "check_whenComplete (completeDownError || completeUpError)";
         fail({}, "check_whenComplete (completeDownError || completeUpError)");
         return;
     } else if (completeDown && completeUp) {
         auto ptr = tcpRelaySession;
         if (ptr) {
             // all ok
-            BOOST_LOG_S5B(trace) << "ProxyHandshakeAuth::check_whenComplete() all ok";
+            BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::check_whenComplete() all ok";
             do_whenComplete();
         }
     }
@@ -325,3 +327,34 @@ bool ProxyHandshakeAuth::downside_in_udp_mode() {
             break;
     }
 }
+
+void ProxyHandshakeAuth::fail(boost::system::error_code ec, const std::string &what) {
+    std::string r;
+    {
+        std::stringstream ss;
+        ss << what << ": [" << ec.message() << "] . ";
+        r = ss.str();
+    }
+    BOOST_LOG_S5B_ID(relayId, error) << r;
+
+    do_whenError(ec);
+}
+
+ProxyHandshakeAuth::ProxyHandshakeAuth(
+        std::shared_ptr<TcpRelaySession> tcpRelaySession_,
+        boost::asio::ip::tcp::socket &downstream_socket_,
+        boost::asio::ip::tcp::socket &upstream_socket_,
+        std::shared_ptr<ConfigLoader> configLoader,
+        std::shared_ptr<AuthClientManager> authClientManager,
+        UpstreamServerRef nowServer, std::function<void()> whenComplete,
+        std::function<void(boost::system::error_code)> whenError
+) :
+        tcpRelaySession(std::move(tcpRelaySession_)),
+        downstream_socket_(downstream_socket_),
+        upstream_socket_(upstream_socket_),
+        configLoader(std::move(configLoader)),
+        authClientManager(std::move(authClientManager)),
+        nowServer(std::move(nowServer)),
+        whenComplete(std::move(whenComplete)),
+        whenError(std::move(whenError)),
+        relayId(tcpRelaySession->relayId) {}

@@ -57,23 +57,23 @@ bool HttpServerImpl::checkHeaderAuthString(
         const std::shared_ptr<decltype(parents)::element_type> &ptr
 ) {
     if (ptr->authClientManager->checkAuth_Base64AuthString(base64Part)) {
-        BOOST_LOG_S5B(trace) << "checkHeaderAuthString Base64AuthString ok: " << base64Part;
+        BOOST_LOG_S5B_ID(relayId, trace) << "checkHeaderAuthString Base64AuthString ok: " << base64Part;
         return true;
     } else {
         auto rr = base64_decode_string(base64Part);
         auto indexSplitFlag = rr.find(':');
         if (indexSplitFlag == decltype(rr)::npos || indexSplitFlag < 1) {
             // bad format
-            BOOST_LOG_S5B(warning) << "checkHeaderAuthString bad format: " << base64Part << " rr: " << rr;
+            BOOST_LOG_S5B_ID(relayId, warning) << "checkHeaderAuthString bad format: " << base64Part << " rr: " << rr;
             return false;
         }
         std::string_view user{rr.data(), indexSplitFlag};
         std::string_view pwd{rr.data() + indexSplitFlag + 1, rr.length() - indexSplitFlag - 1};
         if (ptr->authClientManager->checkAuth(user, pwd)) {
-            BOOST_LOG_S5B(trace) << "checkHeaderAuthString ok: " << user << " : " << pwd;
+            BOOST_LOG_S5B_ID(relayId, trace) << "checkHeaderAuthString ok: " << user << " : " << pwd;
             return true;
         } else {
-            BOOST_LOG_S5B(warning) << "checkHeaderAuthString wrong: " << user << " : " << pwd;
+            BOOST_LOG_S5B_ID(relayId, warning) << "checkHeaderAuthString wrong: " << user << " : " << pwd;
             return false;
         }
     }
@@ -97,14 +97,16 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
         auto it = s.find("\r\n\r\n");
         if (it != std::string::npos) {
             // find
-            BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header find!";
+            BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_http_header find!";
             try {
                 boost::beast::http::parser<true, boost::beast::http::buffer_body> headerParser;
                 headerParser.skip(true);
                 boost::system::error_code ec;
                 headerParser.put(boost::asio::buffer(s), ec);
                 if (ec) {
-                    BOOST_LOG_S5B(error) << "do_analysis_client_first_http_header headerParser ec:" << ec.message();
+                    BOOST_LOG_S5B_ID(relayId, error)
+                        << "do_analysis_client_first_http_header headerParser ec:"
+                        << ec.message();
                     fail(ec, "do_analysis_client_first_http_header headerParser");
                     return;
                 }
@@ -114,24 +116,24 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                 if (ptr->authClientManager->needAuth()) {
                     auto hPA = h.count(boost::beast::http::field::proxy_authorization);
                     auto hA = h.count(boost::beast::http::field::authorization);
-                    BOOST_LOG_S5B(trace) << "===== proxy_authorization N:" << hPA;
-                    BOOST_LOG_S5B(trace) << "===== authorization N:" << hA;
+                    BOOST_LOG_S5B_ID(relayId, trace) << "===== proxy_authorization N:" << hPA;
+                    BOOST_LOG_S5B_ID(relayId, trace) << "===== authorization N:" << hA;
                     if (hPA == 0 && hA == 0) {
                         // no auth
-                        BOOST_LOG_S5B(warning) << "do_analysis_client_first_http_header no auth.";
+                        BOOST_LOG_S5B_ID(relayId, warning) << "do_analysis_client_first_http_header no auth.";
                         // goto 407 to let user retry
                         do_send_407();
                         return;
                     } else {
                         if (hPA > 0) {
                             auto pa = h.at(boost::beast::http::field::proxy_authorization);
-                            BOOST_LOG_S5B(trace) << "===== proxy_authorization:" << pa;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "===== proxy_authorization:" << pa;
                             auto startCheck = boost::starts_with(pa, std::string{"Basic "});
                             // TODO support `basic BASIC BaSIc bAsIC`
-                            BOOST_LOG_S5B(trace) << "===== proxy_authorization startCheck:" << startCheck;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "===== proxy_authorization startCheck:" << startCheck;
 
                             const std::string_view base64Part(pa.begin() + 6, pa.size() - 6);
-                            BOOST_LOG_S5B(trace) << "===== base64Part:" << base64Part;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "===== base64Part:" << base64Part;
                             if (!checkHeaderAuthString(base64Part, ptr)) {
                                 // goto 407 to let user retry
                                 do_send_407();
@@ -139,12 +141,12 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                             }
                         } else if (hA > 0) {
                             auto pa = h.at(boost::beast::http::field::authorization);
-                            BOOST_LOG_S5B(trace) << "===== authorization:" << pa;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "===== authorization:" << pa;
                             auto startCheck = boost::starts_with(pa, std::string{"Basic "});
-                            BOOST_LOG_S5B(trace) << "===== authorization startCheck:" << startCheck;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "===== authorization startCheck:" << startCheck;
 
                             const std::string_view base64Part(pa.begin() + 6, pa.size() - 6);
-                            BOOST_LOG_S5B(trace) << "===== base64Part:" << base64Part;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "===== base64Part:" << base64Part;
                             if (!checkHeaderAuthString(base64Part, ptr)) {
                                 // goto 407 to let user retry
                                 do_send_407();
@@ -155,17 +157,17 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                 }
 
                 auto target = h.base().target();
-                BOOST_LOG_S5B(trace) << "target:" << target;
+                BOOST_LOG_S5B_ID(relayId, trace) << "target:" << target;
                 auto uri = parseURI(std::string(target));
 
                 ptr->host = uri.domain;
                 ptr->port = boost::lexical_cast<uint16_t>(uri.port);
-                BOOST_LOG_S5B(trace) << "host:" << ptr->host;
-                BOOST_LOG_S5B(trace) << "port:" << ptr->port;
+                BOOST_LOG_S5B_ID(relayId, trace) << "host:" << ptr->host;
+                BOOST_LOG_S5B_ID(relayId, trace) << "port:" << ptr->port;
 
                 if (h.method() == boost::beast::http::verb::connect) {
                     // is "connect"
-                    BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header is connect trim";
+                    BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_http_header is connect trim";
 
                     ptr->proxyRelayMode = ProxyRelayMode::connect;
 
@@ -180,9 +182,9 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                 {
                     // TODO debug  ???  seems never go there
                     // BOOST_ASSERT(false);
-                    BOOST_LOG_S5B(warning) << "do_analysis_client_first_http_header"
-                                           << " (method() != boost::beast::http::verb::connect)"
-                                           << " seems never go there ???";
+                    BOOST_LOG_S5B_ID(relayId, warning) << "do_analysis_client_first_http_header"
+                                                       << " (method() != boost::beast::http::verb::connect)"
+                                                       << " seems never go there ???";
 
                     ptr->proxyRelayMode = ProxyRelayMode::connect;
 
@@ -202,7 +204,7 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
             }
         } else {
             // not find
-            BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header not find";
+            BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_http_header not find";
             do_read_client_first_http_header();
         }
     } else {
@@ -223,7 +225,7 @@ void HttpServerImpl::do_read_client_first_http_header() {
                         const size_t &bytes_transferred) {
                     boost::ignore_unused(bytes_transferred);
                     if (!error) {
-                        BOOST_LOG_S5B(trace) << "do_read_client_first_http_header";
+                        BOOST_LOG_S5B_ID(relayId, trace) << "do_read_client_first_http_header";
                         do_analysis_client_first_http_header();
                     } else {
                         do_whenError(error);
@@ -299,7 +301,7 @@ void HttpServerImpl::do_send_Connection_Established() {
                         return fail(ec, ss.str());
                     }
 
-                    // BOOST_LOG_S5B(trace) << "do_send_Connection_Established()";
+                    // BOOST_LOG_S5B_ID(relayId, trace) << "do_send_Connection_Established()";
 
                     ptr->do_whenDownEnd();
                 }
@@ -357,5 +359,21 @@ void HttpServerImpl::to_send_last_ok_package() {
 
 void HttpServerImpl::to_send_last_error_package() {
     do_send_Connection_Failed();
+}
+
+HttpServerImpl::HttpServerImpl(
+        const std::shared_ptr<ProxyHandshakeAuth> &parents_
+) : parents(parents_), relayId(parents_->relayId) {}
+
+void HttpServerImpl::fail(boost::system::error_code ec, const std::string &what) {
+    std::string r;
+    {
+        std::stringstream ss;
+        ss << what << ": [" << ec.message() << "] . ";
+        r = ss.str();
+    }
+    BOOST_LOG_S5B_ID(relayId, error) << r;
+
+    do_whenError(ec);
 }
 
