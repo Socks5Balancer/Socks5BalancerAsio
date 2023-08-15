@@ -52,7 +52,7 @@ public:
     HttpServerImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_);
 
     ~HttpServerImpl() {
-        BOOST_LOG_S5B(trace) << "~HttpServerImpl()";
+        BOOST_LOG_S5B_ID(relayId, trace) << "~HttpServerImpl()";
     }
 
 public:

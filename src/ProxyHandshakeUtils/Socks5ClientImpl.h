@@ -54,7 +54,7 @@ public:
     Socks5ClientImpl(const std::shared_ptr<ProxyHandshakeAuth> &parents_);
 
     ~Socks5ClientImpl() {
-        BOOST_LOG_S5B(trace) << "~Socks5ClientImpl()";
+        BOOST_LOG_S5B_ID(relayId, trace) << "~Socks5ClientImpl()";
     }
 
     void start();
