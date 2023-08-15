@@ -234,6 +234,8 @@ add_executable(${ProjectMainName}
         src/log/BoostAssertionFailed.cpp
         src/AuthClientManager.cpp
         src/AuthClientManager.h
+        src/TcpRelaySession.cpp
+        src/TcpRelaySession.h
         ${ProxyHandshakeAuthHeader})
 
 

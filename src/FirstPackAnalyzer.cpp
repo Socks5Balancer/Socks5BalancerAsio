@@ -18,6 +18,7 @@
 
 #include "FirstPackAnalyzer.h"
 #include "TcpRelayServer.h"
+#include "TcpRelaySession.h"
 #include <regex>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>

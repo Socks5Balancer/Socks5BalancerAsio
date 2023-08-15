@@ -17,6 +17,7 @@
  */
 
 #include "StateMonitorServer.h"
+#include "TcpRelaySession.h"
 
 #include <regex>
 #include <type_traits>
@@ -47,6 +48,9 @@ std::string HttpConnectSession::createJsonString() {
         config.put("connectCheckPeriod", c.connectCheckPeriod.count());
         config.put("connectCheckStart", c.connectCheckStart.count());
         config.put("additionCheckPeriod", c.additionCheckPeriod.count());
+
+        config.put("relayId", SessionRelayId::readRelayId());
+        config.put("relayIdMod", SessionRelayId::relayIdMod());
 
         boost::property_tree::ptree pUS;
         for (const auto &a: c.upstream) {
