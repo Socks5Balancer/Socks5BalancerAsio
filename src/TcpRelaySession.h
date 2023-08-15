@@ -80,8 +80,10 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     enum {
         max_data_length = 8192
     }; //8KB
-    unsigned char downstream_data_[max_data_length];
-    unsigned char upstream_data_[max_data_length];
+    std::array<unsigned char, max_data_length> downstream_data_;
+    std::array<unsigned char, max_data_length> upstream_data_;
+//    unsigned char downstream_data_[max_data_length];
+//    unsigned char upstream_data_[max_data_length];
 
 #ifdef Need_ProxyHandshakeAuth
     std::shared_ptr<ProxyHandshakeAuth> firstPackAnalyzer;

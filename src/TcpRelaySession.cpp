@@ -345,9 +345,10 @@ void TcpRelaySession::do_downstream_write(const size_t &bytes_transferred) {
 
 void TcpRelaySession::do_downstream_read() {
     downstream_socket_.async_read_some(
-            boost::asio::buffer(downstream_data_, max_data_length),
-            [this, self = shared_from_this()](const boost::system::error_code &error,
-                                              const size_t &bytes_transferred) {
+            boost::asio::buffer(downstream_data_.data(), downstream_data_.size()),
+            [this, self = shared_from_this()](
+                    const boost::system::error_code &error,
+                    const size_t &bytes_transferred) {
                 if (!error) {
                     auto ct = getConnectionTracker();
                     if (ct) {

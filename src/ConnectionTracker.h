@@ -76,11 +76,17 @@ public:
     template<typename PodType, std::size_t N>
     void relayGotoUp(const PodType (&data)[N], std::size_t max_size_in_bytes);
 
+    template<typename PodType, std::size_t N>
+    void relayGotoUp(const std::array<PodType, N> &data, std::size_t max_size_in_bytes);
+
     // the data Remote Server --> Proxy --> Client
     void relayGotoDown(const boost::asio::streambuf &buf);
 
     template<typename PodType, std::size_t N>
     void relayGotoDown(const PodType (&data)[N], std::size_t max_size_in_bytes);
+
+    template<typename PodType, std::size_t N>
+    void relayGotoDown(const std::array<PodType, N> &data, std::size_t max_size_in_bytes);
 
     bool isComplete() {
         return isEnd;
@@ -133,6 +139,38 @@ void ConnectionTracker::relayGotoDown(const PodType (&data)[N], std::size_t max_
     boost::asio::streambuf::mutable_buffers_type bs = down_data_.prepare(s);
     auto it = boost::asio::buffers_begin(bs);
     it = std::copy_n(reinterpret_cast<const unsigned char *>(data), s, it);
+    down_data_.commit(s);
+
+    down_data_Update();
+}
+
+// the data Client --> Proxy --> Remove Server
+template<typename PodType, std::size_t N>
+void ConnectionTracker::relayGotoUp(const std::array<PodType, N> &data, std::size_t max_size_in_bytes) {
+    if (isEnd) {
+        return;
+    }
+    size_t s = (N * sizeof(PodType) < max_size_in_bytes
+                ? N * sizeof(PodType) : max_size_in_bytes);
+    boost::asio::streambuf::mutable_buffers_type bs = up_data_.prepare(s);
+    auto it = boost::asio::buffers_begin(bs);
+    it = std::copy_n(reinterpret_cast<const unsigned char *>(data.data()), s, it);
+    up_data_.commit(s);
+
+    up_data_Update();
+}
+
+// the data Remote Server --> Proxy --> Client
+template<typename PodType, std::size_t N>
+void ConnectionTracker::relayGotoDown(const std::array<PodType, N> &data, std::size_t max_size_in_bytes) {
+    if (isEnd) {
+        return;
+    }
+    size_t s = (N * sizeof(PodType) < max_size_in_bytes
+                ? N * sizeof(PodType) : max_size_in_bytes);
+    boost::asio::streambuf::mutable_buffers_type bs = down_data_.prepare(s);
+    auto it = boost::asio::buffers_begin(bs);
+    it = std::copy_n(reinterpret_cast<const unsigned char *>(data.data()), s, it);
     down_data_.commit(s);
 
     down_data_Update();
