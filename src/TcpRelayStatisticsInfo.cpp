@@ -18,6 +18,7 @@
 
 #include "TcpRelayStatisticsInfo.h"
 #include "TcpRelayServer.h"
+#include "TcpRelaySession.h"
 #include <chrono>
 #include <limits>
 

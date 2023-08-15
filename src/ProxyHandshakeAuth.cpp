@@ -18,6 +18,7 @@
 
 #include "ProxyHandshakeAuth.h"
 #include "TcpRelayServer.h"
+#include "TcpRelaySession.h"
 
 void ProxyHandshakeAuth::do_read_client_first_3_byte() {
     // do_downstream_read
