@@ -254,6 +254,8 @@
     <br/>
     listen On: <span class="string-pad">{{ listenOn }}</span>
     <br/>
+    Total History Connect Count: <span class="string-pad">{{ relayId }}</span>
+    <br/>
     ---------------------------------------------------------------------------------------------
     <br/>
     <table style="border: black 3px dashed;">
@@ -664,6 +666,8 @@
             nowTime: "",
             startTime: "",
             runTime: 0,
+            relayId: 0,
+            relayIdMod: 0,
             runTimeString: "",
             runTimeString2: "",
             lastConnectComeTime: "",
@@ -780,6 +784,9 @@
 
                         app.sleepTime = _.parseInt(_.get(T, 'config.sleepTime', '' + Number.MAX_SAFE_INTEGER));
                         app.nowTime = T.nowTime;
+
+                        app.relayIdMod = T.config.relayIdMod;
+                        app.relayId = T.config.relayId;
 
                         app.runTime = T.runTime;
                         app.runTimeString = moment.duration(_.parseInt(T.runTime)).humanize();

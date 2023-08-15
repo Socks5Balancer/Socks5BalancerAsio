@@ -1,4 +1,5 @@
 "use strict";
+// @ts-ignore
 function formatInt(int) {
     if (int < 10) {
         return `0${int}`;
@@ -99,6 +100,7 @@ window.i18n.zhCN = (() => {
         isSleeping: { s: "是否休眠:" },
         sleeping: { s: "休眠中" },
         listenOn: { s: "监听于:" },
+        totalHistoryConnectCount: { s: "历史累计连接数:" },
         ClientConnectInfo: { s: "客户端连接信息" },
         Host: { s: "主机" },
         lastServer: { s: "上次连接的上游服务器" },

@@ -1,3 +1,4 @@
+// @ts-ignore
 function formatInt(int: number) {
     if (int < 10) {
         return `0${int}`;
@@ -12,12 +13,12 @@ window.i18n.enUS = (() => {
     const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
         formatDurationFunction: {
             s: "formatDurationFunction", f: (time: number) => {
-                const seconds = globalThis.moment.duration(time).seconds();
-                const minutes = globalThis.moment.duration(time).minutes();
-                const hours = globalThis.moment.duration(time).hours();
-                const days = globalThis.moment.duration(time).days();
-                const months = globalThis.moment.duration(time).months();
-                const years = globalThis.moment.duration(time).years();
+                const seconds = (globalThis as any).moment.duration(time).seconds();
+                const minutes = (globalThis as any).moment.duration(time).minutes();
+                const hours = (globalThis as any).moment.duration(time).hours();
+                const days = (globalThis as any).moment.duration(time).days();
+                const months = (globalThis as any).moment.duration(time).months();
+                const years = (globalThis as any).moment.duration(time).years();
                 if (years > 0) {
                     return `${years}Y-${months}M-${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
                 }
@@ -99,6 +100,7 @@ window.i18n.enUS = (() => {
         isSleeping: {s: "isSleeping:"},
         sleeping: {s: "sleeping"},
         listenOn: {s: "listen On:"},
+        totalHistoryConnectCount: {s: "Total History Connect Count: "},
         ClientConnectInfo: {s: "Client Connect Info"},
         Host: {s: "Host"},
         lastServer: {s: "lastServer"},

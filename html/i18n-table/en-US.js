@@ -1,4 +1,5 @@
 "use strict";
+// @ts-ignore
 function formatInt(int) {
     if (int < 10) {
         return `0${int}`;
@@ -99,6 +100,7 @@ window.i18n.enUS = (() => {
         isSleeping: { s: "isSleeping:" },
         sleeping: { s: "sleeping" },
         listenOn: { s: "listen On:" },
+        totalHistoryConnectCount: { s: "Total History Connect Count: " },
         ClientConnectInfo: { s: "Client Connect Info" },
         Host: { s: "Host" },
         lastServer: { s: "lastServer" },

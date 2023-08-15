@@ -1,3 +1,4 @@
+// @ts-ignore
 function formatInt(int: number) {
     if (int < 10) {
         return `0${int}`;
@@ -13,12 +14,12 @@ window.i18n.zhCN = (() => {
     const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
         formatDurationFunction: {
             s: "formatDurationFunction", f: (time: number) => {
-                const seconds = globalThis.moment.duration(time).seconds();
-                const minutes = globalThis.moment.duration(time).minutes();
-                const hours = globalThis.moment.duration(time).hours();
-                const days = globalThis.moment.duration(time).days();
-                const months = globalThis.moment.duration(time).months();
-                const years = globalThis.moment.duration(time).years();
+                const seconds = (globalThis as any).moment.duration(time).seconds();
+                const minutes = (globalThis as any).moment.duration(time).minutes();
+                const hours = (globalThis as any).moment.duration(time).hours();
+                const days = (globalThis as any).moment.duration(time).days();
+                const months = (globalThis as any).moment.duration(time).months();
+                const years = (globalThis as any).moment.duration(time).years();
                 if (years > 0) {
                     return `${years}年-${months}月-${days}天 ${formatInt(hours)}时:${formatInt(minutes)}分:${formatInt(seconds)}秒`;
                 }
@@ -100,6 +101,7 @@ window.i18n.zhCN = (() => {
         isSleeping: {s: "是否休眠:"},
         sleeping: {s: "休眠中"},
         listenOn: {s: "监听于:"},
+        totalHistoryConnectCount: {s: "历史累计连接数:"},
         ClientConnectInfo: {s: "客户端连接信息"},
         Host: {s: "主机"},
         lastServer: {s: "上次连接的上游服务器"},

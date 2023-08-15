@@ -190,6 +190,8 @@ var app = new Vue({
         nowTime: "",
         startTime: "",
         runTime: 0,
+        relayId: 0,
+        relayIdMod: 0,
         runTimeString: "",
         runTimeString2: "",
         lastConnectComeTime: "",
@@ -307,6 +309,9 @@ var app = new Vue({
 
                     app.sleepTime = _.parseInt(_.get(T, 'config.sleepTime', '' + Number.MAX_SAFE_INTEGER));
                     app.nowTime = T.nowTime;
+
+                    app.relayIdMod = T.config.relayIdMod;
+                    app.relayId = T.config.relayId;
 
                     app.runTime = T.runTime;
                     app.runTimeString = moment.duration(_.parseInt(T.runTime)).humanize();
