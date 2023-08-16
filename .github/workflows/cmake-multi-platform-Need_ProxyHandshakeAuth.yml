@@ -37,6 +37,7 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
             toolset: gcc
+            version: 22.04
           # - os: ubuntu-latest
           #   c_compiler: clang
           #   cpp_compiler: clang++
@@ -67,6 +68,7 @@ jobs:
           # A list of supported versions can be found here:
           # https://github.com/MarkusJx/prebuilt-boost/blob/main/versions-manifest.json
           boost_version: 1.81.0
+          platform_version: ${{matrix.version}}
           toolset: ${{matrix.toolset}}
       
     - name: Configure CMake
