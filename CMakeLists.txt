@@ -102,10 +102,13 @@ set(Boost_USE_MULTITHREADED ON)
 find_package(Boost 1.81.0 REQUIRED COMPONENTS system filesystem program_options log log_setup ${BOOST_THEAD_MODULE} REQUIRED)
 
 
+message(STATUS "Boost_FOUND: ${Boost_FOUND}")
+message(STATUS "BOOST_ROOT: ${BOOST_ROOT}")
 message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 message(STATUS "Boost_VERSION: ${Boost_VERSION}")
+message(STATUS "Boost_LIB_VERSION: ${Boost_LIB_VERSION}")
 
 if (MSVC)
 else ()
@@ -140,6 +143,13 @@ endif ()
 
 
 find_package(OpenSSL 1.1.0 REQUIRED)
+
+message(STATUS "OPENSSL_FOUND: ${OPENSSL_FOUND}")
+message(STATUS "OPENSSL_INCLUDE_DIR: ${OPENSSL_INCLUDE_DIR}")
+message(STATUS "OPENSSL_CRYPTO_LIBRARY: ${OPENSSL_CRYPTO_LIBRARY}")
+message(STATUS "OPENSSL_SSL_LIBRARY: ${OPENSSL_SSL_LIBRARY}")
+message(STATUS "OPENSSL_LIBRARIES: ${OPENSSL_LIBRARIES}")
+message(STATUS "OPENSSL_VERSION: ${OPENSSL_VERSION}")
 
 
 # ============================================================================================
