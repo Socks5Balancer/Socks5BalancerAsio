@@ -51,9 +51,9 @@
 
 namespace SessionRelayId {
 
-    size_t readRelayId();
+    extern size_t readRelayId();
 
-    constexpr size_t relayIdMod();
+    extern constexpr size_t relayIdMod();
 
 }
 
