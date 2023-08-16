@@ -36,9 +36,11 @@ jobs:
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
+            toolset: gcc
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
+            toolset: clang
         exclude:
           - os: windows-latest
             c_compiler: gcc
@@ -65,6 +67,7 @@ jobs:
           # A list of supported versions can be found here:
           # https://github.com/MarkusJx/prebuilt-boost/blob/main/versions-manifest.json
           boost_version: 1.81.0
+          toolset: ${{matrix.toolset}}
       
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
