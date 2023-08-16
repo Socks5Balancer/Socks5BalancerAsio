@@ -24,6 +24,7 @@
 #endif
 
 #include <string>
+#include <iomanip>
 #include <boost/log/core.hpp>
 #include <boost/log/sources/logger.hpp>
 #include <boost/log/sources/severity_logger.hpp>
