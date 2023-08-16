@@ -76,15 +76,15 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
             bool disable,
             bool slowImpl
     ) :
-            index(index),
-            name(std::move(name)),
             host(std::move(host)),
             port(port),
+            name(std::move(name)),
+            index(index),
             authUser(std::move(authUser)),
             authPwd(std::move(authPwd)),
+            isManualDisable(disable),
             disable(disable),
-            slowImpl(slowImpl),
-            isManualDisable(disable) {}
+            slowImpl(slowImpl) {}
 
     std::string print();
 
