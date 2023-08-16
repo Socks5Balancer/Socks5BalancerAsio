@@ -31,6 +31,8 @@ jobs:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
+            toolset: msvc
+            version: 2022
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
