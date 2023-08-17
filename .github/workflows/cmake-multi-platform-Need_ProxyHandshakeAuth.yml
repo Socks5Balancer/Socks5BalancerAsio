@@ -99,28 +99,28 @@ jobs:
       if: runner.os == 'Windows'
       uses: chpoit/js-copy-github-action@master
       with:
-        source: html
+        source: ${{ github.workspace }}/html
         target: ${{ steps.strings.outputs.build-output-dir }}/Release
 
     - name: Copy html (Linux)
       if: runner.os != 'Windows'
       uses: chpoit/js-copy-github-action@master
       with:
-        source: html
+        source: ${{ github.workspace }}/html
         target: ${{ steps.strings.outputs.build-output-dir }}
 
     - name: Copy config (Win)
       if: runner.os == 'Windows'
       uses: chpoit/js-copy-github-action@master
       with:
-        source: example-config/FullConfig.json
+        source: ${{ github.workspace }}/example-config/FullConfig.json
         target: ${{ steps.strings.outputs.build-output-dir }}/Release
 
     - name: Copy config (Linux)
       if: runner.os != 'Windows'
       uses: chpoit/js-copy-github-action@master
       with:
-        source: example-config/FullConfig.json
+        source: ${{ github.workspace }}/example-config/FullConfig.json
         target: ${{ steps.strings.outputs.build-output-dir }}
   
     - name: Upload EXE (Win)
