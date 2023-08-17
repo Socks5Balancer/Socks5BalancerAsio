@@ -130,6 +130,7 @@ jobs:
         name: Socks5BalancerAsioWindows.zip
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
+          ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
           ${{ steps.strings.outputs.build-output-dir }}/Release/html
 
         
@@ -140,6 +141,7 @@ jobs:
         name: Socks5BalancerAsioLinux.zip
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
+          ${{ steps.strings.outputs.build-output-dir }}/FullConfig.json
           ${{ steps.strings.outputs.build-output-dir }}/html
 
 
