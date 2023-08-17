@@ -108,7 +108,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: Socks5BalancerAsio.zip
-        path: Socks5BalancerAsio.zip
+        path: ${{ steps.strings.outputs.build-output-dir }}\Socks5BalancerAsio.zip
         # name: Socks5BalancerAsio.exe
         # path: ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio.exe
 
