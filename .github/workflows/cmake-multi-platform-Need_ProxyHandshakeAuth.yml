@@ -94,35 +94,10 @@ jobs:
     #   # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest --build-config ${{ matrix.build_type }}
-
-    - name: Archive Release (Win)
-      uses: thedoctor0/zip-release@0.7.1
-      if: runner.os == 'Windows'
-      with:
-        type: 'zip'
-        filename: 'Socks5BalancerAsio.zip'
-        exclusions: '*.git* /*node_modules/* .editorconfig'
-        directory: ${{ steps.strings.outputs.build-output-dir }}/Release
-
-    - name: Archive Release (Linux)
-      uses: thedoctor0/zip-release@0.7.1
-      if: runner.os != 'Windows'
-      with:
-        type: 'zip'
-        filename: 'Socks5BalancerAsio.zip'
-        exclusions: '*.git* /*node_modules/* .editorconfig /CMakeFiles/*'
-        directory: ${{ steps.strings.outputs.build-output-dir }}
-
-        
-    - name: Upload All
-      uses: actions/upload-artifact@v1
-      with:
-        name: Socks5BalancerAsioAll-${{ runner.os }}.zip
-        path: ${{ steps.strings.outputs.build-output-dir }}
     
     - name: Upload EXE (Win)
       if: runner.os == 'Windows'
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: Socks5BalancerAsioWindows.zip
         path: |
@@ -132,7 +107,7 @@ jobs:
         
     - name: Upload EXE (Linux)
       if: runner.os != 'Windows'
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: Socks5BalancerAsioLinux.zip
         path: |
