@@ -26,17 +26,19 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang, cl]
+        c_compiler: [gcc, cl]
         include:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
+            toolset: msvc
+            version: 2022
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
+            toolset: gcc
+            version: 22.04
+            gcc: 12
         exclude:
           - os: windows-latest
             c_compiler: gcc
@@ -63,7 +65,9 @@ jobs:
           # A list of supported versions can be found here:
           # https://github.com/MarkusJx/prebuilt-boost/blob/main/versions-manifest.json
           boost_version: 1.81.0
-      
+          platform_version: ${{matrix.version}}
+          toolset: ${{matrix.toolset}}
+            
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -79,10 +83,10 @@ jobs:
         -S ${{ github.workspace }}
       env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
-
+      
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j 12
 
     # - name: Test
     #   working-directory: ${{ steps.strings.outputs.build-output-dir }}
@@ -90,16 +94,21 @@ jobs:
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest --build-config ${{ matrix.build_type }}
 
-    - uses: montudor/action-zip@v1
+    - name: Archive Release
+      uses: thedoctor0/zip-release@0.7.1
       with:
-        args: zip -qq -r Socks5BalancerAsio.zip ${{ steps.strings.outputs.build-output-dir }}
+        type: 'zip'
+        filename: 'Socks5BalancerAsio.zip'
+        exclusions: '*.git* /*node_modules/* .editorconfig'
+        directory: ${{ steps.strings.outputs.build-output-dir }}
+        
     
     # upload artifact, binary
     - name: Upload EXE
       uses: actions/upload-artifact@v1
       with:
         name: Socks5BalancerAsio.zip
-        path: Socks5BalancerAsio.zip
+        path: ${{ steps.strings.outputs.build-output-dir }}\Socks5BalancerAsio.zip
         # name: Socks5BalancerAsio.exe
         # path: ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio.exe
 
