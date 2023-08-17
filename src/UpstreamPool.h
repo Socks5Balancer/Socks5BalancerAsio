@@ -138,11 +138,12 @@ protected:
     auto filterValidServer() -> std::vector<UpstreamServerRef>;
 
 public:
-    auto getServerGlobal() -> UpstreamServerRef;
+    auto getServerGlobal(const size_t &relayId) -> UpstreamServerRef;
 
     auto getServerByHint(
             const RuleEnum &_upstreamSelectRule,
             size_t &_lastUseUpstreamIndex,
+            const size_t &relayId,
             bool dontFallbackToGlobal = false
     ) -> UpstreamServerRef;
 

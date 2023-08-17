@@ -53,8 +53,8 @@ public:
             : configLoader(configLoader),
               upstreamPool(upstreamPool),
               tcpRelayServer(tcpRelayServer),
-              socket_(std::move(socket)),
-              startTime(startTime) {}
+              startTime(startTime),
+              socket_(std::move(socket)) {}
 
     void start() {
         read_request();

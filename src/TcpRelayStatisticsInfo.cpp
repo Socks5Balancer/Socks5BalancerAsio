@@ -112,13 +112,14 @@ void TcpRelayStatisticsInfo::addSession(size_t index, const std::shared_ptr<TcpR
         }
         auto n = upstreamIndex.at(index);
         std::lock_guard lg{n->sessionsMtx};
-        BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::addSession()"
-                             << " getClientEndpointAddrString:"
-                             << ptr->getClientEndpointAddrString()
-                             << " getClientEndpointAddrPortString:"
-                             << ptr->getClientEndpointAddrPortString()
-                             << " getListenEndpointAddrString:"
-                             << ptr->getListenEndpointAddrString();
+        BOOST_LOG_S5B_ID(s->relayId, trace)
+            << "TcpRelayStatisticsInfo::addSession()"
+            << " getClientEndpointAddrString:"
+            << ptr->getClientEndpointAddrString()
+            << " getClientEndpointAddrPortString:"
+            << ptr->getClientEndpointAddrPortString()
+            << " getListenEndpointAddrString:"
+            << ptr->getListenEndpointAddrString();
         BOOST_ASSERT(n->sessions.get<SessionInfo::ListenClientAddrPortPair>().find(std::make_tuple(
                 ptr->getClientEndpointAddrPortString(),
                 ptr->getListenEndpointAddrString()
@@ -139,13 +140,14 @@ void TcpRelayStatisticsInfo::addSessionClient(const std::shared_ptr<TcpRelaySess
         }
         auto n = clientIndex.at(addr);
         std::lock_guard lg{n->sessionsMtx};
-        BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::addSessionClient()"
-                             << " getClientEndpointAddrString:"
-                             << ptr->getClientEndpointAddrString()
-                             << " getClientEndpointAddrPortString:"
-                             << ptr->getClientEndpointAddrPortString()
-                             << " getListenEndpointAddrString:"
-                             << ptr->getListenEndpointAddrString();
+        BOOST_LOG_S5B_ID(s->relayId, trace)
+            << "TcpRelayStatisticsInfo::addSessionClient()"
+            << " getClientEndpointAddrString:"
+            << ptr->getClientEndpointAddrString()
+            << " getClientEndpointAddrPortString:"
+            << ptr->getClientEndpointAddrPortString()
+            << " getListenEndpointAddrString:"
+            << ptr->getListenEndpointAddrString();
         BOOST_ASSERT(n->sessions.get<SessionInfo::ListenClientAddrPortPair>().find(std::make_tuple(
                 ptr->getClientEndpointAddrPortString(),
                 ptr->getListenEndpointAddrString()
@@ -166,13 +168,14 @@ void TcpRelayStatisticsInfo::addSessionListen(const std::shared_ptr<TcpRelaySess
         }
         auto n = listenIndex.at(addr);
         std::lock_guard lg{n->sessionsMtx};
-        BOOST_LOG_S5B(trace) << "TcpRelayStatisticsInfo::addSessionListen()"
-                             << " getClientEndpointAddrString:"
-                             << ptr->getClientEndpointAddrString()
-                             << " getClientEndpointAddrPortString:"
-                             << ptr->getClientEndpointAddrPortString()
-                             << " getListenEndpointAddrString:"
-                             << ptr->getListenEndpointAddrString();
+        BOOST_LOG_S5B_ID(s->relayId, trace)
+            << "TcpRelayStatisticsInfo::addSessionListen()"
+            << " getClientEndpointAddrString:"
+            << ptr->getClientEndpointAddrString()
+            << " getClientEndpointAddrPortString:"
+            << ptr->getClientEndpointAddrPortString()
+            << " getListenEndpointAddrString:"
+            << ptr->getListenEndpointAddrString();
         BOOST_ASSERT(n->sessions.get<SessionInfo::ListenClientAddrPortPair>().find(std::make_tuple(
                 ptr->getClientEndpointAddrPortString(),
                 ptr->getListenEndpointAddrString()

@@ -84,21 +84,22 @@ void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
                     return;
                 }
                 if (!error) {
-                    BOOST_LOG_S5B(trace) << "async_accept accept.";
+                    BOOST_LOG_S5B_ID(session->relayId, trace) << "async_accept accept.";
                     boost::system::error_code ec;
                     auto clientEndpoint = session->downstream_socket().remote_endpoint(ec);
                     auto listenEndpoint = session->downstream_socket().local_endpoint();
                     if (!ec) {
-                        BOOST_LOG_S5B(trace) << "incoming connection from : "
-                                             << clientEndpoint.address() << ":" << clientEndpoint.port()
-                                             << "  on : "
-                                             << listenEndpoint.address() << ":" << listenEndpoint.port();
+                        BOOST_LOG_S5B_ID(session->relayId, trace)
+                            << "incoming connection from : "
+                            << clientEndpoint.address() << ":" << clientEndpoint.port()
+                            << "  on : "
+                            << listenEndpoint.address() << ":" << listenEndpoint.port();
 
                         upstreamPool->updateLastConnectComeTime();
                         session->start();
                     }
                 }
-                BOOST_LOG_S5B(trace) << "TcpRelayServer::async_accept() async_accept next.";
+                BOOST_LOG_S5B_ID(session->relayId, trace) << "TcpRelayServer::async_accept() async_accept next.";
                 async_accept(sa);
             });
 }

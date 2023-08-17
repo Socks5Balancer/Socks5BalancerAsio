@@ -62,13 +62,15 @@ void UpstreamServer::updateOnlineTime() {
     lastOnlineTime = UpstreamTimePointNow();
 }
 
-UpstreamPool::UpstreamPool(boost::asio::any_io_executor ex, std::shared_ptr<TcpTest> tcpTest,
-                           std::shared_ptr<ConnectTestHttps> connectTestHttps)
-        : ex(ex),
-          tcpTest(std::move(tcpTest)),
-          lastConnectComeTime(UpstreamTimePointNow()),
-          connectTestHttps(std::move(connectTestHttps)),
-          lastChangeUpstreamTime(UpstreamTimePointNow()) {}
+UpstreamPool::UpstreamPool(
+        boost::asio::any_io_executor ex,
+        std::shared_ptr<TcpTest> tcpTest,
+        std::shared_ptr<ConnectTestHttps> connectTestHttps
+) : ex(ex),
+    lastChangeUpstreamTime(UpstreamTimePointNow()),
+    lastConnectComeTime(UpstreamTimePointNow()),
+    tcpTest(std::move(tcpTest)),
+    connectTestHttps(std::move(connectTestHttps)) {}
 
 const std::deque<UpstreamServerRef> &UpstreamPool::pool() {
     return _pool;
@@ -169,6 +171,7 @@ auto UpstreamPool::filterValidServer() -> std::vector<UpstreamServerRef> {
 auto UpstreamPool::getServerByHint(
         const RuleEnum &_upstreamSelectRule,
         size_t &_lastUseUpstreamIndex,
+        const size_t &relayId,
         bool dontFallbackToGlobal) -> UpstreamServerRef {
 
     RuleEnum __upstreamSelectRule = _upstreamSelectRule;
@@ -186,15 +189,15 @@ auto UpstreamPool::getServerByHint(
     switch (__upstreamSelectRule) {
         case RuleEnum::force_only_one:
             s = _pool[_lastUseUpstreamIndex]->shared_from_this();
-            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::loop:
             s = getNextServer(_lastUseUpstreamIndex);
-            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::one_by_one:
             s = tryGetLastServer(_lastUseUpstreamIndex);
-            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::change_by_time: {
             UpstreamTimePoint t = UpstreamTimePointNow();
@@ -205,7 +208,7 @@ auto UpstreamPool::getServerByHint(
             } else {
                 s = tryGetLastServer(_lastUseUpstreamIndex);
             }
-            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         }
         case RuleEnum::inherit:
@@ -220,16 +223,16 @@ auto UpstreamPool::getServerByHint(
             } else {
                 s.reset();
             }
-            BOOST_LOG_S5B(trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
             return s;
         }
     }
 }
 
-auto UpstreamPool::getServerGlobal() -> UpstreamServerRef {
+auto UpstreamPool::getServerGlobal(const size_t &relayId) -> UpstreamServerRef {
     const auto &_upstreamSelectRule = _configLoader->config.upstreamSelectRule;
     auto &_lastUseUpstreamIndex = lastUseUpstreamIndex;
-    return getServerByHint(_upstreamSelectRule, _lastUseUpstreamIndex, true);
+    return getServerByHint(_upstreamSelectRule, _lastUseUpstreamIndex, relayId, true);
 }
 
 void UpstreamPool::endAdditionTimer() {
