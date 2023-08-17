@@ -20,29 +20,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace SessionRelayId {
-
-    std::mutex mtxLastRelayId{};
-    size_t lastRelayId{0};
-
-    size_t readRelayId() {
-        std::lock_guard lg{mtxLastRelayId};
-        return lastRelayId + 1;
-    }
-
-    constexpr size_t relayIdMod() {
-        return std::numeric_limits<decltype(lastRelayId)>::max() / 2;
-    }
-
-    size_t getNextRelayId() {
-        std::lock_guard lg{mtxLastRelayId};
-        if (lastRelayId > relayIdMod()) {
-            lastRelayId = 0;
-        }
-        return ++lastRelayId;
-    }
-
-}
+#include "SessionRelayId.h"
 
 TcpRelaySession::TcpRelaySession(
         boost::asio::any_io_executor ex,
@@ -124,19 +102,19 @@ void TcpRelaySession::try_connect_upstream() {
             // try get by client
             auto ic = pSI->getInfoClient(clientEndpointAddrString);
             if (ic && ic->rule != RuleEnum::inherit) {
-                s = upstreamPool->getServerByHint(ic->rule, ic->lastUseUpstreamIndex);
+                s = upstreamPool->getServerByHint(ic->rule, ic->lastUseUpstreamIndex, relayId);
             }
             if (!s) {
                 // try get by listen
                 auto il = pSI->getInfoListen(clientEndpointAddrString);
                 if (il && il->rule != RuleEnum::inherit) {
-                    s = upstreamPool->getServerByHint(il->rule, il->lastUseUpstreamIndex);
+                    s = upstreamPool->getServerByHint(il->rule, il->lastUseUpstreamIndex, relayId);
                 }
             }
         }
         if (!s) {
             // fallback to get by global rule
-            s = upstreamPool->getServerGlobal();
+            s = upstreamPool->getServerGlobal(relayId);
         }
         if (s) {
             BOOST_LOG_S5B_ID(relayId, trace)

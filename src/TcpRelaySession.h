@@ -49,13 +49,6 @@
 #include "TcpRelayStatisticsInfo.h"
 #include "./log/Log.h"
 
-namespace SessionRelayId {
-
-    extern size_t readRelayId();
-
-    extern constexpr size_t relayIdMod();
-
-}
 
 // code template from https://github.com/ArashPartow/proxy/blob/master/tcpproxy_server.cpp
 class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
@@ -122,7 +115,7 @@ public:
     );
 
     ~TcpRelaySession() {
-        BOOST_LOG_S5B(trace) << "~TcpRelaySession()";
+        BOOST_LOG_S5B_ID(relayId, trace) << "~TcpRelaySession()";
         close();
     }
 

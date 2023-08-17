@@ -246,6 +246,8 @@ add_executable(${ProjectMainName}
         src/AuthClientManager.h
         src/TcpRelaySession.cpp
         src/TcpRelaySession.h
+        src/SessionRelayId.cpp
+        src/SessionRelayId.h
         ${ProxyHandshakeAuthHeader})
 
 
