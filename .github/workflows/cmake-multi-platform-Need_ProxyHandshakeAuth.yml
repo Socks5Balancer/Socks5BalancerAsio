@@ -100,7 +100,7 @@ jobs:
         type: 'zip'
         filename: 'Socks5BalancerAsio.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
-        directory: ${{ steps.strings.outputs.build-output-dir }}
+        directory: ${{ steps.strings.outputs.build-output-dir }}/Release
         
     
     # upload artifact, binary
