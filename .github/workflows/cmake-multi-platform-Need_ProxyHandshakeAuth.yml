@@ -117,7 +117,7 @@ jobs:
     - name: Upload All
       uses: actions/upload-artifact@v1
       with:
-        name: Socks5BalancerAsioAll.zip
+        name: Socks5BalancerAsioAll-${{ runner.os }}.zip
         path: ${{ steps.strings.outputs.build-output-dir }}
 
     
