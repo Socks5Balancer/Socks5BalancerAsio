@@ -122,13 +122,22 @@ jobs:
       with:
         source: ${{ github.workspace }}/example-config/FullConfig.json
         target: ${{ steps.strings.outputs.build-output-dir }}
-  
-    - name: Upload EXE (Win)
+        
+
+    - name: Upload All (Win)
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v3
       with:
         name: Socks5BalancerAsioAll-${{ runner.os }}.zip
-        path: ${{ github.workspace }}
+        path: ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Upload All (Linux)
+      if: runner.os != 'Windows'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Socks5BalancerAsioAll-${{ runner.os }}.zip
+        path: ${{ steps.strings.outputs.build-output-dir }}
+        
   
     - name: Upload EXE (Win)
       if: runner.os == 'Windows'
