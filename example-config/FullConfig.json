@@ -65,7 +65,7 @@
     "host": "127.0.0.1",
     "port": 5002,
     "root_path": "./html/",
-    "index_file_of_root": "state.html",
+    "index_file_of_root": "stateBootstrap.html",
     "backendHost": "",
     "backendPort": 0,
     "allowFileExtList": "htm html js json jpg jpeg png bmp gif ico svg"
