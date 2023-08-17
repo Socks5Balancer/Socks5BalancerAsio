@@ -94,7 +94,21 @@ jobs:
     #   # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest --build-config ${{ matrix.build_type }}
-    
+
+    - name: Copy html (Win)
+      if: runner.os == 'Windows'
+      uses: chpoit/js-copy-github-action@master
+      with:
+        source: html
+        target: ${{ steps.strings.outputs.build-output-dir }}/Release
+
+    - name: Copy html (Linux)
+      if: runner.os != 'Windows'
+      uses: chpoit/js-copy-github-action@master
+      with:
+        source: html
+        target: ${{ steps.strings.outputs.build-output-dir }}
+  
     - name: Upload EXE (Win)
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v3
@@ -102,7 +116,7 @@ jobs:
         name: Socks5BalancerAsioWindows.zip
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
-          html
+          ${{ steps.strings.outputs.build-output-dir }}/Release/html
 
         
     - name: Upload EXE (Linux)
@@ -112,7 +126,7 @@ jobs:
         name: Socks5BalancerAsioLinux.zip
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
-          html
+          ${{ steps.strings.outputs.build-output-dir }}/html
 
 
         
