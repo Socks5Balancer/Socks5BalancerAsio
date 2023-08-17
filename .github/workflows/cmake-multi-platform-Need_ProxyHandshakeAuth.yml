@@ -119,14 +119,15 @@ jobs:
       with:
         name: Socks5BalancerAsioAll-${{ runner.os }}.zip
         path: ${{ steps.strings.outputs.build-output-dir }}
-
     
     - name: Upload EXE (Win)
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v1
       with:
         name: Socks5BalancerAsioWindows.zip
-        path: ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
+        path: |
+          ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
+          html
 
         
     - name: Upload EXE (Linux)
@@ -134,6 +135,9 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: Socks5BalancerAsioLinux.zip
-        path: ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
+        path: |
+          ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
+          html
+
 
         
