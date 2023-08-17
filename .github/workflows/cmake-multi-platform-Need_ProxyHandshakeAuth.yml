@@ -127,6 +127,13 @@ jobs:
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v3
       with:
+        name: Socks5BalancerAsioAll-${{ runner.os }}.zip
+        path: ${{ github.workspace }}
+  
+    - name: Upload EXE (Win)
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v3
+      with:
         name: Socks5BalancerAsioWindows.zip
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
