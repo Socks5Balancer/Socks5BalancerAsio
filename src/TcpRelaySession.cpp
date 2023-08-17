@@ -37,12 +37,12 @@ TcpRelaySession::TcpRelaySession(
         upstream_socket_(ex),
         resolver_(ex),
         upstreamPool(std::move(upstreamPool)),
-        statisticsInfo(std::move(statisticsInfo)),
-        configLoader(std::move(configLoader)),
         authClientManager(std::move(authClientManager)),
+        statisticsInfo(std::move(statisticsInfo)),
         retryLimit(retryLimit),
         traditionTcpRelay(traditionTcpRelay),
         disableConnectionTracker(disableConnectionTracker),
+        configLoader(std::move(configLoader)),
         relayId(SessionRelayId::getNextRelayId()) {
 //        std::cout << "TcpRelaySession create" << std::endl;
 }
