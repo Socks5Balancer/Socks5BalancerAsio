@@ -112,22 +112,28 @@ jobs:
         filename: 'Socks5BalancerAsio.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig /CMakeFiles/*'
         directory: ${{ steps.strings.outputs.build-output-dir }}
+
         
+    - name: Upload All
+      uses: actions/upload-artifact@v1
+      with:
+        name: Socks5BalancerAsioAll.zip
+        path: ${{ steps.strings.outputs.build-output-dir }}
+
     
-    # upload artifact, binary
     - name: Upload EXE (Win)
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v1
       with:
-        name: Socks5BalancerAsio.zip
-        path: ${{ steps.strings.outputs.build-output-dir }}/Release\Socks5BalancerAsio.zip
+        name: Socks5BalancerAsioWindows.zip
+        path: ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
+
         
-    # upload artifact, binary
     - name: Upload EXE (Linux)
       if: runner.os != 'Windows'
       uses: actions/upload-artifact@v1
       with:
-        name: Socks5BalancerAsio.zip
-        path: ${{ steps.strings.outputs.build-output-dir }}
+        name: Socks5BalancerAsioLinux.zip
+        path: ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
 
         
