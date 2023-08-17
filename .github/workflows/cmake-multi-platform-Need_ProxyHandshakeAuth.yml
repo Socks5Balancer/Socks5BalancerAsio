@@ -108,6 +108,20 @@ jobs:
       with:
         source: html
         target: ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Copy config (Win)
+      if: runner.os == 'Windows'
+      uses: chpoit/js-copy-github-action@master
+      with:
+        source: example-config/FullConfig.json
+        target: ${{ steps.strings.outputs.build-output-dir }}/Release
+
+    - name: Copy config (Linux)
+      if: runner.os != 'Windows'
+      uses: chpoit/js-copy-github-action@master
+      with:
+        source: example-config/FullConfig.json
+        target: ${{ steps.strings.outputs.build-output-dir }}
   
     - name: Upload EXE (Win)
       if: runner.os == 'Windows'
