@@ -38,7 +38,7 @@ jobs:
             cpp_compiler: g++
             toolset: gcc
             version: 22.04
-            gcc: 13
+            gcc: 12
         exclude:
           - os: windows-latest
             c_compiler: gcc
