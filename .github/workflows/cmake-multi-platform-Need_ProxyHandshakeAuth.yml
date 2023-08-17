@@ -94,13 +94,23 @@ jobs:
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest --build-config ${{ matrix.build_type }}
 
-    - name: Archive Release
+    - name: Archive Release (Win)
       uses: thedoctor0/zip-release@0.7.1
+      if: runner.os == 'Windows'
       with:
         type: 'zip'
         filename: 'Socks5BalancerAsio.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
         directory: ${{ steps.strings.outputs.build-output-dir }}/Release
+
+    - name: Archive Release (Linux)
+      uses: thedoctor0/zip-release@0.7.1
+      if: runner.os != 'Windows'
+      with:
+        type: 'zip'
+        filename: 'Socks5BalancerAsio.zip'
+        exclusions: '*.git* /*node_modules/* .editorconfig'
+        directory: ${{ steps.strings.outputs.build-output-dir }}
         
     
     # upload artifact, binary
