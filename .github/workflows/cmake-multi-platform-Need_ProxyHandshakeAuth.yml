@@ -148,7 +148,7 @@ jobs:
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v3
       with:
-        name: Socks5BalancerAsioWindows-${{ steps.strings.outputs.git-rev }}.zip
+        name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-Windows.zip
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
           ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
@@ -159,7 +159,7 @@ jobs:
       if: runner.os != 'Windows'
       uses: actions/upload-artifact@v3
       with:
-        name: Socks5BalancerAsioLinux-${{ steps.strings.outputs.git-rev }}.zip
+        name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-Linux.zip
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
           ${{ steps.strings.outputs.build-output-dir }}/FullConfig.json
