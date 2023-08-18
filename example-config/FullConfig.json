@@ -68,6 +68,6 @@
     "index_file_of_root": "stateBootstrap.html",
     "backendHost": "",
     "backendPort": 0,
-    "allowFileExtList": "htm html js json jpg jpeg png bmp gif ico svg"
+    "allowFileExtList": "htm html js json jpg jpeg png bmp gif ico svg css"
   }
 }
