@@ -144,6 +144,13 @@ jobs:
           #     path: ${{ steps.strings.outputs.build-output-dir }}
 
 
+      - name: Debug Catch SSL (Win)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v3
+        with:
+         name: Socks5BalancerAsioAll-${{ runner.os }}.zip
+         path: "C:/Program Files/OpenSSL"
+
       - name: Upload EXE (Win)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
