@@ -97,31 +97,33 @@ jobs:
 
     - name: Copy html (Win)
       if: runner.os == 'Windows'
-      uses: chpoit/js-copy-github-action@master
+      uses: Lyoko-Jeremie/js-copy-github-action@master
       with:
         source: ${{ github.workspace }}/html/**/*
         target: ${{ steps.strings.outputs.build-output-dir }}/Release/html
 
     - name: Copy html (Linux)
       if: runner.os != 'Windows'
-      uses: chpoit/js-copy-github-action@master
+      uses: Lyoko-Jeremie/js-copy-github-action@master
       with:
         source: ${{ github.workspace }}/html/**/*
         target: ${{ steps.strings.outputs.build-output-dir }}/html
 
     - name: Copy config (Win)
       if: runner.os == 'Windows'
-      uses: chpoit/js-copy-github-action@master
+      uses: Lyoko-Jeremie/js-copy-github-action@master
       with:
-        source: ${{ github.workspace }}/example-config/FullConfig.json
-        target: ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
+        srcBase: ${{ github.workspace }}/example-config/
+        source: FullConfig.json
+        target: ${{ steps.strings.outputs.build-output-dir }}/Release/
 
     - name: Copy config (Linux)
       if: runner.os != 'Windows'
-      uses: chpoit/js-copy-github-action@master
+      uses: Lyoko-Jeremie/js-copy-github-action@master
       with:
-        source: ${{ github.workspace }}/example-config/FullConfig.json
-        target: ${{ steps.strings.outputs.build-output-dir }}/FullConfig.json
+        srcBase: ${{ github.workspace }}/example-config/
+        source: FullConfig.json
+        target: ${{ steps.strings.outputs.build-output-dir }}/
         
 
     - name: Upload All (Win)
