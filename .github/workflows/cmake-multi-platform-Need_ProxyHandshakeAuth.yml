@@ -152,6 +152,16 @@ jobs:
       #    name: OpenSSL.zip
       #    path: "C:/Program Files/OpenSSL"
 
+
+      - name: OpenSSL DLL (Win)
+        if: runner.os == 'Windows'
+        uses: Lyoko-Jeremie/js-copy-github-action@master
+        with:
+          srcBase: "C:/Program Files/OpenSSL"
+          source: "C:/Program Files/OpenSSL/*.dll"
+          destBase: ${{ steps.strings.outputs.build-output-dir }}/Release/
+          target: ${{ steps.strings.outputs.build-output-dir }}/Release/
+
       - name: Upload EXE (Win)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
