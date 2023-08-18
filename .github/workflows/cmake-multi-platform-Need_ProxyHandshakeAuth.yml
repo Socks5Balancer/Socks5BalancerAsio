@@ -148,7 +148,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
-         name: Socks5BalancerAsioAll-${{ runner.os }}.zip
+         name: OpenSSL.zip
          path: "C:/Program Files/OpenSSL"
 
       - name: Upload EXE (Win)
