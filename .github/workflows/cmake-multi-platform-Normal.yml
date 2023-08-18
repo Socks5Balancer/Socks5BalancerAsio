@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms Need_ProxyHandshakeAuth
+name: CMake on multiple platforms Normal
 
 on:
   push:
@@ -79,7 +79,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DUSE_DYNAMIC_BOOST=OFF
-          -DNeed_ProxyHandshakeAuth=ON
+          -DNeed_ProxyHandshakeAuth=OFF
           -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include
           -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
           -S ${{ github.workspace }}
@@ -148,7 +148,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-ProxyHandshakeAuth-Windows.zip
+          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-Normal-Windows.zip
           path: |
             ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
             ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
@@ -159,11 +159,11 @@ jobs:
         if: runner.os != 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-ProxyHandshakeAuth-Linux.zip
+          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-Normal-Linux.zip
           path: |
             ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
             ${{ steps.strings.outputs.build-output-dir }}/FullConfig.json
             ${{ steps.strings.outputs.build-output-dir }}/html
 
 
-
+        
