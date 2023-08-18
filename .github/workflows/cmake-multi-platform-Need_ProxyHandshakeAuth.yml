@@ -79,11 +79,11 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DUSE_DYNAMIC_BOOST=OFF
-          -DOPENSSL_USE_STATIC_LIBS=ON
           -DNeed_ProxyHandshakeAuth=ON
           -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include
           -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
           -S ${{ github.workspace }}
+        # -DOPENSSL_USE_STATIC_LIBS=ON
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 

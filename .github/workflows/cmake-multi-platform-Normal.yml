@@ -83,6 +83,7 @@ jobs:
           -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include
           -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
           -S ${{ github.workspace }}
+        # -DOPENSSL_USE_STATIC_LIBS=ON
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
@@ -144,6 +145,15 @@ jobs:
           #     path: ${{ steps.strings.outputs.build-output-dir }}
 
 
+      - name: OpenSSL DLL (Win)
+        if: runner.os == 'Windows'
+        uses: Lyoko-Jeremie/js-copy-github-action@master
+        with:
+          srcBase: "C:/Program Files/OpenSSL"
+          source: "C:/Program Files/OpenSSL/*.dll"
+          destBase: ${{ steps.strings.outputs.build-output-dir }}/Release/
+          target: ${{ steps.strings.outputs.build-output-dir }}/Release/
+
       - name: Upload EXE (Win)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
@@ -153,6 +163,7 @@ jobs:
             ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
             ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
             ${{ steps.strings.outputs.build-output-dir }}/Release/html
+            ${{ steps.strings.outputs.build-output-dir }}/Release/*.dll
 
 
       - name: Upload EXE (Linux)
