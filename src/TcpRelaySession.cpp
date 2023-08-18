@@ -102,18 +102,24 @@ void TcpRelaySession::try_connect_upstream() {
             // try get by client
             auto ic = pSI->getInfoClient(clientEndpointAddrString);
             if (ic && ic->rule != RuleEnum::inherit) {
+                BOOST_LOG_S5B_ID(relayId, trace)
+                    << "TcpRelaySession::try_connect_upstream() get by client getServerByHint";
                 s = upstreamPool->getServerByHint(ic->rule, ic->lastUseUpstreamIndex, relayId);
             }
             if (!s) {
                 // try get by listen
                 auto il = pSI->getInfoListen(clientEndpointAddrString);
                 if (il && il->rule != RuleEnum::inherit) {
+                    BOOST_LOG_S5B_ID(relayId, trace)
+                        << "TcpRelaySession::try_connect_upstream() get by listen getServerByHint";
                     s = upstreamPool->getServerByHint(il->rule, il->lastUseUpstreamIndex, relayId);
                 }
             }
         }
         if (!s) {
             // fallback to get by global rule
+            BOOST_LOG_S5B_ID(relayId, trace)
+                << "TcpRelaySession::try_connect_upstream() get by global rule getServerByHint";
             s = upstreamPool->getServerGlobal(relayId);
         }
         if (s) {

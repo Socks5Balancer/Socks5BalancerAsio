@@ -189,15 +189,15 @@ auto UpstreamPool::getServerByHint(
     switch (__upstreamSelectRule) {
         case RuleEnum::force_only_one:
             s = _pool[_lastUseUpstreamIndex]->shared_from_this();
-            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint force_only_one:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::loop:
             s = getNextServer(_lastUseUpstreamIndex);
-            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint loop:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::one_by_one:
             s = tryGetLastServer(_lastUseUpstreamIndex);
-            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint one_by_one:" << (s ? s->print() : "nullptr");
             return s;
         case RuleEnum::change_by_time: {
             UpstreamTimePoint t = UpstreamTimePointNow();
@@ -208,7 +208,7 @@ auto UpstreamPool::getServerByHint(
             } else {
                 s = tryGetLastServer(_lastUseUpstreamIndex);
             }
-            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint change_by_time:" << (s ? s->print() : "nullptr");
             return s;
         }
         case RuleEnum::inherit:
@@ -223,7 +223,7 @@ auto UpstreamPool::getServerByHint(
             } else {
                 s.reset();
             }
-            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint:" << (s ? s->print() : "nullptr");
+            BOOST_LOG_S5B_ID(relayId, trace) << "getServerByHint random:" << (s ? s->print() : "nullptr");
             return s;
         }
     }
