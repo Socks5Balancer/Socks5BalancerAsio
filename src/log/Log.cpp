@@ -206,6 +206,7 @@ namespace s5ba_log {
            #else
            << "\n   Need_ProxyHandshakeAuth OFF"
            #endif // Need_ProxyHandshakeAuth
+           << "\n ------------------------------------------------------------------------- "
            << "\nSocks5BalancerAsio  Copyright (C) <2020>  <Jeremie>"
            << "\n  This program comes with ABSOLUTELY NO WARRANTY; "
            << "\n  This is free software, and you are welcome to redistribute it"
