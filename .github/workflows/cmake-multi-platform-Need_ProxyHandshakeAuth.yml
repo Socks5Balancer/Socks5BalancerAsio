@@ -171,6 +171,7 @@ jobs:
             ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
             ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
             ${{ steps.strings.outputs.build-output-dir }}/Release/html
+            ${{ steps.strings.outputs.build-output-dir }}/Release/*.dll
 
 
       - name: Upload EXE (Linux)
