@@ -114,7 +114,8 @@ jobs:
       uses: Lyoko-Jeremie/js-copy-github-action@master
       with:
         srcBase: ${{ github.workspace }}/example-config/
-        source: FullConfig.json
+        source: ${{ github.workspace }}/example-config/FullConfig.json
+        destBase: ${{ steps.strings.outputs.build-output-dir }}/Release/
         target: ${{ steps.strings.outputs.build-output-dir }}/Release/
 
     - name: Copy config (Linux)
@@ -122,7 +123,8 @@ jobs:
       uses: Lyoko-Jeremie/js-copy-github-action@master
       with:
         srcBase: ${{ github.workspace }}/example-config/
-        source: FullConfig.json
+        source: ${{ github.workspace }}/example-config/FullConfig.json
+        destBase: ${{ steps.strings.outputs.build-output-dir }}
         target: ${{ steps.strings.outputs.build-output-dir }}/
         
 
