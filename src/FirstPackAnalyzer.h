@@ -69,19 +69,20 @@ public:
 
     std::string host{};
     uint16_t port{0};
+
+    const size_t relayId;
 public:
     FirstPackAnalyzer(
-            std::weak_ptr<TcpRelaySession> tcpRelaySession,
+            std::shared_ptr<TcpRelaySession> tcpRelaySession_,
             boost::asio::ip::tcp::socket &downstream_socket_,
             boost::asio::ip::tcp::socket &upstream_socket_,
             std::function<void()> whenComplete,
             std::function<void(boost::system::error_code error)> whenError
-    ) :
-            tcpRelaySession(std::move(tcpRelaySession)),
-            downstream_socket_(downstream_socket_),
-            upstream_socket_(upstream_socket_),
-            whenComplete(std::move(whenComplete)),
-            whenError(std::move(whenError)) {}
+    );
+
+    ~FirstPackAnalyzer() {
+        BOOST_LOG_S5B_ID(relayId, trace) << "~FirstPackAnalyzer()";
+    }
 
     void start();
 

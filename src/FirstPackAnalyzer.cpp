@@ -170,7 +170,7 @@ void FirstPackAnalyzer::do_read_client_first_3_byte() {
                             d[1] == 0x01 &&
                             d[2] == 0x00) {
                             // is socks5
-                            BOOST_LOG_S5B(trace) << "is socks5" << std::endl;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "is socks5" << std::endl;
                             connectType = ConnectType::socks5;
                             // relay normal
                             do_prepare_whenComplete();
@@ -178,53 +178,53 @@ void FirstPackAnalyzer::do_read_client_first_3_byte() {
                                    (d[1] == 'O' || d[1] == 'o') &&
                                    (d[2] == 'N' || d[2] == 'n')) {
                             // is http Connect
-                            BOOST_LOG_S5B(trace) << "is http Connect" << std::endl;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "is http Connect" << std::endl;
                             // analysis target server and create socks5 handshake
                             connectType = ConnectType::httpConnect;
                             do_analysis_client_first_http_header();
                         } else {
                             // is other protocol
-                            BOOST_LOG_S5B(trace) << "is other protocol" << std::endl;
+                            BOOST_LOG_S5B_ID(relayId, trace) << "is other protocol" << std::endl;
                             // analysis target server and create socks5 handshake
                             switch (d[0]) {
                                 case 'P':
                                 case 'p':
                                     // POST, PUT, PATCH
-                                    BOOST_LOG_S5B(trace) << "is POST, PUT, PATCH" << std::endl;
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is POST, PUT, PATCH" << std::endl;
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'G':
                                 case 'g':
-                                    BOOST_LOG_S5B(trace) << "is GET" << std::endl;
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is GET" << std::endl;
                                     // GET
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'H':
                                 case 'h':
-                                    BOOST_LOG_S5B(trace) << "is HEAD" << std::endl;
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is HEAD" << std::endl;
                                     // HEAD
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'D':
                                 case 'd':
-                                    BOOST_LOG_S5B(trace) << "is DELETE" << std::endl;
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is DELETE" << std::endl;
                                     // DELETE
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'O':
                                 case 'o':
-                                    BOOST_LOG_S5B(trace) << "is OPTIONS" << std::endl;
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is OPTIONS" << std::endl;
                                     // OPTIONS
                                     connectType = ConnectType::httpOther;
                                     break;
                                 case 'T':
                                 case 't':
-                                    BOOST_LOG_S5B(trace) << "is TRACE" << std::endl;
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is TRACE" << std::endl;
                                     // TRACE
                                     connectType = ConnectType::httpOther;
                                     break;
                                 default:
-                                    BOOST_LOG_S5B(trace) << "is default..." << std::endl;
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is default..." << std::endl;
                                     connectType = ConnectType::unknown;
                                     break;
                             }
@@ -254,7 +254,7 @@ void FirstPackAnalyzer::do_read_client_first_http_header() {
                         const size_t &bytes_transferred) {
                     boost::ignore_unused(bytes_transferred);
                     if (!error) {
-                        BOOST_LOG_S5B(trace) << "do_read_client_first_http_header" << std::endl;
+                        BOOST_LOG_S5B_ID(relayId, trace) << "do_read_client_first_http_header" << std::endl;
                         do_analysis_client_first_http_header();
                     } else {
                         do_whenError(error);
@@ -276,31 +276,36 @@ void FirstPackAnalyzer::do_analysis_client_first_http_header() {
         auto it = s.find("\r\n\r\n");
         if (it != std::string::npos) {
             // find
-            BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header find!" << std::endl;
+            BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_http_header find!" << std::endl;
             try {
                 boost::beast::http::parser<true, boost::beast::http::buffer_body> headerParser;
                 headerParser.skip(true);
                 boost::system::error_code ec;
                 headerParser.put(boost::asio::buffer(s), ec);
                 if (ec) {
-                    BOOST_LOG_S5B(error) << "do_analysis_client_first_http_header headerParser ec:" << ec.message() << std::endl;
+                    BOOST_LOG_S5B_ID(relayId, error)
+                        << "do_analysis_client_first_http_header headerParser ec:"
+                        << ec.message()
+                        << std::endl;
                     fail(ec, "do_analysis_client_first_http_header headerParser");
                     return;
                 }
                 auto h = headerParser.get();
 
                 auto target = h.base().target();
-                BOOST_LOG_S5B(trace) << "target:" << target << std::endl;
+                BOOST_LOG_S5B_ID(relayId, trace) << "target:" << target << std::endl;
                 auto uri = parseURI(std::string(target));
 
                 host = uri.domain;
                 port = boost::lexical_cast<uint16_t>(uri.port);
-                BOOST_LOG_S5B(trace) << "host:" << host << std::endl;
-                BOOST_LOG_S5B(trace) << "port:" << port << std::endl;
+                BOOST_LOG_S5B_ID(relayId, trace) << "host:" << host << std::endl;
+                BOOST_LOG_S5B_ID(relayId, trace) << "port:" << port << std::endl;
 
                 if (h.method() == boost::beast::http::verb::connect) {
                     // is connect
-                    BOOST_LOG_S5B(trace) << "do_analysis_client_first_http_header is connect trim" << std::endl;
+                    BOOST_LOG_S5B_ID(relayId, trace)
+                        << "do_analysis_client_first_http_header is connect trim"
+                        << std::endl;
 
                     connectType = ConnectType::httpConnect;
 
@@ -324,7 +329,7 @@ void FirstPackAnalyzer::do_analysis_client_first_http_header() {
             }
         } else {
             // not find
-            BOOST_LOG_S5B(warning) << "do_analysis_client_first_http_header not find" << std::endl;
+            BOOST_LOG_S5B_ID(relayId, warning) << "do_analysis_client_first_http_header not find" << std::endl;
             do_read_client_first_http_header();
         }
     } else {
@@ -356,7 +361,7 @@ void FirstPackAnalyzer::do_send_Connection_Established() {
                         return fail(ec, ss.str());
                     }
 
-                    // BOOST_LOG_S5B(trace) << "do_send_Connection_Established()" << std::endl;
+                    // BOOST_LOG_S5B_ID(relayId, trace) << "do_send_Connection_Established()" << std::endl;
 
                     do_socks5_handshake_write();
                 }
@@ -399,7 +404,7 @@ void FirstPackAnalyzer::do_socks5_handshake_write() {
                         return fail(ec, ss.str());
                     }
 
-                    // BOOST_LOG_S5B(trace) << "do_socks5_handshake_write()" << std::endl;
+                    // BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_handshake_write()" << std::endl;
 
                     do_socks5_handshake_read();
                 }
@@ -440,7 +445,7 @@ void FirstPackAnalyzer::do_socks5_handshake_read() {
                                 return fail(ec, "socks5_handshake_read (bytes_transferred < 2)");
                             }
 
-                            // BOOST_LOG_S5B(trace) << "do_socks5_handshake_read()" << std::endl;
+                            // BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_handshake_read()" << std::endl;
                             do_socks5_connect_write();
                         }));
     } else {
@@ -505,7 +510,7 @@ void FirstPackAnalyzer::do_socks5_connect_write() {
                                 return fail(ec, ss.str());
                             }
 
-                            // BOOST_LOG_S5B(trace) << "do_socks5_connect_write()" << std::endl;
+                            // BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_connect_write()" << std::endl;
                             do_socks5_connect_read();
                         })
         );
@@ -579,7 +584,7 @@ void FirstPackAnalyzer::do_socks5_connect_read() {
                                             "FirstPackAnalyzer socks5_connect_read (socks5_read_buf->at(3) == 0x04)");
                             }
 
-                            // BOOST_LOG_S5B(trace) << "do_socks5_connect_read()" << std::endl;
+                            // BOOST_LOG_S5B_ID(relayId, trace) << "do_socks5_connect_read()" << std::endl;
                             // socks5 handshake now complete
                             do_prepare_whenComplete();
                         }));
@@ -596,7 +601,7 @@ void FirstPackAnalyzer::fail(boost::system::error_code ec, const std::string &wh
         ss << what << ": [" << ec.message() << "] . ";
         r = ss.str();
     }
-    BOOST_LOG_S5B(error) << r << std::endl;
+    BOOST_LOG_S5B_ID(relayId, error) << r << std::endl;
 
     do_whenError(ec);
 }
@@ -606,3 +611,16 @@ void FirstPackAnalyzer::badParentPtr() {
         do_whenError({});
     }
 }
+
+FirstPackAnalyzer::FirstPackAnalyzer(
+        std::shared_ptr<TcpRelaySession> tcpRelaySession_,
+        boost::asio::ip::tcp::socket &downstream_socket_,
+        boost::asio::ip::tcp::socket &upstream_socket_, std::function<void()> whenComplete,
+        std::function<void(boost::system::error_code)> whenError
+) :
+        tcpRelaySession(tcpRelaySession_->weak_from_this()),
+        downstream_socket_(downstream_socket_),
+        upstream_socket_(upstream_socket_),
+        whenComplete(std::move(whenComplete)),
+        whenError(std::move(whenError)),
+        relayId(tcpRelaySession_->relayId) {}
