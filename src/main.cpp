@@ -72,20 +72,20 @@ int main(int argc, const char *argv[]) {
                     .run(), vMap);
     boost::program_options::notify(vMap);
     if (vMap.count("help")) {
-        BOOST_LOG_S5B(info_VSERION) << "usage: " << argv[0] << " [[-c] CONFIG]" << "\n";
+        std::cout << "usage: " << argv[0] << " [[-c] CONFIG]" << "\n";
 
-        BOOST_LOG_S5B(info_VSERION) << "    Socks5BalancerAsio  Copyright (C) <2020>  <Jeremie>\n"
-                                    << "    This program comes with ABSOLUTELY NO WARRANTY; \n"
-                                    << "    This is free software, and you are welcome to redistribute it\n"
-                                    << "    under certain conditions; \n"
-                                    << "         GNU GENERAL PUBLIC LICENSE , Version 3 "
-                                    << "\n";
+        std::cout << "    Socks5BalancerAsio  Copyright (C) <2020>  <Jeremie>\n"
+                  << "    This program comes with ABSOLUTELY NO WARRANTY; \n"
+                  << "    This is free software, and you are welcome to redistribute it\n"
+                  << "    under certain conditions; \n"
+                  << "         GNU GENERAL PUBLIC LICENSE , Version 3 "
+                  << "\n";
 
-        BOOST_LOG_S5B(info_VSERION) << desc << std::endl;
+        std::cout << desc << std::endl;
         return 0;
     }
     if (vMap.count("version")) {
-        BOOST_LOG_S5B(info_VSERION) << s5ba_log::versionInfo();
+        std::cout << s5ba_log::versionInfo();
         return 0;
     }
 

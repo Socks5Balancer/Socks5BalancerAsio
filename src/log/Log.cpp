@@ -34,6 +34,11 @@
 #include <iostream>      // std::cerr
 //#include <boost/stacktrace.hpp>
 
+// https://zh.cppreference.com/w/cpp/thread/call_once
+// https://www.modernescpp.com/index.php/thread-safe-initialization-of-a-singleton
+#include <mutex>
+#include <memory>
+
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
 
@@ -186,7 +191,10 @@ namespace s5ba_log {
 
     }
 
-    std::string versionInfo() {
+    std::once_flag versionInfo_OnceFlag{};
+    std::unique_ptr<std::string> versionInfoString{};
+
+    void versionInfoStringInit() {
         std::stringstream ss;
         ss << "Socks5BalancerAsio"
            << "\n   ProgramVersion " << ProgramVersion
@@ -213,7 +221,12 @@ namespace s5ba_log {
            << "\n  under certain conditions; "
            << "\n       GNU GENERAL PUBLIC LICENSE , Version 3 "
            << "\n ---------- Socks5BalancerAsio  Copyright (C) <2020>  <Jeremie> ---------- ";
-        return ss.str();
+        versionInfoString = std::make_unique<decltype(versionInfoString)::element_type>(ss.str());
+    }
+
+    std::string versionInfo() {
+        std::call_once(versionInfo_OnceFlag, &versionInfoStringInit);
+        return *versionInfoString;
     }
 
 } // s5ba_log

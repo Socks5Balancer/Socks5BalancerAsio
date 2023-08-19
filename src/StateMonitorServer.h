@@ -32,6 +32,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <utility>
 #include "ConfigLoader.h"
 #include "UpstreamPool.h"
 #include "TcpRelayServer.h"
@@ -48,10 +49,10 @@ public:
     HttpConnectSession(boost::asio::ip::tcp::socket socket,
                        std::shared_ptr<ConfigLoader> configLoader,
                        std::shared_ptr<UpstreamPool> upstreamPool,
-                       std::shared_ptr<TcpRelayServer> tcpRelayServer,
+                       const std::shared_ptr<TcpRelayServer> &tcpRelayServer,
                        UpstreamTimePoint startTime)
-            : configLoader(configLoader),
-              upstreamPool(upstreamPool),
+            : configLoader(std::move(configLoader)),
+              upstreamPool(std::move(upstreamPool)),
               tcpRelayServer(tcpRelayServer),
               startTime(startTime),
               socket_(std::move(socket)) {}
@@ -114,14 +115,14 @@ class StateMonitorServer : public std::enable_shared_from_this<StateMonitorServe
 public:
     StateMonitorServer(
             boost::asio::any_io_executor ex,
-            std::shared_ptr<ConfigLoader> configLoader,
+            const std::shared_ptr<ConfigLoader>& configLoader,
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::shared_ptr<TcpRelayServer> tcpRelayServer
     ) :
             ex(ex),
             configLoader(configLoader),
-            upstreamPool(upstreamPool),
-            tcpRelayServer(tcpRelayServer),
+            upstreamPool(std::move(upstreamPool)),
+            tcpRelayServer(std::move(tcpRelayServer)),
             startTime(UpstreamTimePointNow()),
             address(boost::asio::ip::make_address(configLoader->config.stateServerHost)),
             port(configLoader->config.stateServerPort),

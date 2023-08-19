@@ -25,6 +25,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "SessionRelayId.h"
+#include "./log/Log.h"
 
 std::string HttpConnectSession::createJsonString() {
     boost::property_tree::ptree root;
@@ -239,6 +240,8 @@ std::string HttpConnectSession::createJsonString() {
             UpstreamTimePointNow() - startTime
     ).count());
     root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
+
+    root.put("VersionInfoString", s5ba_log::versionInfo());
 
     std::stringstream ss;
     boost::property_tree::write_json(ss, root);
