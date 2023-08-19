@@ -178,7 +178,7 @@ jobs:
         if: runner.os != 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}}-DynamicSSL-ProxyHandshakeAuth-Linux
+          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-DynamicSSL-ProxyHandshakeAuth-Linux
           path: |
             ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
             ${{ steps.strings.outputs.build-output-dir }}/FullConfig.json
