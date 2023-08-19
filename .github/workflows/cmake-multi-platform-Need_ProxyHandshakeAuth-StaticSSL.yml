@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms Normal
+name: CMake on multiple platforms Need_ProxyHandshakeAuth StaticSSL
 
 on:
   push:
@@ -79,11 +79,11 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DUSE_DYNAMIC_BOOST=OFF
-          -DNeed_ProxyHandshakeAuth=OFF
+          -DNeed_ProxyHandshakeAuth=ON
+          -DOPENSSL_USE_STATIC_LIBS=ON
           -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include
           -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
           -S ${{ github.workspace }}
-        # -DOPENSSL_USE_STATIC_LIBS=ON
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
@@ -145,20 +145,28 @@ jobs:
           #     path: ${{ steps.strings.outputs.build-output-dir }}
 
 
-      - name: OpenSSL DLL (Win)
-        if: runner.os == 'Windows'
-        uses: Lyoko-Jeremie/js-copy-github-action@master
-        with:
-          srcBase: "C:/Program Files/OpenSSL"
-          source: "C:/Program Files/OpenSSL/*.dll"
-          destBase: ${{ steps.strings.outputs.build-output-dir }}/Release/
-          target: ${{ steps.strings.outputs.build-output-dir }}/Release/
+      # - name: Debug Catch SSL (Win)
+      #   if: runner.os == 'Windows'
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #    name: OpenSSL.zip
+      #    path: "C:/Program Files/OpenSSL"
+
+
+      # - name: OpenSSL DLL (Win)
+      #   if: runner.os == 'Windows'
+      #   uses: Lyoko-Jeremie/js-copy-github-action@master
+      #   with:
+      #     srcBase: "C:/Program Files/OpenSSL"
+      #     source: "C:/Program Files/OpenSSL/*.dll"
+      #     destBase: ${{ steps.strings.outputs.build-output-dir }}/Release/
+      #     target: ${{ steps.strings.outputs.build-output-dir }}/Release/
 
       - name: Upload EXE (Win)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-DynamicSSL-Normal-Windows
+          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-StaticSSL-ProxyHandshakeAuth-Windows
           path: |
             ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
             ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
@@ -170,11 +178,11 @@ jobs:
         if: runner.os != 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-DynamicSSL-Normal-Linux
+          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}}-StaticSSL-ProxyHandshakeAuth-Linux
           path: |
             ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
             ${{ steps.strings.outputs.build-output-dir }}/FullConfig.json
             ${{ steps.strings.outputs.build-output-dir }}/html
 
 
-        
+

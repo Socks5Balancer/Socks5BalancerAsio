@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms Normal
+name: CMake on multiple platforms MINI_BUILD_MODE
 
 on:
   push:
@@ -79,7 +79,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DUSE_DYNAMIC_BOOST=OFF
-          -DNeed_ProxyHandshakeAuth=OFF
+          -DMINI_BUILD_MODE=ON
           -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include
           -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
           -S ${{ github.workspace }}
