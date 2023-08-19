@@ -158,7 +158,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-StaticSSL-Normal-Windows
+          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-StaticSSL-MINI_BUILD_MODE-Windows
           path: |
             ${{ steps.strings.outputs.build-output-dir }}/Release/Socks5BalancerAsio.exe
             ${{ steps.strings.outputs.build-output-dir }}/Release/FullConfig.json
@@ -170,7 +170,7 @@ jobs:
         if: runner.os != 'Windows'
         uses: actions/upload-artifact@v3
         with:
-          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-StaticSSL-Normal-Linux
+          name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-StaticSSL-MINI_BUILD_MODE-Linux
           path: |
             ${{ steps.strings.outputs.build-output-dir }}/Socks5BalancerAsio
             ${{ steps.strings.outputs.build-output-dir }}/FullConfig.json
