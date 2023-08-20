@@ -3,6 +3,15 @@ A Simple TCP Socket Balancer for balance Multi Socks5 Proxy Backend Servers Powe
 
 ---
 
+| Build Binary Release | Link | Info |
+| ------------------- | ---- | ---- |
+| Nightly Auto Build Binary | [![CMake on multiple platforms](https://github.com/Socks5Balancer/Socks5BalancerAsio/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)](https://github.com/Socks5Balancer/Socks5BalancerAsio/actions/workflows/cmake-multi-platform.yml) | Nightly(CD) Build, Unstable but newgest and with full type |
+| Release (**Recommand**) | [Release Page](https://github.com/Socks5Balancer/Socks5BalancerAsio/releases) | Stable, need Use the Release Marked with `Latest` version |
+| Custom build        | [Project](https://github.com/Socks5Balancer/Socks5BalancerAsio-mini-build) | Outdate but extreme stable, Deployed in many server worldwide |
+| Docker (thanks fossforreal) | [fossforreal/docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker) | Maybe Outdate, you can build new version manually follow its `README` |
+
+---
+
 Docker version available with instructions here: [fossforreal/Socks5BalancerAsio-Docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker) (thanks fossforreal)
 
 ---
