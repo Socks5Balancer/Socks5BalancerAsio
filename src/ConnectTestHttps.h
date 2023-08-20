@@ -75,6 +75,8 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
 
     bool _isComplete = false;
 
+    std::chrono::milliseconds timePing{0};
+
 public:
     ConnectTestHttpsSession(
             boost::asio::any_io_executor executor,

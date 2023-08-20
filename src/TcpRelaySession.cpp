@@ -437,6 +437,7 @@ void TcpRelaySession::stop() {
 void TcpRelaySession::addUp2Statistics(size_t bytes_transferred_) {
     auto pSI = statisticsInfo.lock();
     if (pSI) {
+        // TODO addByteUpAuth
         pSI->addByteUp(nowServer->index, bytes_transferred_);
         pSI->addByteUpClient(clientEndpointAddrString, bytes_transferred_);
         pSI->addByteUpListen(listenEndpointAddrString, bytes_transferred_);
@@ -446,6 +447,7 @@ void TcpRelaySession::addUp2Statistics(size_t bytes_transferred_) {
 void TcpRelaySession::addDown2Statistics(size_t bytes_transferred_) {
     auto pSI = statisticsInfo.lock();
     if (pSI) {
+        // TODO addByteDownAuth
         pSI->addByteDown(nowServer->index, bytes_transferred_);
         pSI->addByteDownClient(clientEndpointAddrString, bytes_transferred_);
         pSI->addByteDownListen(listenEndpointAddrString, bytes_transferred_);

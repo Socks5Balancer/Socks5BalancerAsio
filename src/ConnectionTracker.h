@@ -30,6 +30,7 @@
 #include <string>
 #include <functional>
 #include <utility>
+#include <chrono>
 #include "ConnectType.h"
 
 #include "./log/Log.h"
@@ -57,6 +58,9 @@ class ConnectionTracker : public std::enable_shared_from_this<ConnectionTracker>
     uint16_t port{0};
 
     bool isEnd = false;
+
+    std::chrono::milliseconds timePing{0};
+
 public:
 
     ConnectionTracker() = delete;
