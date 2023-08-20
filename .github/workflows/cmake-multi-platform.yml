@@ -49,9 +49,9 @@ jobs:
           - build_mode: MINI_BUILD_MODE
             cmake_build_mode_string: "-DMINI_BUILD_MODE=ON"
           - ssl_type: StaticSSL
-            cmake_ssl_type_string: "-DUSE_DYNAMIC_BOOST=OFF"
+            cmake_ssl_type_string: "-DOPENSSL_USE_STATIC_LIBS=ON"
           - ssl_type: DynamicSSL
-            cmake_ssl_type_string: "-DUSE_DYNAMIC_BOOST=ON"
+            cmake_ssl_type_string: "-DOPENSSL_USE_STATIC_LIBS=OFF"
         exclude:
           - os: windows-latest
             c_compiler: gcc
@@ -91,6 +91,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DUSE_DYNAMIC_BOOST=OFF
           ${{ matrix.cmake_build_mode_string }}
           ${{ matrix.cmake_ssl_type_string }}
           -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include
@@ -158,7 +159,7 @@ jobs:
           #     path: ${{ steps.strings.outputs.build-output-dir }}
 
 
-      - name: OpenSSL DLL (Win)
+      - name: OpenSSL DLL (Win DynamicSSL)
         # https://github.com/orgs/community/discussions/27152
         # https://github.com/actions/runner/issues/409
         if: ${{ (runner.os == 'Windows') && (matrix.ssl_type == 'DynamicSSL') }}
@@ -169,7 +170,7 @@ jobs:
           destBase: ${{ steps.strings.outputs.build-output-dir }}/Release/
           target: ${{ steps.strings.outputs.build-output-dir }}/Release/
 
-      - name: Upload EXE (Win)
+      - name: Upload EXE (Win DynamicSSL)
         if: ${{ (runner.os == 'Windows') && (matrix.ssl_type == 'DynamicSSL') }}
         uses: actions/upload-artifact@v3
         with:
@@ -180,7 +181,7 @@ jobs:
             ${{ steps.strings.outputs.build-output-dir }}/Release/html
             ${{ steps.strings.outputs.build-output-dir }}/Release/*.dll
 
-      - name: Upload EXE (Win)
+      - name: Upload EXE (Win StaticSSL)
         if: ${{ (runner.os == 'Windows') && (matrix.ssl_type == 'StaticSSL') }}
         uses: actions/upload-artifact@v3
         with:
