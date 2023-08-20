@@ -250,8 +250,8 @@ void Socks5ServerImpl::do_auth_client_read() {
                                     (char *) (socks5_read_buf->data() + 2 + socks5_read_buf->at(1) + 1),
                                     socks5_read_buf->at(2 + socks5_read_buf->at(1))
                             };
-                            auto c = ptr->authClientManager->checkAuth(user, pwd);
-                            if (c) {
+                            auto au = ptr->authClientManager->checkAuth(user, pwd);
+                            if (au) {
                                 BOOST_LOG_S5B_ID(relayId, trace)
                                     << "do_auth_client_read auth ok :[" << user << "]:[" << pwd << "]";
                                 do_auth_client_ok();

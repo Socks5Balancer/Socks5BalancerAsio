@@ -50,7 +50,7 @@
 class AuthClientManager : public std::enable_shared_from_this<AuthClientManager> {
 public:
 
-    struct AuthUser {
+    struct AuthUser : public std::enable_shared_from_this<AuthUser> {
         struct ID {
         };
         struct USER {
@@ -96,8 +96,7 @@ public:
     };
 
     using AuthInfoContainer = boost::multi_index_container<
-//            boost::shared_ptr<AuthUser>,
-            AuthUser,
+            std::shared_ptr<AuthUser>,
             boost::multi_index::indexed_by<
                     boost::multi_index::sequenced<>,
                     boost::multi_index::ordered_unique<
@@ -128,9 +127,8 @@ public:
                             boost::multi_index::member<AuthUser, const std::string, &AuthUser::base64>
                     >,
                     boost::multi_index::random_access<>
-            >/*,
-            AuthUser*/
-    >;;
+            >
+    >;
 
 public:
     std::shared_ptr<ConfigLoader> configLoader;
@@ -150,9 +148,9 @@ public:
 
     bool needAuth();
 
-    bool checkAuth(const std::string_view &user, const std::string_view &pwd);
+    std::shared_ptr<AuthClientManager::AuthUser> checkAuth(const std::string_view &user, const std::string_view &pwd);
 
-    bool checkAuth_Base64AuthString(const std::string_view &base64AuthString);
+    std::shared_ptr<AuthClientManager::AuthUser> checkAuth_Base64AuthString(const std::string_view &base64AuthString);
 
 };
 

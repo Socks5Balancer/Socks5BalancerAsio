@@ -56,7 +56,7 @@ bool HttpServerImpl::checkHeaderAuthString(
         const std::string_view &base64Part,
         const std::shared_ptr<decltype(parents)::element_type> &ptr
 ) {
-    if (ptr->authClientManager->checkAuth_Base64AuthString(base64Part)) {
+    if (auto au = ptr->authClientManager->checkAuth_Base64AuthString(base64Part)) {
         BOOST_LOG_S5B_ID(relayId, trace) << "checkHeaderAuthString Base64AuthString ok: " << base64Part;
         return true;
     } else {
@@ -69,7 +69,7 @@ bool HttpServerImpl::checkHeaderAuthString(
         }
         std::string_view user{rr.data(), indexSplitFlag};
         std::string_view pwd{rr.data() + indexSplitFlag + 1, rr.length() - indexSplitFlag - 1};
-        if (ptr->authClientManager->checkAuth(user, pwd)) {
+        if (auto au = ptr->authClientManager->checkAuth(user, pwd)) {
             BOOST_LOG_S5B_ID(relayId, trace) << "checkHeaderAuthString ok: " << user << " : " << pwd;
             return true;
         } else {
