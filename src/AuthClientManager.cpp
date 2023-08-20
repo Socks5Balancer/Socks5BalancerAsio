@@ -21,33 +21,36 @@
 void AuthClientManager::initUserInfo() {
     // empty now
     for (const auto &a: configLoader->config.authClientInfo) {
-        userPwd.insert(std::make_pair(a.user, a.pwd));
-        base64AuthStringSet.insert(a.base64AuthString);
+        authInfo.emplace_back(++lastId, a.user, a.pwd, a.base64AuthString);
     }
 }
 
 bool AuthClientManager::needAuth() {
-    return !userPwd.empty();
+    return !authInfo.empty();
 }
 
 bool AuthClientManager::checkAuth(const std::string_view &user, const std::string_view &pwd) {
-    auto it = userPwd.equal_range(std::string{user});
-    if (it.first != userPwd.end()) {
-        for (auto i = it.first; i != it.second; ++i) {
-//                std::cout << i->first << ": " << i->second << '\n';
-            if (i->second == pwd) {
-                return true;
-            }
-        }
-        // cannot find a match pwd
-        return false;
-    } else {
-        // cannot find the user
-        return false;
-    }
+    auto &userPwd = authInfo.get<AuthUser::USER_PWD>();
+    auto it = userPwd.find(std::make_tuple(std::string{user}, std::string{pwd}));
+    return it != userPwd.end();
+//    auto it = userPwd.equal_range(std::string{user});
+//    if (it.first != userPwd.end()) {
+//        for (auto i = it.first; i != it.second; ++i) {
+////                std::cout << i->first << ": " << i->second << '\n';
+//            if (i->second == pwd) {
+//                return true;
+//            }
+//        }
+//        // cannot find a match pwd
+//        return false;
+//    } else {
+//        // cannot find the user
+//        return false;
+//    }
 }
 
 bool AuthClientManager::checkAuth_Base64AuthString(const std::string_view &base64AuthString) {
+    auto &base64AuthStringSet = authInfo.get<AuthUser::BASE64>();
     auto it = base64AuthStringSet.find(std::string{base64AuthString});
     return it != base64AuthStringSet.end();
 }

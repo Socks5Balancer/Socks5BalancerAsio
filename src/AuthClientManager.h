@@ -35,12 +35,109 @@
 #include "ConfigLoader.h"
 
 
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index/key.hpp>
+
+
 class AuthClientManager : public std::enable_shared_from_this<AuthClientManager> {
+public:
+
+    struct AuthUser {
+        struct ID {
+        };
+        struct USER {
+        };
+        struct PWD {
+        };
+        struct USER_PWD {
+        };
+        struct BASE64 {
+        };
+        const size_t id;
+        const std::string user;
+        const std::string pwd;
+        // for http aut speedup
+        const std::string base64;
+
+        AuthUser(
+                const size_t &id,
+                std::string user,
+                std::string pwd,
+                std::string base64
+        ) : id(id),
+            user(std::move(user)),
+            pwd(std::move(pwd)),
+            base64(std::move(base64)) {}
+
+        AuthUser(const AuthUser &o) = default;
+
+        std::strong_ordering operator<=>(const AuthUser &o) const {
+            // https://zh.cppreference.com/w/cpp/language/default_comparisons
+            if ((id <=> o.id) != std::strong_ordering::equal) {
+                return id <=> o.id;
+            } else if ((base64 <=> o.base64) != std::strong_ordering::equal) {
+                return base64 <=> o.base64;
+            } else if ((user <=> o.user) != std::strong_ordering::equal) {
+                return user <=> o.user;
+            } else if ((pwd <=> o.pwd) != std::strong_ordering::equal) {
+                return pwd <=> o.pwd;
+            }
+            return std::strong_ordering::equal;
+        }
+
+    };
+
+    using AuthInfoContainer = boost::multi_index_container<
+//            boost::shared_ptr<AuthUser>,
+            AuthUser,
+            boost::multi_index::indexed_by<
+                    boost::multi_index::sequenced<>,
+                    boost::multi_index::ordered_unique<
+                            boost::multi_index::identity<AuthUser>
+                    >,
+                    boost::multi_index::hashed_unique<
+                            boost::multi_index::tag<AuthUser::ID>,
+                            boost::multi_index::member<AuthUser, const size_t, &AuthUser::id>
+                    >,
+                    boost::multi_index::hashed_non_unique<
+                            boost::multi_index::tag<AuthUser::USER>,
+                            boost::multi_index::member<AuthUser, const std::string, &AuthUser::user>
+                    >,
+                    boost::multi_index::hashed_non_unique<
+                            boost::multi_index::tag<AuthUser::PWD>,
+                            boost::multi_index::member<AuthUser, const std::string, &AuthUser::pwd>
+                    >,
+                    boost::multi_index::hashed_unique<
+                            boost::multi_index::tag<AuthUser::USER_PWD>,
+                            boost::multi_index::composite_key<
+                                    AuthUser,
+                                    boost::multi_index::member<AuthUser, const std::string, &AuthUser::user>,
+                                    boost::multi_index::member<AuthUser, const std::string, &AuthUser::pwd>
+                            >
+                    >,
+                    boost::multi_index::hashed_unique<
+                            boost::multi_index::tag<AuthUser::BASE64>,
+                            boost::multi_index::member<AuthUser, const std::string, &AuthUser::base64>
+                    >,
+                    boost::multi_index::random_access<>
+            >/*,
+            AuthUser*/
+    >;;
+
 public:
     std::shared_ptr<ConfigLoader> configLoader;
 
-    std::multimap<std::string, std::string> userPwd;
-    std::set<std::string> base64AuthStringSet;
+    std::atomic_size_t lastId{0};
+
+    AuthInfoContainer authInfo;
 
 public:
     AuthClientManager(std::shared_ptr<ConfigLoader> configLoader) : configLoader(std::move(configLoader)) {
