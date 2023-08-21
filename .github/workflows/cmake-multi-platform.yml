@@ -77,6 +77,20 @@ jobs:
           yarn run build
           cd ..
 
+      - name: Remove File
+        uses: Lyoko-Jeremie/js-rm-github-action@master
+        with:
+          path: |
+            ${{ github.workspace }}/html/node_modules
+            ${{ github.workspace }}/html/.yarn
+            ${{ github.workspace }}/html/.editorconfig
+            ${{ github.workspace }}/html/.gitattributes
+            ${{ github.workspace }}/html/.gitignore
+            ${{ github.workspace }}/html/.yarnrc.yml
+            ${{ github.workspace }}/html/package.json
+            ${{ github.workspace }}/html/tsconfig.json
+            ${{ github.workspace }}/html/yarn.lock
+
       - name: Set reusable strings
         # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
         id: strings
@@ -128,32 +142,14 @@ jobs:
         if: runner.os == 'Windows'
         uses: Lyoko-Jeremie/js-copy-github-action@master
         with:
-          list: true
-          source: |
-            ${{ github.workspace }}/html/*.js
-            ${{ github.workspace }}/html/*.map
-            ${{ github.workspace }}/html/*.ts
-            ${{ github.workspace }}/html/*.css
-            ${{ github.workspace }}/html/*.html
-            ${{ github.workspace }}/html/i18n-table/*.js
-            ${{ github.workspace }}/html/i18n-table/*.map
-            ${{ github.workspace }}/html/i18n-table/*.ts
+          source: ${{ github.workspace }}/html/**/*
           target: ${{ steps.strings.outputs.build-output-dir }}/Release/html
 
       - name: Copy html (Linux)
         if: runner.os != 'Windows'
         uses: Lyoko-Jeremie/js-copy-github-action@master
         with:
-          list: true
-          source: |
-            ${{ github.workspace }}/html/*.js
-            ${{ github.workspace }}/html/*.map
-            ${{ github.workspace }}/html/*.ts
-            ${{ github.workspace }}/html/*.css
-            ${{ github.workspace }}/html/*.html
-            ${{ github.workspace }}/html/i18n-table/*.js
-            ${{ github.workspace }}/html/i18n-table/*.map
-            ${{ github.workspace }}/html/i18n-table/*.ts
+          source: ${{ github.workspace }}/html/**/*
           target: ${{ steps.strings.outputs.build-output-dir }}/html
 
       - name: Copy config (Win)
