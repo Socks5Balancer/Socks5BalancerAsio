@@ -128,14 +128,32 @@ jobs:
         if: runner.os == 'Windows'
         uses: Lyoko-Jeremie/js-copy-github-action@master
         with:
-          source: ${{ github.workspace }}/html/**/*
+          multi: true
+          source: |
+            ${{ github.workspace }}/html/*.js
+            ${{ github.workspace }}/html/*.map
+            ${{ github.workspace }}/html/*.ts
+            ${{ github.workspace }}/html/*.css
+            ${{ github.workspace }}/html/*.html
+            ${{ github.workspace }}/html/i18n-table/*.js
+            ${{ github.workspace }}/html/i18n-table/*.map
+            ${{ github.workspace }}/html/i18n-table/*.ts
           target: ${{ steps.strings.outputs.build-output-dir }}/Release/html
 
       - name: Copy html (Linux)
         if: runner.os != 'Windows'
         uses: Lyoko-Jeremie/js-copy-github-action@master
         with:
-          source: ${{ github.workspace }}/html/**/*
+          multi: true
+          source: |
+            ${{ github.workspace }}/html/*.js
+            ${{ github.workspace }}/html/*.map
+            ${{ github.workspace }}/html/*.ts
+            ${{ github.workspace }}/html/*.css
+            ${{ github.workspace }}/html/*.html
+            ${{ github.workspace }}/html/i18n-table/*.js
+            ${{ github.workspace }}/html/i18n-table/*.map
+            ${{ github.workspace }}/html/i18n-table/*.ts
           target: ${{ steps.strings.outputs.build-output-dir }}/html
 
       - name: Copy config (Win)
