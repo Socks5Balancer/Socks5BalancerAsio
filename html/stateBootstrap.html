@@ -517,7 +517,7 @@
     </div>
     <br/>
 
-    <div class="container-fluid" v-if="AuthIndex.length>0">
+    <div class="container-fluid" v-if="AuthIndex.length > 0">
         <table style="border: black 3px dashed;">
             <thead>
             <tr>
@@ -609,16 +609,16 @@
             <tr>
                 <td colspan="11">
                 <span class="table-info-cell">
-                ↑ {{dataCount2String(reduceField(ListenIndex, 'byteUpLast'))}}
-                ↓ {{dataCount2String(reduceField(ListenIndex, 'byteDownLast'))}}
+                ↑ {{dataCount2String(reduceField(AuthIndex, 'byteUpLast'))}}
+                ↓ {{dataCount2String(reduceField(AuthIndex, 'byteDownLast'))}}
                 </span>
                     <span class="table-info-cell">
-                ↑Max {{speed2String(reduceField(ListenIndex, 'byteUpChangeMax'))}}
-                ↓Max {{speed2String(reduceField(ListenIndex, 'byteDownChangeMax'))}}
+                ↑Max {{speed2String(reduceField(AuthIndex, 'byteUpChangeMax'))}}
+                ↓Max {{speed2String(reduceField(AuthIndex, 'byteDownChangeMax'))}}
                 </span>
                     <span class="table-info-cell">
-                ↑ {{speed2String(reduceField(ListenIndex, 'byteUpChange'))}}
-                ↓ {{speed2String(reduceField(ListenIndex, 'byteDownChange'))}}
+                ↑ {{speed2String(reduceField(AuthIndex, 'byteUpChange'))}}
+                ↓ {{speed2String(reduceField(AuthIndex, 'byteDownChange'))}}
                 </span>
                 </td>
             </tr>

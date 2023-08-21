@@ -415,7 +415,7 @@
             <td>
                 <a href="javascript:void(0)"
                    v-on:click="sendCommand(
-                   '/op?_targetMode=client'
+                   '/op?_targetMode=listen'
                    + '&endAllConnect=0'
                    + '&_target=' + u.index)"
                    style="margin-right: 1em;"
@@ -449,6 +449,79 @@
                 <span class="table-info-cell">
                 ↑ {{speed2String(reduceField(ListenIndex, 'byteUpChange'))}}
                 ↓ {{speed2String(reduceField(ListenIndex, 'byteDownChange'))}}
+                </span>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+    <br/>
+
+    <table style="border: black 3px dashed;" v-if="AuthIndex.length > 0">
+        <thead>
+        <tr>
+            <th colspan="10" style="text-align: center;">
+                Auth User Info
+            </th>
+        </tr>
+        <tr>
+            <th>ID</th>
+            <th>UserName</th>
+            <th>Password</th>
+            <th>AuthBase64</th>
+            <th>running</th>
+            <th>closeConnect</th>
+            <th>data</th>
+            <th>speedMax</th>
+            <th>speed</th>
+            <th>detail</th>
+            <!--        <th></th>-->
+        </tr>
+        </thead>
+        <tbody>
+
+        <tr v-for="u in AuthIndex">
+            <td>{{u.id}}</td>
+            <td>{{u.user}}</td>
+            <td>{{u.pwd}}</td>
+            <td>{{u.base64}}</td>
+            <td>{{u.sessionsCount}}</td>
+            <td>
+                <a href="javascript:void(0)"
+                   v-on:click="sendCommand(
+                   '/op?_targetMode=authUser'
+                   + '&endAllConnect=0'
+                   + '&_target=' + u.id)"
+                   style="margin-right: 1em;"
+                >
+                    CloseConnect
+                </a>
+            </td>
+            <td>{{formatData(u)}}</td>
+            <td>{{formatSpeedMax(u)}}</td>
+            <td>{{formatSpeed(u)}}</td>
+            <td>
+                <a target="_blank"
+                   v-bind:href="'perState.html?backend='+backend+'&targetMode=authUser&target='+u.index"
+                >detail</a>
+            </td>
+            <!--            <td></td>-->
+        </tr>
+
+        </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="11">
+                <span class="table-info-cell">
+                ↑ {{dataCount2String(reduceField(AuthIndex, 'byteUpLast'))}}
+                ↓ {{dataCount2String(reduceField(AuthIndex, 'byteDownLast'))}}
+                </span>
+                <span class="table-info-cell">
+                ↑Max {{speed2String(reduceField(AuthIndex, 'byteUpChangeMax'))}}
+                ↓Max {{speed2String(reduceField(AuthIndex, 'byteDownChangeMax'))}}
+                </span>
+                <span class="table-info-cell">
+                ↑ {{speed2String(reduceField(AuthIndex, 'byteUpChange'))}}
+                ↓ {{speed2String(reduceField(AuthIndex, 'byteDownChange'))}}
                 </span>
             </td>
         </tr>
@@ -697,6 +770,7 @@
             UpstreamIndex: [],
             ClientIndex: [],
             ListenIndex: [],
+            AuthIndex: [],
             get backend() {
                 var s = getSearchParams('backend');
                 if (s) {
@@ -820,6 +894,20 @@
                             });
                         } else {
                             app.ListenIndex = [];
+                        }
+                        if (_.isArray(T.AuthIndex)) {
+                            app.AuthIndex = T.AuthIndex.map(N => {
+                                N.byteInfo = 'true';
+                                N.lastUseUpstreamIndex = _.parseInt(N.lastUseUpstreamIndex);
+                                if (N.AuthUser) {
+                                    N.user = N.AuthUser.user || "";
+                                    N.pwd = N.AuthUser.pwd || "";
+                                    N.base64 = N.AuthUser.base64 || "";
+                                }
+                                return N;
+                            });
+                        } else {
+                            app.AuthIndex = [];
                         }
 
                         app.lastConnectComeTime = T.pool.lastConnectComeTime;
