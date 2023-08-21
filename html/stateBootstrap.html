@@ -327,7 +327,7 @@
                 <th>{{tableState.newServer.s}}</th>
                 <th>{{tableState.nowRule.s}}</th>
                 <th>{{tableState.newRule.s}}</th>
-                <th>{{tableState.running.s}}</th>
+                <th>{{tableState.runCount.s}}</th>
                 <th v-html="tableState.CloseConnect.s">{{ }}</th>
                 <th>{{tableState.data.s}}</th>
                 <th>{{tableState.speedMax.s}}</th>
@@ -429,7 +429,7 @@
                 <th>{{tableState.newServer.s}}</th>
                 <th>{{tableState.nowRule.s}}</th>
                 <th>{{tableState.newRule.s}}</th>
-                <th>{{tableState.running.s}}</th>
+                <th>{{tableState.runCount.s}}</th>
                 <th v-html="tableState.CloseConnect.s">{{ }}</th>
                 <th>{{tableState.data.s}}</th>
                 <th>{{tableState.speedMax.s}}</th>
@@ -474,7 +474,7 @@
                 <td>
                     <a href="javascript:void(0)"
                        v-on:click="sendCommand(
-                   '/op?_targetMode=client'
+                   '/op?_targetMode=listen'
                    + '&endAllConnect=0'
                    + '&_target=' + u.index)"
                        style="margin-right: 1em;"
@@ -492,6 +492,116 @@
                     >detail</a>
                 </td>
                 <!--            <td></td>-->
+            </tr>
+
+            </tbody>
+            <tfoot>
+            <tr>
+                <td colspan="11">
+                <span class="table-info-cell">
+                ↑ {{dataCount2String(reduceField(ListenIndex, 'byteUpLast'))}}
+                ↓ {{dataCount2String(reduceField(ListenIndex, 'byteDownLast'))}}
+                </span>
+                    <span class="table-info-cell">
+                ↑Max {{speed2String(reduceField(ListenIndex, 'byteUpChangeMax'))}}
+                ↓Max {{speed2String(reduceField(ListenIndex, 'byteDownChangeMax'))}}
+                </span>
+                    <span class="table-info-cell">
+                ↑ {{speed2String(reduceField(ListenIndex, 'byteUpChange'))}}
+                ↓ {{speed2String(reduceField(ListenIndex, 'byteDownChange'))}}
+                </span>
+                </td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+    <br/>
+
+    <div class="container-fluid" v-if="AuthIndex.length>0">
+        <table style="border: black 3px dashed;">
+            <thead>
+            <tr>
+                <th colspan="10" style="text-align: center;">
+                    {{tableState.AuthUserInfo.s}}
+                </th>
+            </tr>
+            <tr>
+                <th>{{tableState.AuthUserInfoId.s}}</th>
+                <th>{{tableState.AuthUserInfoName.s}}</th>
+                <th>{{tableState.AuthUserInfoPwd.s}}</th>
+                <th>{{tableState.AuthUserInfoBase64String.s}}</th>
+<!--                <th>{{tableState.lastServer.s}}</th>-->
+<!--                <th>{{tableState.newServer.s}}</th>-->
+<!--                <th>{{tableState.nowRule.s}}</th>-->
+<!--                <th>{{tableState.newRule.s}}</th>-->
+                <th>{{tableState.runCount.s}}</th>
+                <th v-html="tableState.CloseConnect.s">{{ }}</th>
+                <th>{{tableState.data.s}}</th>
+                <th>{{tableState.speedMax.s}}</th>
+                <th>{{tableState.speed.s}}</th>
+                <th>detail</th>
+                <!--        <th></th>-->
+            </tr>
+            </thead>
+            <tbody>
+
+            <tr v-for="u in AuthIndex">
+                <td>{{u.id}}</td>
+                <td>{{u.user}}</td>
+                <td>{{u.pwd}}</td>
+                <td>{{u.base64}}</td>
+<!--                <td>{{u.lastUseUpstreamIndex + 1}}</td>-->
+<!--                <td>-->
+<!--                    <select name="newRule" v-model="u.lastUseUpstreamIndex"-->
+<!--                            v-on:change="sendCommand(-->
+<!--                        '/op?_targetMode=authUser'-->
+<!--                        + '&forceNowUseServer=' + (u.lastUseUpstreamIndex)-->
+<!--                        + '&_target=' + u.index)"-->
+<!--                    >-->
+<!--                        <template v-for="it in upstreamPool">-->
+<!--                            <option v-if="it.index===u.lastUseUpstreamIndex"-->
+<!--                                    v-bind:value="it.index" selected>-->
+<!--                                {{ it.index + 1 }}-->
+<!--                            </option>-->
+<!--                            <option v-else v-bind:value="it.index">{{ it.index + 1 }}</option>-->
+<!--                        </template>-->
+<!--                    </select>-->
+<!--                </td>-->
+<!--                <td>{{u.rule}}</td>-->
+<!--                <td>-->
+<!--                    <select name="newRule" v-model="u.rule"-->
+<!--                            v-on:change="sendCommand('/op?_targetMode=authUser&newRule=' + u.rule+'&_target=' + u.index)"-->
+<!--                    >-->
+<!--                        <template v-for="it in UpstreamSelectRuleList">-->
+<!--                            <option v-if="it===u.rule" v-bind:value="it" selected>{{ it }}</option>-->
+<!--                            <option v-else v-bind:value="it">{{ it }}</option>-->
+<!--                        </template>-->
+<!--                    </select>-->
+<!--                </td>-->
+                <td>{{u.sessionsCount}}
+<!--                    / <span class="opacity_01">{{u.connectCount}}</span>-->
+                </td>
+                <td>
+                    <a href="javascript:void(0)"
+                       v-on:click="sendCommand(
+                   '/op?_targetMode=authUser'
+                   + '&endAllConnect=0'
+                   + '&_target=' + u.id)"
+                       style="margin-right: 1em;"
+                       v-html="tableState.CloseConnect.s"
+                    >
+                        {{ }}
+                    </a>
+                </td>
+                <td>{{formatData(u)}}</td>
+                <td>{{formatSpeedMax(u)}}</td>
+                <td>{{formatSpeed(u)}}</td>
+                <td>
+                    <a target="_blank"
+                       v-bind:href="'perState.html?backend='+backend+'&targetMode=authUser&target='+u.index"
+                    >detail</a>
+                </td>
+<!--                            <td></td>-->
             </tr>
 
             </tbody>

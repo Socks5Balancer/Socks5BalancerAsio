@@ -221,6 +221,7 @@ var app = new Vue({
         UpstreamIndex: [],
         ClientIndex: [],
         ListenIndex: [],
+        AuthIndex: [],
         get backend() {
             var s = getSearchParams('backend');
             if (s) {
@@ -349,6 +350,20 @@ var app = new Vue({
                         });
                     } else {
                         app.ListenIndex = [];
+                    }
+                    if (_.isArray(T.AuthIndex)) {
+                        app.AuthIndex = T.AuthIndex.map(N => {
+                            N.byteInfo = 'true';
+                            N.lastUseUpstreamIndex = _.parseInt(N.lastUseUpstreamIndex);
+                            if (N.AuthUser) {
+                                N.user = N.AuthUser.user || "";
+                                N.pwd = N.AuthUser.pwd || "";
+                                N.base64 = N.AuthUser.base64 || "";
+                            }
+                            return N;
+                        });
+                    } else {
+                        app.AuthIndex = [];
                     }
 
                     app.lastConnectComeTime = T.pool.lastConnectComeTime;
