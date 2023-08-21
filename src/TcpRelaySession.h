@@ -64,10 +64,15 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     std::weak_ptr<TcpRelayStatisticsInfo> statisticsInfo;
 
     boost::asio::ip::tcp::endpoint clientEndpoint;
+    // client send "ip"
     std::string clientEndpointAddrString;
+    // client send "ip:port"
     std::string clientEndpointAddrPortString;
     boost::asio::ip::tcp::endpoint listenEndpoint;
+    // listen "ip:port"
     std::string listenEndpointAddrString;
+    // proxy target "<ip/domain>[:port]"
+    // the client want to connect to target though proxy
     std::string targetEndpointAddrString;
 
     enum {
@@ -100,6 +105,9 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     std::shared_ptr<ConfigLoader> configLoader;
 
 public:
+
+    std::shared_ptr<AuthClientManager::AuthUser> authUser{};
+
     const size_t relayId;
 
 public:

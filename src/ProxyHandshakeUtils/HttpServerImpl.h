@@ -38,6 +38,7 @@
 #include <boost/asio/read_until.hpp>
 #include <boost/beast.hpp>
 
+#include "../AuthClientManager.h"
 #include "../log/Log.h"
 
 class ProxyHandshakeAuth;
@@ -84,7 +85,7 @@ public:
 
     ParsedURI parseURI(const std::string &url);
 
-    bool checkHeaderAuthString(
+    std::shared_ptr<AuthClientManager::AuthUser> checkHeaderAuthString(
             const std::string_view &base64Part,
             const std::shared_ptr<decltype(parents)::element_type> &ptr);
 

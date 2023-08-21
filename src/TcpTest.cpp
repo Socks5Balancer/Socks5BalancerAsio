@@ -19,6 +19,7 @@
 #include "TcpTest.h"
 
 #include "UtilTools.h"
+#include "./log/Log.h"
 
 void TcpTestSession::do_resolve() {
 //        std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port << std::endl;
@@ -95,7 +96,7 @@ void TcpTestSession::fail(boost::system::error_code ec, const std::string &what)
         ss << what << ": " << ec.message();
         r = ss.str();
     }
-    std::cerr << r << "\n";
+    BOOST_LOG_S5B(error) << r;
     if (callback && callback->failedCallback) {
         callback->failedCallback(r);
     }

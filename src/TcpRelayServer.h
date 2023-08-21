@@ -81,6 +81,8 @@ public:
 
     std::shared_ptr<TcpRelayStatisticsInfo> getStatisticsInfo();
 
+    std::shared_ptr<AuthClientManager> getAuthClientManager();
+
     void do_cleanTimer();
 
     void do_speedCalcTimer();

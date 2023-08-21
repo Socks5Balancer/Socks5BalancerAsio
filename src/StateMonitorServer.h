@@ -138,7 +138,7 @@ protected:
 
 public:
     void start() {
-        std::cout << "StateMonitorServer start on:" << address.to_string() << ":" << port << std::endl;
+        BOOST_LOG_S5B(trace) << "StateMonitorServer start on:" << address.to_string() << ":" << port << std::endl;
         http_server();
     }
 

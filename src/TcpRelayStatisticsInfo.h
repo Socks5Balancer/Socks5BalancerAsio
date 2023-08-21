@@ -70,9 +70,9 @@ public:
 
         const uint64_t startTime;
 
-        explicit SessionInfo(const std::weak_ptr<TcpRelaySession>& s);
+        explicit SessionInfo(const std::weak_ptr<TcpRelaySession> &s);
 
-        explicit SessionInfo(const std::shared_ptr<TcpRelaySession>& s);
+        explicit SessionInfo(const std::shared_ptr<TcpRelaySession> &s);
 
         SessionInfo(const SessionInfo &o) = default;
 
@@ -80,7 +80,8 @@ public:
             // https://zh.cppreference.com/w/cpp/language/default_comparisons
             if ((upstreamIndex <=> o.upstreamIndex) != std::strong_ordering::equal) {
                 return upstreamIndex <=> o.upstreamIndex;
-            } else if ((clientEndpointAddrPortString <=> o.clientEndpointAddrPortString) != std::strong_ordering::equal) {
+            } else if ((clientEndpointAddrPortString <=> o.clientEndpointAddrPortString) !=
+                       std::strong_ordering::equal) {
                 return clientEndpointAddrPortString <=> o.clientEndpointAddrPortString;
             } else if ((listenEndpointAddrString <=> o.listenEndpointAddrString) != std::strong_ordering::equal) {
                 return listenEndpointAddrString <=> o.listenEndpointAddrString;
@@ -94,7 +95,9 @@ public:
         uint16_t post{};
         std::string targetEndpointAddrString;
 
-        void updateTargetInfo(const std::shared_ptr<TcpRelaySession>& s);
+        size_t authUserId{0};
+
+        void updateTargetInfo(const std::shared_ptr<TcpRelaySession> &s);
     };
 
     using SessionInfoContainer = boost::multi_index_container<
@@ -167,9 +170,14 @@ public:
     };
 
 private:
+    // upstreamIndex
     std::map<size_t, std::shared_ptr<Info>> upstreamIndex;
+    // clientEndpointAddrString "ip"
     std::map<std::string, std::shared_ptr<Info>> clientIndex;
+    // listenEndpointAddrString "ip:port"
     std::map<std::string, std::shared_ptr<Info>> listenIndex;
+    // authUser id
+    std::map<size_t, std::shared_ptr<Info>> authUserIndex;
 
 public:
     std::atomic_size_t lastConnectServerIndex{0};
@@ -184,50 +192,66 @@ public:
     // ListenEndpointAddrString : (127.0.0.1:661133)
     std::map<std::string, std::shared_ptr<Info>> &getListenIndex();
 
+    std::map<size_t, std::shared_ptr<Info>> &getAuthUserIndex();
+
 public:
-    void addSession(size_t index, const std::shared_ptr<TcpRelaySession>& s);
+    void addSession(size_t index, const std::shared_ptr<TcpRelaySession> &s);
 
-    void addSessionClient(const std::shared_ptr<TcpRelaySession>& s);
+    void addSessionClient(const std::shared_ptr<TcpRelaySession> &s);
 
-    void addSessionListen(const std::shared_ptr<TcpRelaySession>& s);
+    void addSessionListen(const std::shared_ptr<TcpRelaySession> &s);
+
+    void addSessionAuthUser(const std::shared_ptr<TcpRelaySession> &s);
 
     void updateSessionInfo(std::shared_ptr<TcpRelaySession> s);
 
     std::shared_ptr<Info> getInfo(size_t index);
 
-    std::shared_ptr<Info> getInfoClient(const std::string& addr);
+    std::shared_ptr<Info> getInfoClient(const std::string &addr);
 
-    std::shared_ptr<Info> getInfoListen(const std::string& addr);
+    std::shared_ptr<Info> getInfoListen(const std::string &addr);
+
+    std::shared_ptr<Info> getInfoAuthUser(size_t id);
 
     void removeExpiredSession(size_t index);
 
-    void removeExpiredSessionClient(const std::string& addr);
+    void removeExpiredSessionClient(const std::string &addr);
 
-    void removeExpiredSessionListen(const std::string& addr);
+    void removeExpiredSessionListen(const std::string &addr);
+
+    void removeExpiredSessionAuthUser(size_t id);
 
     void addByteUp(size_t index, size_t b);
 
-    void addByteUpClient(const std::string& addr, size_t b);
+    void addByteUpClient(const std::string &addr, size_t b);
 
-    void addByteUpListen(const std::string& addr, size_t b);
+    void addByteUpListen(const std::string &addr, size_t b);
+
+    void addByteUpAuthUser(size_t id, size_t b);
 
     void addByteDown(size_t index, size_t b);
 
-    void addByteDownClient(const std::string& addr, size_t b);
+    void addByteDownClient(const std::string &addr, size_t b);
 
-    void addByteDownListen(const std::string& addr, size_t b);
+    void addByteDownListen(const std::string &addr, size_t b);
+
+    void addByteDownAuthUser(size_t id, size_t b);
 
     void connectCountAdd(size_t index);
 
-    void connectCountAddClient(const std::string& addr);
+    void connectCountAddClient(const std::string &addr);
 
-    void connectCountAddListen(const std::string& addr);
+    void connectCountAddListen(const std::string &addr);
+
+    void connectCountAddAuthUser(size_t id);
 
     void connectCountSub(size_t index);
 
-    void connectCountSubClient(const std::string& addr);
+    void connectCountSubClient(const std::string &addr);
 
-    void connectCountSubListen(const std::string& addr);
+    void connectCountSubListen(const std::string &addr);
+
+    void connectCountSubAuthUser(size_t id);
 
     void calcByteAll();
 
@@ -235,9 +259,11 @@ public:
 
     void closeAllSession(size_t index);
 
-    void closeAllSessionClient(const std::string& addr);
+    void closeAllSessionClient(const std::string &addr);
 
-    void closeAllSessionListen(const std::string& addr);
+    void closeAllSessionListen(const std::string &addr);
+
+    void closeAllSessionAuthUser(size_t id);
 
 };
 

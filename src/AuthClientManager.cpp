@@ -50,3 +50,13 @@ AuthClientManager::checkAuth_Base64AuthString(const std::string_view &base64Auth
         return {};
     }
 }
+
+std::shared_ptr<AuthClientManager::AuthUser> AuthClientManager::getById(size_t id) {
+    auto &idL = authInfo.get<AuthUser::ID>();
+    auto it = idL.find(id);
+    if (it != idL.end()) {
+        return *it;
+    } else {
+        return {};
+    }
+}

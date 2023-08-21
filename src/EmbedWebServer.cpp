@@ -24,6 +24,8 @@
 #include <boost/asio/strand.hpp>
 #include <boost/beast/version.hpp>
 
+#include "./log/Log.h"
+
 // Return a reasonable mime type based on the extension of a file.
 boost::beast::string_view
 mime_type(boost::beast::string_view path) {
@@ -261,7 +263,7 @@ handle_request(
 // Report a failure
 void
 fail(boost::beast::error_code ec, char const *what) {
-    std::cerr << what << ": " << ec.message() << "\n";
+    BOOST_LOG_S5B(error) << what << ": " << ec.message();
 }
 
 //------------------------------------------------------------------------------
@@ -327,7 +329,7 @@ void EmbedWebServerSession::on_read(boost::beast::error_code ec, std::size_t byt
         return fail(ec, "read");
 
 
-    std::cout << "req_.target():" << req_.target() << std::endl;
+    BOOST_LOG_S5B(trace) << "req_.target():" << req_.target();
     if (req_.method() == boost::beast::http::verb::get) {
         // answer backend json
         if (boost::beast::string_view{req_.target()} == std::string{"/backend"}) {

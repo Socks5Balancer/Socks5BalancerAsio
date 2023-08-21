@@ -153,6 +153,8 @@ public:
 
     std::shared_ptr<AuthClientManager::AuthUser> checkAuth_Base64AuthString(const std::string_view &base64AuthString);
 
+    std::shared_ptr<AuthClientManager::AuthUser> getById(size_t id);
+
 };
 
 

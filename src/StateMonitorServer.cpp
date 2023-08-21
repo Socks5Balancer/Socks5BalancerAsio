@@ -23,6 +23,7 @@
 #include <type_traits>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/lexical_cast/try_lexical_convert.hpp>
 
 #include "SessionRelayId.h"
 #include "./log/Log.h"
@@ -232,6 +233,40 @@ std::string HttpConnectSession::createJsonString() {
                 pL.push_back(std::make_pair("", n));
             }
             root.add_child("ListenIndex", pL);
+
+            boost::property_tree::ptree pA;
+            auto am = pT->getAuthClientManager();
+            for (const auto &a: info->getAuthUserIndex()) {
+                boost::property_tree::ptree n;
+
+                n.put("id", a.first);
+                n.put("connectCount", a.second->connectCount.load());
+                n.put("sessionsCount", a.second->calcSessionsNumber());
+                n.put("byteDownChange", a.second->byteDownChange);
+                n.put("byteUpChange", a.second->byteUpChange);
+                n.put("byteDownLast", a.second->byteDownLast);
+                n.put("byteUpLast", a.second->byteUpLast);
+                n.put("byteUpChangeMax", a.second->byteUpChangeMax);
+                n.put("byteDownChangeMax", a.second->byteDownChangeMax);
+                n.put("rule", ruleEnum2string(a.second->rule));
+                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+
+                auto au = am->getById(a.first);
+                boost::property_tree::ptree pAU;
+                if (au) {
+                    pAU.put("ok", true);
+                    pAU.put("id", au->id);
+                    pAU.put("user", au->user);
+                    pAU.put("pwd", au->pwd);
+                    pAU.put("base64", au->base64);
+                } else {
+                    pAU.put("ok", false);
+                }
+                n.add_child("AuthUser", pAU);
+
+                pA.push_back(std::make_pair("", n));
+            }
+            root.add_child("AuthIndex", pA);
 
         }
     }
@@ -451,6 +486,20 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                                         info->closeAllSession();
                                     }
                                 }
+                            } else if ("authUser" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    size_t id{0};
+                                    if (boost::conversion::try_lexical_convert(target->second, id)) {
+                                        auto info = ptr->getStatisticsInfo()->getInfoAuthUser(id);
+                                        if (info) {
+                                            info->closeAllSession();
+                                        }
+                                    } else {
+                                        BOOST_LOG_S5B(warning)
+                                            << "HttpConnectSession::path_op"
+                                            << " boost::conversion::try_lexical_convert(target->second, id) failed";
+                                    }
+                                }
                             }
                         }
                     }
@@ -514,12 +563,12 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                 }
             }
         } catch (const boost::bad_lexical_cast &e) {
-            std::cout << "boost::bad_lexical_cast:" << e.what() << std::endl;
+            BOOST_LOG_S5B(error) << "boost::bad_lexical_cast:" << e.what();
             response_.result(boost::beast::http::status::bad_request);
             response_.set(boost::beast::http::field::content_type, "text/plain");
             boost::beast::ostream(response_.body()) << "boost::bad_lexical_cast:" << e.what() << "\r\n";
         } catch (const std::exception &e) {
-            std::cout << "std::exception:" << e.what() << std::endl;
+            BOOST_LOG_S5B(error) << "std::exception:" << e.what();
             response_.result(boost::beast::http::status::bad_request);
             response_.set(boost::beast::http::field::content_type, "text/plain");
             boost::beast::ostream(response_.body()) << "std::exception:" << e.what() << "\r\n";
@@ -730,12 +779,12 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
             return;
 
         } catch (const boost::bad_lexical_cast &e) {
-            std::cout << "boost::bad_lexical_cast:" << e.what() << std::endl;
+            BOOST_LOG_S5B(error) << "boost::bad_lexical_cast:" << e.what();
             response_.result(boost::beast::http::status::bad_request);
             response_.set(boost::beast::http::field::content_type, "text/plain");
             boost::beast::ostream(response_.body()) << "boost::bad_lexical_cast:" << e.what() << "\r\n";
         } catch (const std::exception &e) {
-            std::cout << "std::exception:" << e.what() << std::endl;
+            BOOST_LOG_S5B(error) << "std::exception:" << e.what();
             response_.result(boost::beast::http::status::bad_request);
             response_.set(boost::beast::http::field::content_type, "text/plain");
             boost::beast::ostream(response_.body()) << "std::exception:" << e.what() << "\r\n";
@@ -744,7 +793,7 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
 }
 
 void HttpConnectSession::create_response() {
-    std::cout << "request_.target():" << request_.target() << std::endl;
+    BOOST_LOG_S5B(trace) << "request_.target():" << request_.target() << std::endl;
 
     if (request_.target() == "/") {
         response_.set(boost::beast::http::field::content_type, "text/json");
@@ -784,17 +833,19 @@ void HttpConnectSession::create_response() {
             }
         }
 
-        std::cout << "query:" << query << std::endl;
-        std::cout << "queryList:" << "\n";
+        std::stringstream ss;
+        ss << "query:" << query << std::endl;
+        ss << "queryList:" << "\n";
         for (const auto &a: queryList) {
-            std::cout << "\t" << a;
+            ss << "\t" << a;
         }
-        std::cout << std::endl;
-        std::cout << "queryPairs:" << "\n";
+        ss << std::endl;
+        ss << "queryPairs:" << "\n";
         for (const auto &a: queryPairs) {
-            std::cout << "\t" << a.first << " = " << a.second;
+            ss << "\t" << a.first << " = " << a.second;
         }
-        std::cout << std::endl;
+        ss << std::endl;
+        BOOST_LOG_S5B(trace) << ss.str();
 
         if (path == "/op") {
             return path_op(queryPairs);
@@ -860,8 +911,7 @@ void StateMonitorServer::http_server() {
                         boost::asio::error::host_unreachable == ec ||
                         boost::asio::error::host_unreachable == ec
                 )) {
-                    std::cerr << "StateMonitorServer http_server async_accept error:"
-                              << ec << std::endl;
+                    BOOST_LOG_S5B(error) << "StateMonitorServer http_server async_accept error:" << ec;
                     return;
                 }
                 http_server();

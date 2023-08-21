@@ -18,6 +18,7 @@
 
 #include "Socks5ServerImpl.h"
 #include "../ProxyHandshakeAuth.h"
+#include "../TcpRelaySession.h"
 #include <algorithm>
 
 void Socks5ServerImpl::do_whenError(boost::system::error_code error) {
@@ -254,6 +255,7 @@ void Socks5ServerImpl::do_auth_client_read() {
                             if (au) {
                                 BOOST_LOG_S5B_ID(relayId, trace)
                                     << "do_auth_client_read auth ok :[" << user << "]:[" << pwd << "]";
+                                ptr->tcpRelaySession->authUser = au;
                                 do_auth_client_ok();
                             } else {
                                 BOOST_LOG_S5B_ID(relayId, trace)

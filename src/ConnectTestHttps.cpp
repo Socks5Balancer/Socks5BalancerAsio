@@ -24,6 +24,8 @@
 #include <boost/asio/read.hpp>
 #include <boost/asio/read_until.hpp>
 
+#include "./log/Log.h"
+
 ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::any_io_executor executor,
                                                  const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
                                                  const std::string &targetHost, uint16_t targetPort,
@@ -47,7 +49,7 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::any_io_executor ex
     // Set SNI Hostname (many hosts need this to handshake successfully)
     if (!SSL_set_tlsext_host_name(stream_.native_handle(), targetHost.c_str())) {
         boost::beast::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
-        std::cerr << ec.message() << "\n";
+        BOOST_LOG_S5B(error) << ec.message();
         return;
     }
 
@@ -102,7 +104,7 @@ void ConnectTestHttpsSession::fail(boost::system::error_code ec, const std::stri
            << "socks5Port:" << socks5Port << " ";
         r = ss.str();
     }
-    std::cerr << r << "\n";
+    BOOST_LOG_S5B(error) << r;
     if (callback && callback->failedCallback) {
         callback->failedCallback(r);
     }

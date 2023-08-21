@@ -23,6 +23,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "../ProxyHandshakeAuth.h"
+#include "../TcpRelaySession.h"
 #include "../base64.h"
 
 
@@ -52,29 +53,31 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURI(const std::string &url) {
     return result;
 }
 
-bool HttpServerImpl::checkHeaderAuthString(
+std::shared_ptr<AuthClientManager::AuthUser> HttpServerImpl::checkHeaderAuthString(
         const std::string_view &base64Part,
         const std::shared_ptr<decltype(parents)::element_type> &ptr
 ) {
-    if (auto au = ptr->authClientManager->checkAuth_Base64AuthString(base64Part)) {
+    std::shared_ptr<AuthClientManager::AuthUser> au = ptr->authClientManager->checkAuth_Base64AuthString(base64Part);
+    if (au) {
         BOOST_LOG_S5B_ID(relayId, trace) << "checkHeaderAuthString Base64AuthString ok: " << base64Part;
-        return true;
+        return au;
     } else {
         auto rr = base64_decode_string(base64Part);
         auto indexSplitFlag = rr.find(':');
         if (indexSplitFlag == decltype(rr)::npos || indexSplitFlag < 1) {
             // bad format
             BOOST_LOG_S5B_ID(relayId, warning) << "checkHeaderAuthString bad format: " << base64Part << " rr: " << rr;
-            return false;
+            return {};
         }
         std::string_view user{rr.data(), indexSplitFlag};
         std::string_view pwd{rr.data() + indexSplitFlag + 1, rr.length() - indexSplitFlag - 1};
-        if (auto au = ptr->authClientManager->checkAuth(user, pwd)) {
+        au = ptr->authClientManager->checkAuth(user, pwd);
+        if (au) {
             BOOST_LOG_S5B_ID(relayId, trace) << "checkHeaderAuthString ok: " << user << " : " << pwd;
-            return true;
+            return au;
         } else {
             BOOST_LOG_S5B_ID(relayId, warning) << "checkHeaderAuthString wrong: " << user << " : " << pwd;
-            return false;
+            return {};
         }
     }
 }
@@ -134,10 +137,13 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
 
                             const std::string_view base64Part(pa.begin() + 6, pa.size() - 6);
                             BOOST_LOG_S5B_ID(relayId, trace) << "===== base64Part:" << base64Part;
-                            if (!checkHeaderAuthString(base64Part, ptr)) {
+                            auto au = checkHeaderAuthString(base64Part, ptr);
+                            if (!au) {
                                 // goto 407 to let user retry
                                 do_send_407();
                                 return;
+                            } else {
+                                ptr->tcpRelaySession->authUser = au;
                             }
                         } else if (hA > 0) {
                             auto pa = h.at(boost::beast::http::field::authorization);
@@ -147,10 +153,13 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
 
                             const std::string_view base64Part(pa.begin() + 6, pa.size() - 6);
                             BOOST_LOG_S5B_ID(relayId, trace) << "===== base64Part:" << base64Part;
-                            if (!checkHeaderAuthString(base64Part, ptr)) {
+                            auto au = checkHeaderAuthString(base64Part, ptr);
+                            if (!au) {
                                 // goto 407 to let user retry
                                 do_send_407();
                                 return;
+                            } else {
+                                ptr->tcpRelaySession->authUser = au;
                             }
                         }
                     }

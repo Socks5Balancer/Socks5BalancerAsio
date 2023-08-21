@@ -101,6 +101,9 @@ void TcpRelayStatisticsInfo::SessionInfo::updateTargetInfo(const std::shared_ptr
         host = pp.first;
         post = pp.second;
         targetEndpointAddrString = p->getTargetEndpointAddrString();
+        if (s->authUser) {
+            authUserId = s->authUser->id;
+        }
     }
 }
 
@@ -187,6 +190,37 @@ void TcpRelayStatisticsInfo::addSessionListen(const std::shared_ptr<TcpRelaySess
     }
 }
 
+void TcpRelayStatisticsInfo::addSessionAuthUser(const std::shared_ptr<TcpRelaySession> &s) {
+    BOOST_ASSERT(s);
+    if (auto ptr = s) {
+        BOOST_ASSERT(ptr->authUser);
+        size_t id = ptr->authUser->id;
+        if (authUserIndex.find(id) == authUserIndex.end()) {
+            authUserIndex.try_emplace(id, std::make_shared<Info>());
+        }
+        auto n = authUserIndex.at(id);
+        std::lock_guard lg{n->sessionsMtx};
+        BOOST_LOG_S5B_ID(s->relayId, trace)
+            << "TcpRelayStatisticsInfo::addSessionAuthUser()"
+            << " getClientEndpointAddrString:"
+            << ptr->getClientEndpointAddrString()
+            << " getClientEndpointAddrPortString:"
+            << ptr->getClientEndpointAddrPortString()
+            << " getListenEndpointAddrString:"
+            << ptr->getListenEndpointAddrString()
+            << " authUser:"
+            << (ptr->authUser ? ptr->authUser->id : 0);
+        BOOST_ASSERT(n->sessions.get<SessionInfo::ListenClientAddrPortPair>().find(std::make_tuple(
+                ptr->getClientEndpointAddrPortString(),
+                ptr->getListenEndpointAddrString()
+        )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
+        n->sessions.emplace_back(s);
+//        if (auto ns = ptr->getNowServer()) {
+//            n->lastUseUpstreamIndex = ns->index;
+//        }
+    }
+}
+
 void TcpRelayStatisticsInfo::updateSessionInfo(std::shared_ptr<TcpRelaySession> s) {
     BOOST_ASSERT(s);
     if (s) {
@@ -268,6 +302,16 @@ std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoLis
     }
 }
 
+std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoAuthUser(size_t id) {
+    auto n = authUserIndex.find(id);
+    BOOST_ASSERT(n != authUserIndex.end());
+    if (n != authUserIndex.end()) {
+        return n->second;
+    } else {
+        return {};
+    }
+}
+
 void TcpRelayStatisticsInfo::removeExpiredSession(size_t index) {
     auto p = getInfo(index);
     if (p) {
@@ -284,6 +328,13 @@ void TcpRelayStatisticsInfo::removeExpiredSessionClient(const std::string &addr)
 
 void TcpRelayStatisticsInfo::removeExpiredSessionListen(const std::string &addr) {
     auto p = getInfoListen(addr);
+    if (p) {
+        p->removeExpiredSession();
+    }
+}
+
+void TcpRelayStatisticsInfo::removeExpiredSessionAuthUser(size_t id) {
+    auto p = getInfoAuthUser(id);
     if (p) {
         p->removeExpiredSession();
     }
@@ -310,6 +361,13 @@ void TcpRelayStatisticsInfo::addByteUpListen(const std::string &addr, size_t b) 
     }
 }
 
+void TcpRelayStatisticsInfo::addByteUpAuthUser(size_t id, size_t b) {
+    auto p = getInfoAuthUser(id);
+    if (p) {
+        p->byteUp += b;
+    }
+}
+
 void TcpRelayStatisticsInfo::addByteDown(size_t index, size_t b) {
     auto p = getInfo(index);
     if (p) {
@@ -331,6 +389,13 @@ void TcpRelayStatisticsInfo::addByteDownListen(const std::string &addr, size_t b
     }
 }
 
+void TcpRelayStatisticsInfo::addByteDownAuthUser(size_t id, size_t b) {
+    auto p = getInfoAuthUser(id);
+    if (p) {
+        p->byteDown += b;
+    }
+}
+
 void TcpRelayStatisticsInfo::calcByteAll() {
     for (auto &a: upstreamIndex) {
         a.second->calcByte();
@@ -339,6 +404,9 @@ void TcpRelayStatisticsInfo::calcByteAll() {
         a.second->calcByte();
     }
     for (auto &a: listenIndex) {
+        a.second->calcByte();
+    }
+    for (auto &a: authUserIndex) {
         a.second->calcByte();
     }
 }
@@ -351,6 +419,9 @@ void TcpRelayStatisticsInfo::removeExpiredSessionAll() {
         a.second->removeExpiredSession();
     }
     for (auto &a: listenIndex) {
+        a.second->removeExpiredSession();
+    }
+    for (auto &a: authUserIndex) {
         a.second->removeExpiredSession();
     }
 }
@@ -371,6 +442,13 @@ void TcpRelayStatisticsInfo::closeAllSessionClient(const std::string &addr) {
 
 void TcpRelayStatisticsInfo::closeAllSessionListen(const std::string &addr) {
     auto p = getInfoListen(addr);
+    if (p) {
+        p->closeAllSession();
+    }
+}
+
+void TcpRelayStatisticsInfo::closeAllSessionAuthUser(size_t id) {
+    auto p = getInfoAuthUser(id);
     if (p) {
         p->closeAllSession();
     }
@@ -397,6 +475,13 @@ void TcpRelayStatisticsInfo::connectCountAddListen(const std::string &addr) {
     }
 }
 
+void TcpRelayStatisticsInfo::connectCountAddAuthUser(size_t id) {
+    auto p = getInfoAuthUser(id);
+    if (p) {
+        p->connectCountAdd();
+    }
+}
+
 void TcpRelayStatisticsInfo::connectCountSub(size_t index) {
     auto p = getInfo(index);
     if (p) {
@@ -418,6 +503,13 @@ void TcpRelayStatisticsInfo::connectCountSubListen(const std::string &addr) {
     }
 }
 
+void TcpRelayStatisticsInfo::connectCountSubAuthUser(size_t id) {
+    auto p = getInfoAuthUser(id);
+    if (p) {
+        p->connectCountSub();
+    }
+}
+
 std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getUpstreamIndex() {
     return upstreamIndex;
 }
@@ -428,4 +520,8 @@ std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelaySt
 
 std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getListenIndex() {
     return listenIndex;
+}
+
+std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getAuthUserIndex() {
+    return authUserIndex;
 }
