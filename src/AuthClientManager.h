@@ -31,6 +31,7 @@
 #include <set>
 #include <functional>
 #include <utility>
+#include <atomic>
 
 #include "ConfigLoader.h"
 
