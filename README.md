@@ -6,9 +6,9 @@ A Simple TCP Socket Balancer for balance Multi Socks5 Proxy Backend Servers Powe
 | Build Binary Release | Link | Info |
 | ------------------- | ---- | ---- |
 | Nightly Auto Build Binary | [![CMake on multiple platforms](https://github.com/Socks5Balancer/Socks5BalancerAsio/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)](https://github.com/Socks5Balancer/Socks5BalancerAsio/actions/workflows/cmake-multi-platform.yml) | Nightly(CD) Build, Unstable but newgest and with full type |
-| Release (**Recommand**) | [Release Page](https://github.com/Socks5Balancer/Socks5BalancerAsio/releases) | Stable, need Use the Release Marked with `Latest` version |
-| Custom build        | [Project](https://github.com/Socks5Balancer/Socks5BalancerAsio-mini-build) | Outdate but extreme stable, Deployed in many server worldwide |
-| Docker (thanks fossforreal) | [fossforreal/docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker) | Maybe Outdate, you can build new version manually follow its `README` |
+| Release (**Recommand**) | [Release Page](https://github.com/Socks5Balancer/Socks5BalancerAsio/releases) | Stable, need Use the Release Marked with `Latest` version. OR , use `Pre-release` version to try new feature. |
+| Custom build        | [Project](https://github.com/Socks5Balancer/Socks5BalancerAsio-mini-build) | Outdate but extreme stable, Time-tested and be Deployed in many server worldwide |
+| Docker (thanks fossforreal) | [fossforreal/docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker) | Maybe Outdate, but you can simply build new version manually follow its `README` |
 
 ---
 
@@ -217,10 +217,10 @@ WantedBy=multi-user.target
 
 ---
 
-## Auth Support [update 2023-08-11]
+## Auth Support [update 2023-08-21]
 
 now support Auth (UserName/Password) in http AND socks5 mode.  
-BUT need Enable option flag `-DNeed_ProxyHandshakeAuth=ON` when building, and will **lost** UDP support, **NOW**, **Temporary**.
+BUT need Enable option flag `-DNeed_ProxyHandshakeAuth=ON` when building, <del> and will **lost** UDP support, **NOW**, **Temporary**. </del>
 
 use ```AuthClientInfo``` section in config file to config username/password.
 
@@ -232,11 +232,18 @@ Enable Auth Support will replace `class FirstPackAnalyzer` with `class ProxyHand
 when this mode, Socks5BalancerAsio will impl itself version Socks5-proxy client AND server, and Http-proxy client AND server .  
 (the Http-proxy client not impl, because now no plan to support http-proxy version backend server.).  
 
-Now, **Temporary** , the Socks5-proxy server Only impl CONNECT mode, the UDP mode not impl now,   
-so if Enable Auth Support , you will lose socks5 UDP function (if backend server support it). 
+<del> Now, **Temporary** , the Socks5-proxy server Only impl CONNECT mode, the UDP mode not impl now,   
+so if Enable Auth Support , you will lose socks5 UDP function (if backend server support it).  </del>
 
-if your backend server support socks5 UDP (not all socks5-proxy impl that), and you really need it, please don't Enable Auth Support.
+<del> if your backend server support socks5 UDP (not all socks5-proxy impl that), and you really need it, please don't Enable Auth Support. </del>
 
+Now the UDP maybe work when your backend server support socks5 UDP, it is implemented but not be test (i don't have test evn now.).
+
+Now, **Temporary** , the connect test for `backend server auth` not impl now, it not affect client auth function,  
+but if a backend server have auth, the connect test compoment will not work, this problem will fix in later.
+
+**the Auth Support not stable yet, it will become the main support version after full all feature implemented and stable.  
+the progress can see [here](https://github.com/Socks5Balancer/Socks5BalancerAsio/issues/4) .**
 
 ---
 
@@ -440,6 +447,51 @@ make -j$(nproc)
 ### Dev
 
 Recommend use **Clion**
+
+---
+
+## [Release Version](https://github.com/Socks5Balancer/Socks5BalancerAsio/releases)
+
+now the pre-build Binary buid by [github action](https://github.com/Socks5Balancer/Socks5BalancerAsio/actions) with [config](https://github.com/Socks5Balancer/Socks5BalancerAsio/blob/master/.github/workflows/cmake-multi-platform.yml), follow the named format :
+
+```
+the name format is :
+Socks5BalancerAsio-<git commit hash>-<OpenSSL Link Mode>-<Type>-<OS>.zip
+
+
+the Old impl Version :
+Socks5BalancerAsio-*-*-Normal-*.zip
+
+the new Auth impl Version :
+Socks5BalancerAsio-*-*-ProxyHandshakeAuth-*.zip
+
+the MINI_BUILD_MODE Version :
+Socks5BalancerAsio-*-*-MINI_BUILD_MODE-*.zip
+
+the Windows build Version :
+Socks5BalancerAsio-*-*-*-Windows.zip
+
+the Linux build Version :
+Socks5BalancerAsio-*-*-*-Linux.zip
+
+the Static link OpenSSL build Version :
+Socks5BalancerAsio-*-StaticSSL-*-*.zip
+
+the Dynamic link OpenSSL build Version :
+Socks5BalancerAsio-*-DynamicSSL-*-*.zip
+
+```
+
+the `<OpenSSL Link Mode>` and `<Type>` means :
+
+**OpenSSL Link Mode** :
+* StaticSSL : build with `-DOPENSSL_USE_STATIC_LIBS=ON` , program is a independent program.
+* DynamicSSL : build with `-DOPENSSL_USE_STATIC_LIBS=OFF` , need `libcrypto-1_1-x64.dll` and `libssl-1_1-x64.dll` to run program.
+
+**Type** :
+* Normal : build with `-DNeed_ProxyHandshakeAuth=OFF` , program work with old but stable mode.
+* ProxyHandshakeAuth : build with `-DNeed_ProxyHandshakeAuth=ON` , program use new compoment to support `Auth` .
+* MINI_BUILD_MODE : build with `-DMINI_BUILD_MODE=ON` , force run in `Pure TCP relay mode`, disable EmbedWebServer/TcpTest/ConnectTest, .
 
 ---
 
