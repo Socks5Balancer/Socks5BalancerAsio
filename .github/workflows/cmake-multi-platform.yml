@@ -128,7 +128,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: Lyoko-Jeremie/js-copy-github-action@master
         with:
-          multi: true
+          list: true
           source: |
             ${{ github.workspace }}/html/*.js
             ${{ github.workspace }}/html/*.map
@@ -144,7 +144,7 @@ jobs:
         if: runner.os != 'Windows'
         uses: Lyoko-Jeremie/js-copy-github-action@master
         with:
-          multi: true
+          list: true
           source: |
             ${{ github.workspace }}/html/*.js
             ${{ github.workspace }}/html/*.map
