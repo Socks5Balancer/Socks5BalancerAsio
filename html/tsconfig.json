@@ -1,11 +1,10 @@
-/* To learn more about this file see: https://angular.io/config/tsconfig. */
 {
   "compileOnSave": false,
   "compilerOptions": {
-//    "baseUrl": "./",
+    "baseUrl": "./",
 //    "outDir": "./dist/out-tsc",
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
+//    "forceConsistentCasingInFileNames": true,
+//    "allowSyntheticDefaultImports": true,
     "strict": true,
     "strictNullChecks": true,
     "noImplicitReturns": true,
@@ -13,21 +12,16 @@
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
-    "experimentalDecorators": true,
-    "moduleResolution": "Classic",
+//    "experimentalDecorators": true,
+    "moduleResolution": "Node",
 //    "importHelpers": true,
     "target": "es2015",
-    "module": "ES2022",
+    "module": "None",
     "lib": [
       "es2018",
       "dom"
     ]
   },
-  "angularCompilerOptions": {
-    "strictInjectionParameters": true,
-    "strictInputAccessModifiers": true,
-    "strictTemplates": true
-  }
 //  "include": [
 //    "src/**/*.d.ts"
 //  ]

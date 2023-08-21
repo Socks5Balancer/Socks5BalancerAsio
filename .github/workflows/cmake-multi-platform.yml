@@ -30,6 +30,7 @@ jobs:
         c_compiler: [ gcc, cl ]
         ssl_type: [ StaticSSL, DynamicSSL ]
         build_mode: [ Normal, ProxyHandshakeAuth, MINI_BUILD_MODE ]
+        node-version: [ 18.x ]
         include:
           - os: windows-latest
             c_compiler: cl
@@ -63,6 +64,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # - uses: lukka/get-cmake@latest
+
+      - name: Build
+        run: |
+          cd html
+          yarn install
+          yarn run build
+          cd ..
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
 
       - name: Set reusable strings
         # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.

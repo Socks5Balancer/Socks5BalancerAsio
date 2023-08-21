@@ -1,0 +1,14 @@
+{
+  "name": "Socks5BalancerAsioHtml",
+  "packageManager": "yarn@3.4.1",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc -w"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.14.197",
+    "moment": "^2.29.4",
+    "typescript": "^5.1.6",
+    "vue": "2"
+  }
+}
