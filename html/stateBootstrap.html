@@ -163,10 +163,10 @@
                 <td>{{u.sessionsCount}} <span class="opacity_01">/ {{u.connectCount}} / {{u.connectCount2}}</span></td>
                 <td>{{tableState.emptyFilterFunction.f(u.lastOnlineTime)}}</td>
                 <td>{{tableState.emptyFilterFunction.f(calcDurationOfTimeStringFromNowTime(u.lastOnlineTime))}}</td>
-                <td>{{tableState.emptyFilterFunction.f(u.lastOnlinePing)}}ms</td>
+                <td>{{tableState.emptyFilterPingFunction.f(u.lastOnlinePing)}}</td>
                 <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(u.lastConnectTime)}}</td>
                 <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(calcDurationOfTimeStringFromNowTime(u.lastConnectTime))}}</td>
-                <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(u.lastConnectPing)}}ms</td>
+                <td v-if="!disableConnectTest">{{ tableState.emptyFilterPingFunction.f(u.lastConnectPing)}}</td>
                 <td>
                     <template v-if="u.isManualDisable==='true'">
                         <span style="color: red">{{tableState.Disabled.s}}</span>

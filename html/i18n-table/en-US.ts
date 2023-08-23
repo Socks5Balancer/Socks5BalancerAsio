@@ -44,6 +44,11 @@ window.i18n.enUS = (() => {
                 return s === "<empty>" ? "<empty>" : s;
             }
         },
+        emptyFilterPingFunction: {
+            s: "emptyFilterPingFunction", f: (s: string) => {
+                return s === "<empty>" ? "无" : (s + "ms");
+            }
+        },
         Socks5BalancerAsio: {s: "Socks5BalancerAsio"},
         allConnectCountNotice: {s: "now running connect:"},
         nowRuleNotice: {s: "now rule:"},

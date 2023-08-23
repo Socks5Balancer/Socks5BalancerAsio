@@ -1,4 +1,3 @@
-
 import moment from 'moment';
 
 // @ts-ignore
@@ -44,6 +43,11 @@ window.i18n.zhCN = (() => {
         emptyFilterFunction: {
             s: "emptyFilterFunction", f: (s: string) => {
                 return s === "<empty>" ? "无" : s;
+            }
+        },
+        emptyFilterPingFunction: {
+            s: "emptyFilterPingFunction", f: (s: string) => {
+                return s === "<empty>" ? "无" : (s + "ms");
             }
         },
         Socks5BalancerAsio: {s: "Socks5BalancerAsio"},
