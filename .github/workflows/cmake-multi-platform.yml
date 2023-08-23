@@ -74,7 +74,7 @@ jobs:
         run: |
           cd html
           yarn install
-          yarn run build
+          yarn run webpack
           cd ..
 
       - name: Remove File
@@ -90,6 +90,15 @@ jobs:
             ${{ github.workspace }}/html/package.json
             ${{ github.workspace }}/html/tsconfig.json
             ${{ github.workspace }}/html/yarn.lock
+            ${{ github.workspace }}/html/i18n-table
+            ${{ github.workspace }}/html/i18n
+            ${{ github.workspace }}/html/chart.js
+            ${{ github.workspace }}/html/globalLib.d.ts
+#            ${{ github.workspace }}/html/lodash.min.js
+#            ${{ github.workspace }}/html/moment.min.js
+#            ${{ github.workspace }}/html/vue.js
+            ${{ github.workspace }}/html/webpack.config.js
+#            ${{ github.workspace }}/html/zh-cn.js
 
       - name: Set reusable strings
         # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.

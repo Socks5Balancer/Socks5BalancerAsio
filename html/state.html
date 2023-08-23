@@ -99,7 +99,9 @@
             <th v-if="!disableConnectTest">work</th>
             <th>run</th>
             <th>lastTCPCheckTime</th>
+            <th>time after</th>
             <th v-if="!disableConnectTest">lastConnectCheckTime</th>
+            <th v-if="!disableConnectTest">time after</th>
             <th>ManualDisable</th>
             <th>Usable</th>
             <th>Close Connect</th>
@@ -129,7 +131,9 @@
             </td>
             <td>{{u.sessionsCount}} <span class="opacity_01">/ {{u.connectCount}} / {{u.connectCount2}}</span></td>
             <td>{{u.lastOnlineTime}}</td>
+            <td>{{calcDurationOfTimeStringFromNowTime(u.lastOnlineTime)}}</td>
             <td v-if="!disableConnectTest">{{u.lastConnectTime}}</td>
+            <td v-if="!disableConnectTest">{{calcDurationOfTimeStringFromNowTime(u.lastConnectTime)}}</td>
             <td>
                 <template v-if="u.isManualDisable==='true'">
                     <span style="color: red">Disabled</span>
@@ -675,6 +679,14 @@
         window.history.pushState(null, null, '?' + newQ.toString());
     }
 
+    function serverTimeString2Moment(ts) {
+        return moment(ts, [
+            "YYYY.MM.DD-HH.mm.ss.SSS",
+            "YYYY.MM.DD-HH.mm.ss.SS",
+            "YYYY.MM.DD-HH.mm.ss.S",
+        ], true);
+    }
+
     function tryGetBackendConfigFromServer() {
         fetch('backend', {
             credentials: 'omit'
@@ -722,7 +734,9 @@
     var defaultBackendHost = "127.0.0.1";
     var defaultBackendPort = 5010;
 
-    moment.locale('zh-cn');
+    if (window.navigator.language === "zh-CN") {
+        moment.locale('zh-cn');
+    }
 
     var app = new Vue({
         el: '#body',
@@ -798,6 +812,20 @@
             speed2String: speed2String,
             dataCount2String: dataCount2String,
             reduceField: reduceField,
+            calcDurationOfTimeStringFromNowTime: (ts) => {
+                if (ts === "<empty>") {
+                    return "<empty>";
+                }
+                // return moment.duration(serverTimeString2Moment(ts), serverTimeString2Moment(app.nowTime)).humanize();
+                // console.log('ts', ts);
+                // console.log('app.nowTime', app.nowTime);
+                // console.log('serverTimeString2Moment(ts)', serverTimeString2Moment(ts));
+                // console.log('serverTimeString2Moment(ts)', serverTimeString2Moment(ts).valueOf());
+                // console.log('serverTimeString2Moment(app.nowTime)', serverTimeString2Moment(app.nowTime));
+                // console.log('serverTimeString2Moment(app.nowTime)', serverTimeString2Moment(app.nowTime).valueOf());
+                // console.log('moment.duration', moment.duration(serverTimeString2Moment(app.nowTime).valueOf() - serverTimeString2Moment(ts).valueOf()).asMilliseconds());
+                return formatDuration(moment.duration(serverTimeString2Moment(app.nowTime).valueOf() - serverTimeString2Moment(ts).valueOf()).asMilliseconds());
+            },
             autoFlush: function () {
                 app.autoFlushState = !app.autoFlushState;
                 console.log('autoFlushHandle app.autoFlushState', app.autoFlushState);

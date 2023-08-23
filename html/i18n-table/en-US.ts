@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 // @ts-ignore
 function formatInt(int: number) {
     if (int < 10) {
@@ -13,12 +15,12 @@ window.i18n.enUS = (() => {
     const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
         formatDurationFunction: {
             s: "formatDurationFunction", f: (time: number) => {
-                const seconds = (globalThis as any).moment.duration(time).seconds();
-                const minutes = (globalThis as any).moment.duration(time).minutes();
-                const hours = (globalThis as any).moment.duration(time).hours();
-                const days = (globalThis as any).moment.duration(time).days();
-                const months = (globalThis as any).moment.duration(time).months();
-                const years = (globalThis as any).moment.duration(time).years();
+                const seconds = moment.duration(time).seconds();
+                const minutes = moment.duration(time).minutes();
+                const hours = moment.duration(time).hours();
+                const days = moment.duration(time).days();
+                const months = moment.duration(time).months();
+                const years = moment.duration(time).years();
                 if (years > 0) {
                     return `${years}Y-${months}M-${days}Day ${formatInt(hours)}h:${formatInt(minutes)}m:${formatInt(seconds)}s`;
                 }
@@ -34,7 +36,7 @@ window.i18n.enUS = (() => {
                 if (minutes > 0) {
                     return `${formatInt(minutes)}m:${formatInt(seconds)}s`;
                 }
-                return `00:${formatInt(seconds)}`;
+                return `00m:${formatInt(seconds)}s`;
             }
         },
         emptyFilterFunction: {
@@ -60,7 +62,9 @@ window.i18n.enUS = (() => {
         work: {s: "work"},
         runCount: {s: "run"},
         lastTCPCheckTime: {s: "lastTCPCheckTime"},
+        afterLastTCPCheckTime: {s: "time after"},
         lastConnectCheckTime: {s: "lastConnectCheckTime"},
+        afterLastConnectCheckTime: {s: "time after"},
         ManualDisable: {s: "ManualDisable"},
         Usable: {s: "Usable"},
         CloseConnect: {s: "Close Connect"},
@@ -131,6 +135,7 @@ window.i18n.enUS = (() => {
         EnableAllServer: {s: "Enable All Server"},
         clickToShowDetail: {s: "click to show detail"},
         timeMs: {s: "ms"},
+        total: {s: "total"},
     };
     return tableState;
 })();

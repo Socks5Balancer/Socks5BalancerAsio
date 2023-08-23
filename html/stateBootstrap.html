@@ -39,10 +39,10 @@
         }
     </style>
     <link rel="stylesheet" href="./bootstrap.min.css">
-    <script src="./lodash.min.js"></script>
-    <script src="./vue.js"></script>
-    <script src="./moment.min.js"></script>
-    <script src="./zh-cn.js"></script>
+<!--    <script src="./lodash.min.js"></script>-->
+<!--    <script src="./vue.js"></script>-->
+<!--    <script src="./moment.min.js"></script>-->
+<!--    <script src="./zh-cn.js"></script>-->
 </head>
 <body>
 <div id="body">
@@ -127,7 +127,9 @@
                 <th v-if="!disableConnectTest">{{tableState.work.s}}</th>
                 <th>{{tableState.runCount.s}}</th>
                 <th>{{tableState.lastTCPCheckTime.s}}</th>
+                <th>{{tableState.afterLastTCPCheckTime.s}}</th>
                 <th v-if="!disableConnectTest">{{tableState.lastConnectCheckTime.s}}</th>
+                <th v-if="!disableConnectTest">{{tableState.afterLastConnectCheckTime.s}}</th>
                 <th>{{tableState.ManualDisable.s}}</th>
                 <th>{{tableState.Usable.s}}</th>
                 <th v-html="tableState.CloseConnect.s"></th>
@@ -158,7 +160,9 @@
                 </td>
                 <td>{{u.sessionsCount}} <span class="opacity_01">/ {{u.connectCount}} / {{u.connectCount2}}</span></td>
                 <td>{{tableState.emptyFilterFunction.f(u.lastOnlineTime)}}</td>
-                <td v-if="!disableConnectTest">{{tableState.emptyFilterFunction.f(u.lastConnectTime)}}</td>
+                <td>{{tableState.emptyFilterFunction.f(calcDurationOfTimeStringFromNowTime(u.lastOnlineTime))}}</td>
+                <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(u.lastConnectTime)}}</td>
+                <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(calcDurationOfTimeStringFromNowTime(u.lastConnectTime))}}</td>
                 <td>
                     <template v-if="u.isManualDisable==='true'">
                         <span style="color: red">{{tableState.Disabled.s}}</span>
@@ -282,7 +286,7 @@
                 {{tableState.runTime.s}}
                 <span class="string-pad">{{ runTimeString }}</span>
                 <span class="string-pad">{{ runTimeString2 }}</span>
-                <span class="string-pad">{{ runTime }} {{tableState.timeMs.s}}</span>
+                <span class="string-pad">{{tableState.total.s}} {{ runTime }} {{tableState.timeMs.s}}</span>
             </div>
         </div>
         <div class="row">
@@ -293,7 +297,7 @@
                 {{tableState.lastConnectComeTime.s}}
                 <span class="string-pad">{{ lastConnectComeTimeAgoString }}</span>
                 <span class="string-pad">{{ lastConnectComeTimeAgoString2 }}</span>
-                <span class="string-pad">{{ lastConnectComeTimeAgo }} {{tableState.timeMs.s}}</span>
+                <span class="string-pad">{{tableState.total.s}} {{ lastConnectComeTimeAgo }} {{tableState.timeMs.s}}</span>
             </div>
             <div class="col">
                 {{tableState.isSleeping.s}}
@@ -307,6 +311,8 @@
             </div>
             <div class="col">
                 {{tableState.totalHistoryConnectCount.s}} <span class="string-pad">{{ relayId }}</span>
+            </div>
+            <div class="col">
             </div>
         </div>
     </div>
@@ -668,8 +674,8 @@
     </div>
 </div>
 
-<script src="./i18n-table/en-US.js"></script>
-<script src="./i18n-table/zh-CN.js"></script>
+<!--<script src="./i18n-table/en-US.js"></script>-->
+<!--<script src="./i18n-table/zh-CN.js"></script>-->
 <script src="./boot.js"></script>
 
 </body>

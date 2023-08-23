@@ -2,9 +2,10 @@
   "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": "./",
-//    "outDir": "./dist/out-tsc",
-//    "forceConsistentCasingInFileNames": true,
-//    "allowSyntheticDefaultImports": true,
+    //    "outDir": "./dist/out-tsc",
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "strict": true,
     "strictNullChecks": true,
     "noImplicitReturns": true,
@@ -12,17 +13,18 @@
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
-//    "experimentalDecorators": true,
+    //    "experimentalDecorators": true,
     "moduleResolution": "Node",
-//    "importHelpers": true,
+    //    "importHelpers": true,
+    "allowUmdGlobalAccess": true,
     "target": "es2015",
-    "module": "None",
+    "module": "ES2022",
     "lib": [
       "es2018",
       "dom"
     ]
-  },
-//  "include": [
-//    "src/**/*.d.ts"
-//  ]
+  }
+  //  "include": [
+  //    "src/**/*.d.ts"
+  //  ]
 }

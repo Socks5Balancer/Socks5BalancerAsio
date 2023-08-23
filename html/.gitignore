@@ -227,3 +227,6 @@ i18n-table/*.map
 
 i18n/*.js
 i18n/*.map
+
+boot.js
+boot.js.map

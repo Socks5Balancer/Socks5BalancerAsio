@@ -1,3 +1,6 @@
+
+import moment from 'moment';
+
 // @ts-ignore
 function formatInt(int: number) {
     if (int < 10) {
@@ -14,12 +17,12 @@ window.i18n.zhCN = (() => {
     const tableState: { [key: string]: { s: string, f?: CallableFunction } } = {
         formatDurationFunction: {
             s: "formatDurationFunction", f: (time: number) => {
-                const seconds = (globalThis as any).moment.duration(time).seconds();
-                const minutes = (globalThis as any).moment.duration(time).minutes();
-                const hours = (globalThis as any).moment.duration(time).hours();
-                const days = (globalThis as any).moment.duration(time).days();
-                const months = (globalThis as any).moment.duration(time).months();
-                const years = (globalThis as any).moment.duration(time).years();
+                const seconds = moment.duration(time).seconds();
+                const minutes = moment.duration(time).minutes();
+                const hours = moment.duration(time).hours();
+                const days = moment.duration(time).days();
+                const months = moment.duration(time).months();
+                const years = moment.duration(time).years();
                 if (years > 0) {
                     return `${years}年-${months}月-${days}天 ${formatInt(hours)}时:${formatInt(minutes)}分:${formatInt(seconds)}秒`;
                 }
@@ -30,12 +33,12 @@ window.i18n.zhCN = (() => {
                     return `${days}天 ${formatInt(hours)}时:${formatInt(minutes)}分:${formatInt(seconds)}秒`;
                 }
                 if (hours > 0) {
-                    return `${formatInt(hours)}时:${formatInt(minutes)}m:${formatInt(seconds)}秒`;
+                    return `${formatInt(hours)}时:${formatInt(minutes)}分:${formatInt(seconds)}秒`;
                 }
                 if (minutes > 0) {
-                    return `${formatInt(minutes)}m:${formatInt(seconds)}秒`;
+                    return `${formatInt(minutes)}分:${formatInt(seconds)}秒`;
                 }
-                return `00:${formatInt(seconds)}`;
+                return `00分:${formatInt(seconds)}秒`;
             }
         },
         emptyFilterFunction: {
@@ -61,7 +64,9 @@ window.i18n.zhCN = (() => {
         work: {s: "工作中"},
         runCount: {s: "连接数"},
         lastTCPCheckTime: {s: "上次TCP检查时间"},
+        afterLastTCPCheckTime: {s: "已过去"},
         lastConnectCheckTime: {s: "上次可连通性检查时间"},
+        afterLastConnectCheckTime: {s: "已过去"},
         ManualDisable: {s: "手动禁用"},
         Usable: {s: "可用性"},
         CloseConnect: {s: "&emsp;关闭连接&emsp;"},
@@ -132,6 +137,7 @@ window.i18n.zhCN = (() => {
         EnableAllServer: {s: "启用所有服务器"},
         clickToShowDetail: {s: "点击查看详情"},
         timeMs: {s: "毫秒"},
+        total: {s: "累计"},
     };
     return tableState;
 })();

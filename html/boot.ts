@@ -1,6 +1,14 @@
 // https://github.com/moment/moment/issues/463#issuecomment-552498641
 
+import moment from 'moment';
+import 'moment/locale/zh-cn.js';
+import Vue from 'vue';
+// import {VueConstructor} from 'vue';
 // import type {Vue as VueType} from 'vue/types/vue.d.ts';
+import _ from "lodash";
+
+import 'i18n-table/en-US';
+import 'i18n-table/zh-CN';
 
 interface ServerStateType {
     config: {
@@ -152,7 +160,7 @@ function formatInt(int: number) {
     return `${int}`;
 }
 
-function formatDuration(time: number) {
+let formatDuration = function (time: number) {
     const seconds = moment.duration(time).seconds();
     const minutes = moment.duration(time).minutes();
     const hours = moment.duration(time).hours();
@@ -174,7 +182,7 @@ function formatDuration(time: number) {
     if (minutes > 0) {
         return `${formatInt(minutes)}m:${formatInt(seconds)}s`;
     }
-    return `00:${formatInt(seconds)}`;
+    return `00m:${formatInt(seconds)}s`;
 }
 
 function formatNumber2FixedLength(n: number) {
@@ -258,6 +266,14 @@ function setSearchParams(key: string, value: string) {
     window.history.pushState(null, null as unknown as string, '?' + newQ.toString());
 }
 
+function serverTimeString2Moment(ts: string): moment.Moment {
+    return moment(ts, [
+        "YYYY.MM.DD-HH.mm.ss.SSS",
+        "YYYY.MM.DD-HH.mm.ss.SS",
+        "YYYY.MM.DD-HH.mm.ss.S",
+    ], true);
+}
+
 function tryGetBackendConfigFromServer() {
     fetch('backend', {
         credentials: 'omit'
@@ -312,16 +328,16 @@ function tryGetBackendConfigFromServer() {
 var defaultBackendHost = "127.0.0.1";
 var defaultBackendPort = 5010;
 
-moment.locale('zh-cn');
-
 var getI18nTable = () => {
     if (window.navigator.language === "zh-CN") {
         // chinese
         window.i18nTable = window.i18n.zhCN;
+        moment.locale('zh-cn');
     } else {
         // english
         window.i18nTable = window.i18n.enUS;
     }
+    formatDuration = window.i18nTable.formatDurationFunction.f as any;
 };
 getI18nTable();
 
@@ -400,6 +416,20 @@ var app: any = new Vue({
         speed2String: speed2String,
         dataCount2String: dataCount2String,
         reduceField: reduceField,
+        calcDurationOfTimeStringFromNowTime: (ts: string) => {
+            if (ts === "<empty>") {
+                return "<empty>";
+            }
+            // return moment.duration(serverTimeString2Moment(ts), serverTimeString2Moment(app.nowTime)).humanize();
+            // console.log('ts', ts);
+            // console.log('app.nowTime', app.nowTime);
+            // console.log('serverTimeString2Moment(ts)', serverTimeString2Moment(ts));
+            // console.log('serverTimeString2Moment(ts)', serverTimeString2Moment(ts).valueOf());
+            // console.log('serverTimeString2Moment(app.nowTime)', serverTimeString2Moment(app.nowTime));
+            // console.log('serverTimeString2Moment(app.nowTime)', serverTimeString2Moment(app.nowTime).valueOf());
+            // console.log('moment.duration', moment.duration(serverTimeString2Moment(app.nowTime).valueOf() - serverTimeString2Moment(ts).valueOf()).asMilliseconds());
+            return formatDuration(moment.duration(serverTimeString2Moment(app.nowTime).valueOf() - serverTimeString2Moment(ts).valueOf()).asMilliseconds());
+        },
         autoFlush: function () {
             app.autoFlushState = !app.autoFlushState;
             console.log('autoFlushHandle app.autoFlushState', app.autoFlushState);
