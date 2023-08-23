@@ -35,6 +35,7 @@
 #include <random>
 #include <chrono>
 #include <atomic>
+#include <chrono>
 #include "ConfigLoader.h"
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
@@ -65,6 +66,9 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     bool isManualDisable = false;
     bool disable = false;
     bool slowImpl = false;
+
+    std::chrono::milliseconds lastOnlinePing{-1};
+    std::chrono::milliseconds lastConnectPing{-1};
 
     UpstreamServer(
             size_t index,

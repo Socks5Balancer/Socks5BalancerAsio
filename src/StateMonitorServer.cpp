@@ -114,6 +114,12 @@ std::string HttpConnectSession::createJsonString() {
             n.put("disable", a->disable);
             n.put("lastConnectCheckResult", a->lastConnectCheckResult);
             n.put("connectCount", a->connectCount.load());
+            n.put("lastOnlinePing", (
+                    a->lastOnlinePing.count() != -1 ?
+                    boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
+            n.put("lastConnectPing", (
+                    a->lastConnectPing.count() != -1 ?
+                    boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
             n.put("lastOnlineTime", (
                     a->lastOnlineTime.has_value() ?
                     printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
@@ -441,7 +447,9 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                         a->isOffline = false;
                         a->lastConnectFailed = false;
                         a->lastOnlineTime.reset();
+                        a->lastOnlinePing = std::chrono::milliseconds{-1};
                         a->lastConnectTime.reset();
+                        a->lastConnectPing = std::chrono::milliseconds{-1};
                     }
                     // recheck
                     upstreamPool->forceCheckNow();
@@ -613,6 +621,12 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                         n.put("disable", a->disable);
                         n.put("lastConnectCheckResult", a->lastConnectCheckResult);
                         n.put("connectCount", a->connectCount.load());
+                        n.put("lastOnlinePing", (
+                                a->lastOnlinePing.count() != -1 ?
+                                boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
+                        n.put("lastConnectPing", (
+                                a->lastConnectPing.count() != -1 ?
+                                boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
                         n.put("lastOnlineTime", (
                                 a->lastOnlineTime.has_value() ?
                                 printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));

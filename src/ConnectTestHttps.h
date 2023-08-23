@@ -75,7 +75,8 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
 
     bool _isComplete = false;
 
-    std::chrono::milliseconds timePing{0};
+    std::chrono::milliseconds timePing{-1};
+    std::chrono::time_point<std::chrono::steady_clock> startTime{std::chrono::steady_clock::now()};
 
 public:
     ConnectTestHttpsSession(
@@ -100,12 +101,13 @@ public:
     using SuccessfulInfo = boost::beast::http::response<boost::beast::http::string_body>;
 
     struct CallbackContainer {
-        std::function<void(SuccessfulInfo info)> successfulCallback;
+        std::function<void(std::chrono::milliseconds ping, SuccessfulInfo info)> successfulCallback;
         std::function<void(std::string reason)> failedCallback;
     };
     std::unique_ptr<CallbackContainer> callback;
 
-    void run(std::function<void(SuccessfulInfo info)> onOk, std::function<void(std::string reason)> onErr);
+    void run(std::function<void(std::chrono::milliseconds ping, SuccessfulInfo info)> onOk,
+             std::function<void(std::string reason)> onErr);
 
     // to avoid circle ref
     void release();

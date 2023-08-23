@@ -507,7 +507,7 @@ so i write this, hope it can work more faster and more stable.
 - [x] http/socks5 on same port (mixed-port mode)
 - [ ] analysis socks5 protocol and communicate protocol type
 - [ ] monitor per connect info
-- [ ] backend latency analysis 
+- [x] backend latency analysis 
 - [x] port aggregation mode(multi-listen only mode)
 - [x] direct provide Monitor Page (embedding nginx)
 

@@ -66,7 +66,9 @@ bool ConnectTestHttpsSession::isComplete() {
     return _isComplete;
 }
 
-void ConnectTestHttpsSession::run(std::function<void(SuccessfulInfo)> onOk, std::function<void(std::string)> onErr) {
+void ConnectTestHttpsSession::run(
+        std::function<void(std::chrono::milliseconds, SuccessfulInfo)> onOk,
+        std::function<void(std::string)> onErr) {
     callback = std::make_unique<CallbackContainer>();
     callback->successfulCallback = std::move(onOk);
     callback->failedCallback = std::move(onErr);
@@ -114,13 +116,16 @@ void ConnectTestHttpsSession::fail(boost::system::error_code ec, const std::stri
 void ConnectTestHttpsSession::allOk() {
 //        std::cout << res_ << std::endl;
     if (callback && callback->successfulCallback) {
-        callback->successfulCallback(res_);
+        timePing = std::chrono::duration_cast<decltype(timePing)>(std::chrono::steady_clock::now() - startTime);
+        callback->successfulCallback(timePing, res_);
     }
     release();
 }
 
 void ConnectTestHttpsSession::do_resolve() {
 //        std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port << std::endl;
+
+    startTime = std::chrono::steady_clock::now();
 
     // Look up the domain name
     resolver_.async_resolve(
@@ -408,7 +413,7 @@ void ConnectTestHttpsSession::do_socks5_connect_read() {
                                     }
                                 }
                                     break;
-                                case 0x04:{
+                                case 0x04: {
                                     if (bytes_transferred != (4 + 16 + 2)) {
                                         // try to read last data
                                         boost::asio::async_read(

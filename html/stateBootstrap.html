@@ -128,8 +128,10 @@
                 <th>{{tableState.runCount.s}}</th>
                 <th>{{tableState.lastTCPCheckTime.s}}</th>
                 <th>{{tableState.afterLastTCPCheckTime.s}}</th>
+                <th>{{tableState.lastTCPPing.s}}</th>
                 <th v-if="!disableConnectTest">{{tableState.lastConnectCheckTime.s}}</th>
                 <th v-if="!disableConnectTest">{{tableState.afterLastConnectCheckTime.s}}</th>
+                <th v-if="!disableConnectTest">{{tableState.lastConnectPing.s}}</th>
                 <th>{{tableState.ManualDisable.s}}</th>
                 <th>{{tableState.Usable.s}}</th>
                 <th v-html="tableState.CloseConnect.s"></th>
@@ -161,8 +163,10 @@
                 <td>{{u.sessionsCount}} <span class="opacity_01">/ {{u.connectCount}} / {{u.connectCount2}}</span></td>
                 <td>{{tableState.emptyFilterFunction.f(u.lastOnlineTime)}}</td>
                 <td>{{tableState.emptyFilterFunction.f(calcDurationOfTimeStringFromNowTime(u.lastOnlineTime))}}</td>
+                <td>{{tableState.emptyFilterFunction.f(u.lastOnlinePing)}}ms</td>
                 <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(u.lastConnectTime)}}</td>
                 <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(calcDurationOfTimeStringFromNowTime(u.lastConnectTime))}}</td>
+                <td v-if="!disableConnectTest">{{ tableState.emptyFilterFunction.f(u.lastConnectPing)}}ms</td>
                 <td>
                     <template v-if="u.isManualDisable==='true'">
                         <span style="color: red">{{tableState.Disabled.s}}</span>

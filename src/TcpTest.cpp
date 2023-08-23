@@ -24,6 +24,8 @@
 void TcpTestSession::do_resolve() {
 //        std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port << std::endl;
 
+    startTime = std::chrono::steady_clock::now();
+
     // Look up the domain name
     resolver_.async_resolve(
             socks5Host,
@@ -84,7 +86,8 @@ void TcpTestSession::do_shutdown(bool isOn) {
 
 void TcpTestSession::allOk() {
     if (callback && callback->successfulCallback) {
-        callback->successfulCallback();
+        timePing = std::chrono::duration_cast<decltype(timePing)>(std::chrono::steady_clock::now() - startTime);
+        callback->successfulCallback(timePing);
     }
     release();
 }
@@ -115,7 +118,8 @@ void TcpTestSession::stop() {
     release();
 }
 
-void TcpTestSession::run(std::function<void()> onOk, std::function<void(std::string)> onErr) {
+void
+TcpTestSession::run(std::function<void(std::chrono::milliseconds ping)> onOk, std::function<void(std::string)> onErr) {
     callback = std::make_unique<CallbackContainer>();
     callback->successfulCallback = std::move(onOk);
     callback->failedCallback = std::move(onErr);

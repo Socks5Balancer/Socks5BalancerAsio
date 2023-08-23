@@ -53,6 +53,9 @@ class TcpTestSession : public std::enable_shared_from_this<TcpTestSession> {
 
     bool _isComplete = false;
 
+    std::chrono::milliseconds timePing{-1};
+    std::chrono::time_point<std::chrono::steady_clock> startTime{std::chrono::steady_clock::now()};
+
 public:
     TcpTestSession(boost::asio::any_io_executor executor,
                    const std::string &socks5Host,
@@ -75,12 +78,12 @@ public:
     bool isComplete();
 
     struct CallbackContainer {
-        std::function<void()> successfulCallback;
+        std::function<void(std::chrono::milliseconds ping)> successfulCallback;
         std::function<void(std::string reason)> failedCallback;
     };
     std::unique_ptr<CallbackContainer> callback;
 
-    void run(std::function<void()> onOk, std::function<void(std::string reason)> onErr);
+    void run(std::function<void(std::chrono::milliseconds ping)> onOk, std::function<void(std::string reason)> onErr);
 
     // to avoid circle ref
     void release();
