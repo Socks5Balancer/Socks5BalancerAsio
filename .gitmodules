@@ -1,0 +1,3 @@
+[submodule "html"]
+	path = html
+	url = ../html.git
