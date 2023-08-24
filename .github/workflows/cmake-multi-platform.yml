@@ -85,6 +85,9 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/html/node_modules
+            ${{ github.workspace }}/html/.git
+            ${{ github.workspace }}/html/.idea
+            ${{ github.workspace }}/html/.github
             ${{ github.workspace }}/html/.yarn
             ${{ github.workspace }}/html/.editorconfig
             ${{ github.workspace }}/html/.gitattributes
