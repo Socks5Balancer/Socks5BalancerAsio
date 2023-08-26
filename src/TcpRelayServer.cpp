@@ -136,6 +136,10 @@ std::shared_ptr<AuthClientManager> TcpRelayServer::getAuthClientManager() {
     return authClientManager;
 }
 
+std::shared_ptr<UpstreamPool> TcpRelayServer::getUpstreamPool() {
+    return upstreamPool;
+}
+
 void TcpRelayServer::do_cleanTimer() {
     auto c = [this, self = shared_from_this(), cleanTimer = this->cleanTimer]
             (const boost::system::error_code &e) {

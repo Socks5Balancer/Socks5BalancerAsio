@@ -118,8 +118,9 @@ void TcpTestSession::stop() {
     release();
 }
 
-void
-TcpTestSession::run(std::function<void(std::chrono::milliseconds ping)> onOk, std::function<void(std::string)> onErr) {
+void TcpTestSession::run(
+        std::function<void(std::chrono::milliseconds ping)> onOk,
+        std::function<void(std::string)> onErr) {
     callback = std::make_unique<CallbackContainer>();
     callback->successfulCallback = std::move(onOk);
     callback->failedCallback = std::move(onErr);

@@ -352,12 +352,14 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
                        a->lastOnlineTime = UpstreamTimePointNow();
                        a->isOffline = false;
                        a->lastOnlinePing = ping;
+                       a->delayCollect->pushTcpPing(a->lastOnlinePing);
                    },
                    [t, a](std::string reason) {
                        boost::ignore_unused(reason);
                        // ok error
                        a->isOffline = true;
                        a->lastOnlinePing = std::chrono::milliseconds{-1};
+                       a->delayCollect->pushTcpPing(a->lastOnlinePing);
                    });
         }
     }
@@ -377,12 +379,14 @@ void UpstreamPool::do_tcpCheckerOne_impl(UpstreamServerRef a) {
                a->lastOnlineTime = UpstreamTimePointNow();
                a->isOffline = false;
                a->lastOnlinePing = ping;
+               a->delayCollect->pushTcpPing(a->lastOnlinePing);
            },
            [t, a](std::string reason) {
                boost::ignore_unused(reason);
                // ok error
                a->isOffline = true;
                a->lastOnlinePing = std::chrono::milliseconds{-1};
+               a->delayCollect->pushTcpPing(a->lastOnlinePing);
            });
 }
 
@@ -491,12 +495,14 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
                        ss << "status_code:" << static_cast<int>(info.base().result());
                        a->lastConnectCheckResult = ss.str();
                        a->lastConnectPing = ping;
+                       a->delayCollect->pushHttpPing(a->lastConnectPing);
                    },
                    [t, a](std::string reason) {
                        boost::ignore_unused(reason);
                        // ok error
                        a->lastConnectFailed = true;
                        a->lastConnectPing = std::chrono::milliseconds{-1};
+                       a->delayCollect->pushHttpPing(a->lastConnectPing);
                    });
         }
     }
@@ -526,12 +532,14 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
                ss << "status_code:" << static_cast<int>(info.base().result());
                a->lastConnectCheckResult = ss.str();
                a->lastConnectPing = ping;
+               a->delayCollect->pushHttpPing(a->lastConnectPing);
            },
            [t, a](std::string reason) {
                boost::ignore_unused(reason);
                // ok error
                a->lastConnectFailed = true;
                a->lastConnectPing = std::chrono::milliseconds{-1};
+               a->delayCollect->pushHttpPing(a->lastConnectPing);
            });
 }
 

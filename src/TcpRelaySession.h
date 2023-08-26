@@ -47,6 +47,7 @@
 #endif // Need_ProxyHandshakeAuth
 
 #include "TcpRelayStatisticsInfo.h"
+#include "DelayCollection.h"
 #include "./log/Log.h"
 
 
@@ -103,6 +104,10 @@ class TcpRelaySession : public std::enable_shared_from_this<TcpRelaySession> {
     bool isDeCont = false;
 
     std::shared_ptr<ConfigLoader> configLoader;
+
+    std::atomic_int64_t firstDelayTimestamp{-1};
+    std::atomic_bool firstDelayUpEnd{false};
+    std::atomic_bool firstDelayDownEnd{false};
 
 public:
 

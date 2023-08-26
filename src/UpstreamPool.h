@@ -39,6 +39,7 @@
 #include "ConfigLoader.h"
 #include "TcpTest.h"
 #include "ConnectTestHttps.h"
+#include "DelayCollection.h"
 
 #include "./log/Log.h"
 
@@ -69,6 +70,8 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
 
     std::chrono::milliseconds lastOnlinePing{-1};
     std::chrono::milliseconds lastConnectPing{-1};
+
+    std::shared_ptr<DelayCollection::DelayCollect> delayCollect = std::make_shared<DelayCollection::DelayCollect>();
 
     UpstreamServer(
             size_t index,

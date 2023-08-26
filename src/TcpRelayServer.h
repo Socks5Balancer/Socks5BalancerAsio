@@ -83,6 +83,8 @@ public:
 
     std::shared_ptr<AuthClientManager> getAuthClientManager();
 
+    std::shared_ptr<UpstreamPool> getUpstreamPool();
+
     void do_cleanTimer();
 
     void do_speedCalcTimer();

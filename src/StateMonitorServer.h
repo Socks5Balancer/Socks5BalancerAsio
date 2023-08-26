@@ -103,6 +103,8 @@ protected:
     void path_op(QueryPairsType &queryPairs);
 
     void path_per_info(QueryPairsType &queryPairs);
+
+    void path_delay_info(QueryPairsType &queryPairs);
 };
 
 class StateMonitorServer : public std::enable_shared_from_this<StateMonitorServer> {

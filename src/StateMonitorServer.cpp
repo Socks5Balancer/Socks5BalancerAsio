@@ -806,6 +806,140 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
     }
 }
 
+void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &queryPairs) {
+
+    response_.result(boost::beast::http::status::ok);
+
+    if (!queryPairs.empty()) {
+        auto backendServerIndex = queryPairs.find("backendServerIndex");
+
+        try {
+            if (queryPairs.end() == backendServerIndex) {
+                response_.result(boost::beast::http::status::bad_request);
+                response_.set(boost::beast::http::field::content_type, "text/plain");
+                return;
+            }
+
+            if (auto pT = tcpRelayServer.lock()) {
+                auto up = pT->getUpstreamPool();
+
+                boost::property_tree::ptree root;
+                bool ok = false;
+                for (const UpstreamServerRef &a: up->pool()) {
+                    if (std::to_string(a->index) == backendServerIndex->second) {
+                        ok = true;
+
+                        {
+                            boost::property_tree::ptree n;
+                            n.put("index", a->index);
+                            n.put("name", a->name);
+                            n.put("host", a->host);
+                            n.put("port", a->port);
+                            n.put("isOffline", a->isOffline);
+                            n.put("lastConnectFailed", a->lastConnectFailed);
+                            n.put("isManualDisable", a->isManualDisable);
+                            n.put("disable", a->disable);
+                            n.put("lastConnectCheckResult", a->lastConnectCheckResult);
+                            n.put("connectCount", a->connectCount.load());
+                            n.put("lastOnlinePing", (
+                                    a->lastOnlinePing.count() != -1 ?
+                                    boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
+                            n.put("lastConnectPing", (
+                                    a->lastConnectPing.count() != -1 ?
+                                    boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
+                            n.put("lastOnlineTime", (
+                                    a->lastOnlineTime.has_value() ?
+                                    printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
+                            n.put("lastConnectTime", (
+                                    a->lastConnectTime.has_value() ?
+                                    printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
+                            n.put("isWork", upstreamPool->checkServer(a));
+
+                            auto info = pT->getStatisticsInfo();
+                            if (info) {
+                                auto iInfo = info->getInfo(a->index);
+                                if (iInfo) {
+                                    n.put("byteDownChange", iInfo->byteDownChange);
+                                    n.put("byteUpChange", iInfo->byteUpChange);
+                                    n.put("byteDownLast", iInfo->byteDownLast);
+                                    n.put("byteUpLast", iInfo->byteUpLast);
+                                    n.put("byteUpChangeMax", iInfo->byteUpChangeMax);
+                                    n.put("byteDownChangeMax", iInfo->byteDownChangeMax);
+                                    n.put("sessionsCount", iInfo->calcSessionsNumber());
+                                    n.put("connectCount2", iInfo->connectCount.load());
+                                    n.put("byteInfo", true);
+                                } else {
+                                    n.put("byteDownChange", 0ll);
+                                    n.put("byteUpChange", 0ll);
+                                    n.put("byteDownLast", 0ll);
+                                    n.put("byteUpLast", 0ll);
+                                    n.put("byteUpChangeMax", 0ll);
+                                    n.put("byteDownChangeMax", 0ll);
+                                    n.put("sessionsCount", 0ll);
+                                    n.put("connectCount2", 0ll);
+                                    n.put("byteInfo", false);
+                                }
+                            }
+
+                            if (!n.get_child_optional("byteDownChange").has_value()) {
+                                n.put("byteInfo", false);
+                            }
+                            root.add_child("BaseInfo", n);
+                        }
+
+                        auto makeDI = [](std::deque<DelayCollection::TimeHistory::DelayInfo> &&di) {
+                            boost::property_tree::ptree dd;
+                            for (auto &aa: di) {
+                                boost::property_tree::ptree n;
+                                n.put("delay", aa.delay);
+                                n.put("time", aa.timeClock);
+                                dd.push_back(std::make_pair("", n));
+                            }
+                            return dd;
+                        };
+                        {
+                            root.add_child("tcpPing",
+                                           makeDI(std::move(a->delayCollect->getHistoryTcpPing())));
+                            root.add_child("httpPing",
+                                           makeDI(std::move(a->delayCollect->getHistoryHttpPing())));
+                            root.add_child("relayFirstPing",
+                                           makeDI(std::move(a->delayCollect->getHistoryRelayFirstDelay())));
+                        }
+
+                        break;
+                    }
+                }
+                if (ok) {
+                    std::stringstream ss;
+                    boost::property_tree::write_json(ss, root);
+
+                    response_.result(boost::beast::http::status::ok);
+                    response_.set(boost::beast::http::field::content_type, "text/json");
+                    boost::beast::ostream(response_.body()) << ss.str() << "\n";
+                    return;
+                }
+            }
+
+
+            response_.result(boost::beast::http::status::precondition_required);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "backendServerIndex cannot find or not valid" << "\r\n";
+            return;
+
+        } catch (const boost::bad_lexical_cast &e) {
+            BOOST_LOG_S5B(error) << "boost::bad_lexical_cast:" << e.what();
+            response_.result(boost::beast::http::status::bad_request);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "boost::bad_lexical_cast:" << e.what() << "\r\n";
+        } catch (const std::exception &e) {
+            BOOST_LOG_S5B(error) << "std::exception:" << e.what();
+            response_.result(boost::beast::http::status::bad_request);
+            response_.set(boost::beast::http::field::content_type, "text/plain");
+            boost::beast::ostream(response_.body()) << "std::exception:" << e.what() << "\r\n";
+        }
+    }
+}
+
 void HttpConnectSession::create_response() {
     BOOST_LOG_S5B(trace) << "request_.target():" << request_.target() << std::endl;
 
@@ -869,6 +1003,9 @@ void HttpConnectSession::create_response() {
         }
         if (path == "/listenInfo") {
             return path_per_info(queryPairs);
+        }
+        if (path == "/delayInfo") {
+            return path_delay_info(queryPairs);
         }
     }
 
