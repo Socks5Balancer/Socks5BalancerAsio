@@ -65,6 +65,8 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
     int httpVersion;
     const std::string socks5Host;
     const std::string socks5Port;
+    const std::string socks5AuthUser;
+    const std::string socks5AuthPwd;
     bool slowImpl;
 
     std::chrono::milliseconds delayTime;
@@ -88,6 +90,8 @@ public:
             int httpVersion,
             const std::string &socks5Host,
             const std::string &socks5Port,
+            const std::string &socks5AuthUser,
+            const std::string &socks5AuthPwd,
             bool slowImpl,
             std::chrono::milliseconds delayTime = std::chrono::milliseconds{0}
     );
@@ -116,41 +120,33 @@ public:
 
 private:
 
-    void
-    fail(boost::system::error_code ec, const std::string &what);
+    void fail(boost::system::error_code ec, const std::string &what);
 
-    void
-    allOk();
+    void allOk();
 
-    void
-    do_resolve();
+    void do_resolve();
 
-    void
-    do_tcp_connect(const boost::asio::ip::tcp::resolver::results_type &results);
+    void do_tcp_connect(const boost::asio::ip::tcp::resolver::results_type &results);
 
-    void
-    do_socks5_handshake_write();
+    void do_socks5_handshake_write();
 
-    void
-    do_socks5_handshake_read();
+    void do_socks5_handshake_read();
 
-    void
-    do_socks5_connect_write();
+    void do_socks5_auth_write();
 
-    void
-    do_socks5_connect_read();
+    void do_socks5_auth_read();
 
-    void
-    do_ssl_handshake();
+    void do_socks5_connect_write();
 
-    void
-    do_write();
+    void do_socks5_connect_read();
 
-    void
-    do_read();
+    void do_ssl_handshake();
 
-    void
-    do_shutdown(bool isOn = false);
+    void do_write();
+
+    void do_read();
+
+    void do_shutdown(bool isOn = false);
 
 };
 
@@ -167,6 +163,8 @@ public:
     std::shared_ptr<ConnectTestHttpsSession> createTest(
             const std::string &socks5Host,
             const std::string &socks5Port,
+            const std::string &socks5AuthUser,
+            const std::string &socks5AuthPwd,
             bool slowImpl,
             const std::string &targetHost,
             uint16_t targetPort,

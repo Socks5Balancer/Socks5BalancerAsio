@@ -26,13 +26,13 @@
 
 #include "./log/Log.h"
 
-ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::any_io_executor executor,
-                                                 const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
-                                                 const std::string &targetHost, uint16_t targetPort,
-                                                 const std::string &targetPath, int httpVersion,
-                                                 const std::string &socks5Host, const std::string &socks5Port,
-                                                 bool slowImpl,
-                                                 std::chrono::milliseconds delayTime) :
+ConnectTestHttpsSession::ConnectTestHttpsSession(
+        boost::asio::any_io_executor executor,
+        const std::shared_ptr<boost::asio::ssl::context> &ssl_context,
+        const std::string &targetHost, uint16_t targetPort, const std::string &targetPath, int httpVersion,
+        const std::string &socks5Host, const std::string &socks5Port,
+        const std::string &socks5AuthUser, const std::string &socks5AuthPwd,
+        bool slowImpl, std::chrono::milliseconds delayTime) :
         executor(executor),
         resolver_(executor),
         stream_(executor, *ssl_context),
@@ -42,6 +42,8 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(boost::asio::any_io_executor ex
         httpVersion(httpVersion),
         socks5Host(socks5Host),
         socks5Port(socks5Port),
+        socks5AuthUser(socks5AuthUser),
+        socks5AuthPwd(socks5AuthPwd),
         slowImpl(slowImpl),
         delayTime(delayTime) {
 //        std::cout << "ConnectTestHttpsSession :" << socks5Host << ":" << socks5Port << std::endl;
@@ -186,6 +188,11 @@ void ConnectTestHttpsSession::do_socks5_handshake_write() {
             "\x05\x01\x00", 3
     );
 
+    if (!socks5AuthUser.empty()) {
+        // tell server, we can auth
+        data_send->at(2) = '\x02';
+    }
+
     // Set a timeout on the operation
     boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
 
@@ -235,10 +242,102 @@ void ConnectTestHttpsSession::do_socks5_handshake_read() {
                         //  | 1  |   1    |
                         //  +----+--------+
                         if (bytes_transferred < 2
-                            || socks5_read_buf->at(0) != 5
-                            || socks5_read_buf->at(1) != 0x00) {
+                            || socks5_read_buf->at(0) != 5) {
                             do_shutdown();
                             return fail(ec, "socks5_handshake_read (bytes_transferred < 2)");
+                        }
+                        if (socks5_read_buf->at(1) != 0x00 && socks5_read_buf->at(1) != 0x02) {
+                            return fail(ec, "socks5_handshake_read (invalid auth type)");
+                        }
+                        if (socks5_read_buf->at(1) == 0x02) {
+                            if (socks5AuthUser.empty()) {
+                                return fail(ec, "socks5_handshake_read (we cannot auth)");
+                            } else {
+                                // send auth
+                                do_socks5_auth_write();
+                                return;
+                            }
+                        }
+
+                        do_socks5_connect_write();
+                    }));
+}
+
+
+void ConnectTestHttpsSession::do_socks5_auth_write() {
+
+    // send socks5 client authentication
+    //
+    // +----+------+----------+------+----------+
+    // |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+    // +----+------+----------+------+----------+
+    // | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+    // +----+------+----------+------+----------+
+    //
+    auto data_send = std::make_shared<std::string>(
+            std::string{"\x01"} +
+            std::string{"\x01"} + socks5AuthUser +
+            std::string{"\x01"} + socks5AuthPwd
+    );
+    data_send->at(1) = static_cast<uint8_t>(socks5AuthUser.length());
+    data_send->at(2 + socks5AuthUser.length()) = static_cast<uint8_t>(socks5AuthUser.length());
+    BOOST_ASSERT(data_send->length() == (socks5AuthUser.length() + socks5AuthUser.length() + 3));
+
+
+    // Set a timeout on the operation
+    boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
+
+    boost::asio::async_write(
+            boost::beast::get_lowest_layer(stream_),
+            boost::asio::buffer(*data_send),
+            boost::beast::bind_front_handler(
+                    [this, self = shared_from_this(), data_send](
+                            const boost::system::error_code &ec,
+                            std::size_t bytes_transferred_) {
+                        if (ec) {
+                            return fail(ec, "do_socks5_auth_write");
+                        }
+                        if (bytes_transferred_ != data_send->size()) {
+                            std::stringstream ss;
+                            ss << "do_socks5_auth_write with bytes_transferred_:"
+                               << bytes_transferred_ << " but data_send->size():" << data_send->size();
+                            return fail(ec, ss.str());
+                        }
+
+                        do_socks5_auth_read();
+                    })
+    );
+}
+
+void ConnectTestHttpsSession::do_socks5_auth_read() {
+
+    auto socks5_read_buf = std::make_shared<std::vector<uint8_t>>(MAX_LENGTH);
+
+    // Set a timeout on the operation
+    boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
+
+    // Make the connection on the IP address we get from a lookup
+    boost::beast::get_lowest_layer(stream_).async_read_some(
+            boost::asio::buffer(*socks5_read_buf, MAX_LENGTH),
+            boost::beast::bind_front_handler(
+                    [this, self = shared_from_this(), socks5_read_buf](
+                            boost::beast::error_code ec,
+                            const size_t &bytes_transferred) {
+                        if (ec) {
+                            return fail(ec, "socks5_handshake_read");
+                        }
+
+                        // check server response
+                        //  +----+--------+
+                        //  |VER | STATUS |
+                        //  +----+--------+
+                        //  | 1  |   1    |
+                        //  +----+--------+
+                        if (bytes_transferred < 2) {
+                            return fail(ec, "do_socks5_auth_read (bytes_transferred < 2)");
+                        }
+                        if (socks5_read_buf->at(0) != 0x01 || socks5_read_buf->at(1) != 0x00) {
+                            return fail(ec, "do_socks5_auth_read (failed)");
                         }
 
                         do_socks5_connect_write();
@@ -602,11 +701,13 @@ ConnectTestHttps::ConnectTestHttps(boost::asio::any_io_executor ex) :
 }
 
 std::shared_ptr<ConnectTestHttpsSession>
-ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &socks5Port,
-                             bool slowImpl,
-                             const std::string &targetHost, uint16_t targetPort, const std::string &targetPath,
-                             int httpVersion,
-                             std::chrono::milliseconds maxRandomDelay) {
+ConnectTestHttps::createTest(
+        const std::string &socks5Host, const std::string &socks5Port,
+        const std::string &socks5AuthUser, const std::string &socks5AuthPwd,
+        bool slowImpl,
+        const std::string &targetHost, uint16_t targetPort, const std::string &targetPath,
+        int httpVersion,
+        std::chrono::milliseconds maxRandomDelay) {
     if (!cleanTimer) {
         cleanTimer = std::make_shared<boost::asio::steady_timer>(executor, std::chrono::seconds{5});
         do_cleanTimer();
@@ -620,6 +721,8 @@ ConnectTestHttps::createTest(const std::string &socks5Host, const std::string &s
             httpVersion,
             socks5Host,
             socks5Port,
+            socks5AuthUser,
+            socks5AuthPwd,
             slowImpl,
             std::chrono::milliseconds{
                     maxRandomDelay.count() > 0 ? getRandom<long long int>(0, maxRandomDelay.count()) : 0

@@ -472,6 +472,8 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
             auto t = connectTestHttps->createTest(
                     a->host,
                     std::to_string(a->port),
+                    a->authUser,
+                    a->authPwd,
                     a->slowImpl,
                     _configLoader->config.testRemoteHost,
                     _configLoader->config.testRemotePort,
@@ -507,6 +509,8 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
     auto t = connectTestHttps->createTest(
             a->host,
             std::to_string(a->port),
+            a->authUser,
+            a->authPwd,
             a->slowImpl,
             _configLoader->config.testRemoteHost,
             _configLoader->config.testRemotePort,
