@@ -898,12 +898,39 @@ void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &que
                             return dd;
                         };
                         {
+                            auto t0 = std::chrono::high_resolution_clock::now();
+
                             root.add_child("tcpPing",
                                            makeDI(std::move(a->delayCollect->getHistoryTcpPing())));
+
+                            auto t1 = std::chrono::high_resolution_clock::now();
+                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make tcpPing:"
+                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
+
                             root.add_child("httpPing",
                                            makeDI(std::move(a->delayCollect->getHistoryHttpPing())));
+
+                            auto t2 = std::chrono::high_resolution_clock::now();
+                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make httpPing:"
+                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
                             root.add_child("relayFirstPing",
                                            makeDI(std::move(a->delayCollect->getHistoryRelayFirstDelay())));
+
+                            auto t3 = std::chrono::high_resolution_clock::now();
+                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make relayFirstPing:"
+                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2);
+                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make PingInfoTotal:"
+                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0);
+
+                            {
+                                boost::property_tree::ptree n;
+                                n.put("tcpPing", std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0));
+                                n.put("httpPing", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
+                                n.put("relayFirstPing", std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2));
+                                n.put("total", std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0));
+                                root.add_child("PingInfoTotal", n);
+                            }
                         }
 
                         break;
