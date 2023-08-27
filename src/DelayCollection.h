@@ -121,6 +121,7 @@ namespace DelayCollection {
         void setMaxSize(size_t m) {
             std::lock_guard lg{mtx};
             maxSize = m;
+            BOOST_LOG_S5B(warning) << "TimeHistory::setMaxSize " << m;
             trim();
         }
     };
