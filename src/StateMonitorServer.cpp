@@ -891,7 +891,7 @@ void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &que
                             boost::property_tree::ptree dd;
                             for (auto &aa: di) {
                                 boost::property_tree::ptree n;
-                                n.put("delay", aa.delay);
+                                n.put("delay", aa.delay.count());
                                 n.put("time", printUpstreamTimePoint(aa.timeClock));
                                 dd.push_back(std::make_pair("", n));
                             }
@@ -925,10 +925,14 @@ void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &que
 
                             {
                                 boost::property_tree::ptree n;
-                                n.put("tcpPing", std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0));
-                                n.put("httpPing", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
-                                n.put("relayFirstPing", std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2));
-                                n.put("total", std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0));
+                                n.put("tcpPing",
+                                      std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
+                                n.put("httpPing",
+                                      std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+                                n.put("relayFirstPing",
+                                      std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count());
+                                n.put("total",
+                                      std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0).count());
                                 root.add_child("PingInfoTotal", n);
                             }
                         }
