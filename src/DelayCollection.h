@@ -39,14 +39,14 @@ namespace DelayCollection {
     using TimeMs = std::chrono::milliseconds;
     constexpr TimeMs TimeMsInvalid{-1};
     using TimePoint = std::chrono::steady_clock::time_point;
-    using TimePointLocalClock = std::chrono::local_time<std::chrono::system_clock::duration>;
+    using TimePointClock = std::chrono::system_clock::time_point;
 
     inline TimePoint nowTimePoint() {
         return std::chrono::steady_clock::now();
     }
 
-    inline TimePointLocalClock nowTimePointClock() {
-        return std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
+    inline TimePointClock nowTimePointClock() {
+        return std::chrono::system_clock::now();
     }
 
     class TimeHistory {
@@ -54,7 +54,7 @@ namespace DelayCollection {
 
         struct DelayInfo {
             TimeMs delay;
-            TimePointLocalClock timeClock;
+            TimePointClock timeClock;
 
             auto operator<=>(const DelayInfo &o) const {
                 if ((timeClock <=> o.timeClock) != std::strong_ordering::equal) {

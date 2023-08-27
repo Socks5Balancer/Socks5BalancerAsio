@@ -892,7 +892,7 @@ void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &que
                             for (auto &aa: di) {
                                 boost::property_tree::ptree n;
                                 n.put("delay", aa.delay);
-                                n.put("time", aa.timeClock);
+                                n.put("time", printUpstreamTimePoint(aa.timeClock));
                                 dd.push_back(std::make_pair("", n));
                             }
                             return dd;
@@ -932,6 +932,11 @@ void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &que
                                 root.add_child("PingInfoTotal", n);
                             }
                         }
+                        root.put("startTime", printUpstreamTimePoint(startTime));
+                        root.put("runTime", std::chrono::duration_cast<std::chrono::milliseconds>(
+                                UpstreamTimePointNow() - startTime
+                        ).count());
+                        root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
 
                         break;
                     }
