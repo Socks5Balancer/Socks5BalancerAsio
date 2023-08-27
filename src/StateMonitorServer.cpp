@@ -570,6 +570,19 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                     boost::beast::ostream(response_.body()) << "newRule not in RuleEnumList" << "\r\n";
                 }
             }
+            if (queryPairs.count("setDelayMax") > 0 && queryPairs.count("maxSize") > 0) {
+                auto q = *queryPairs.find("newRule");
+                auto maxSizeQ = *queryPairs.find("maxSize");
+                auto maxSize = boost::lexical_cast<size_t>(maxSizeQ.second);
+                if (auto pT = tcpRelayServer.lock()) {
+                    auto up = pT->getUpstreamPool();
+                    for (const UpstreamServerRef &a: up->pool()) {
+                        a->delayCollect->setMaxSizeTcpPing(maxSize);
+                        a->delayCollect->setMaxSizeHttpPing(maxSize);
+                        a->delayCollect->setMaxSizeFirstDelay(maxSize);
+                    }
+                }
+            }
         } catch (const boost::bad_lexical_cast &e) {
             BOOST_LOG_S5B(error) << "boost::bad_lexical_cast:" << e.what();
             response_.result(boost::beast::http::status::bad_request);
