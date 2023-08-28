@@ -112,7 +112,7 @@ namespace DelayCollection {
             return n;
         }
 
-        std::deque<DelayInfo> history() {
+        [[nodiscard]] std::deque<DelayInfo> history() {
             std::lock_guard lg{mtx};
             // deep copy
             return std::move(std::deque<DelayInfo>{q.begin(), q.end()});
@@ -123,6 +123,10 @@ namespace DelayCollection {
             maxSize = m;
             BOOST_LOG_S5B(warning) << "TimeHistory::setMaxSize " << m;
             trim();
+        }
+
+        [[nodiscard]] decltype(maxSize) getMaxSize() {
+            return maxSize;
         }
     };
 
@@ -161,6 +165,18 @@ namespace DelayCollection {
 
         void setMaxSizeFirstDelay(size_t m) {
             historyRelayFirstDelay.setMaxSize(m);
+        }
+
+        size_t getMaxSizeTcpPing() {
+            return historyTcpPing.getMaxSize();
+        }
+
+        size_t getMaxSizeHttpPing() {
+            return historyHttpPing.getMaxSize();
+        }
+
+        size_t getMaxSizeFirstDelay() {
+            return historyRelayFirstDelay.getMaxSize();
         }
 
     public:

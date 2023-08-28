@@ -942,6 +942,13 @@ void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &que
 
                             {
                                 boost::property_tree::ptree n;
+                                n.put("tcpPingMax", a->delayCollect->getMaxSizeTcpPing());
+                                n.put("httpPingMax", a->delayCollect->getMaxSizeHttpPing());
+                                n.put("relayFirstPingMax", a->delayCollect->getMaxSizeFirstDelay());
+                                root.add_child("PingSetting", n);
+                            }
+                            {
+                                boost::property_tree::ptree n;
                                 n.put("tcpPing",
                                       std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
                                 n.put("httpPing",
