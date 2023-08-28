@@ -819,6 +819,134 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
     }
 }
 
+
+auto makeDI(std::deque<DelayCollection::TimeHistory::DelayInfo> &&di) {
+    boost::property_tree::ptree dd;
+    for (auto &aa: di) {
+        boost::property_tree::ptree n;
+        n.put("delay", aa.delay.count());
+        n.put("time", printUpstreamTimePoint(aa.timeClock));
+        dd.push_back(std::make_pair("", n));
+    }
+    return dd;
+}
+
+boost::property_tree::ptree HttpConnectSession::makeUpstreamServerDI(const UpstreamServerRef &a) {
+    auto pT = tcpRelayServer.lock();
+    BOOST_ASSERT(pT);
+    boost::property_tree::ptree root;
+    {
+        boost::property_tree::ptree n;
+        n.put("index", a->index);
+        n.put("name", a->name);
+        n.put("host", a->host);
+        n.put("port", a->port);
+        n.put("isOffline", a->isOffline);
+        n.put("lastConnectFailed", a->lastConnectFailed);
+        n.put("isManualDisable", a->isManualDisable);
+        n.put("disable", a->disable);
+        n.put("lastConnectCheckResult", a->lastConnectCheckResult);
+        n.put("connectCount", a->connectCount.load());
+        n.put("lastOnlinePing", (
+                a->lastOnlinePing.count() != -1 ?
+                boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
+        n.put("lastConnectPing", (
+                a->lastConnectPing.count() != -1 ?
+                boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
+        n.put("lastOnlineTime", (
+                a->lastOnlineTime.has_value() ?
+                printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
+        n.put("lastConnectTime", (
+                a->lastConnectTime.has_value() ?
+                printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
+        n.put("isWork", upstreamPool->checkServer(a));
+
+        auto info = pT->getStatisticsInfo();
+        if (info) {
+            auto iInfo = info->getInfo(a->index);
+            if (iInfo) {
+                n.put("byteDownChange", iInfo->byteDownChange);
+                n.put("byteUpChange", iInfo->byteUpChange);
+                n.put("byteDownLast", iInfo->byteDownLast);
+                n.put("byteUpLast", iInfo->byteUpLast);
+                n.put("byteUpChangeMax", iInfo->byteUpChangeMax);
+                n.put("byteDownChangeMax", iInfo->byteDownChangeMax);
+                n.put("sessionsCount", iInfo->calcSessionsNumber());
+                n.put("connectCount2", iInfo->connectCount.load());
+                n.put("byteInfo", true);
+            } else {
+                n.put("byteDownChange", 0ll);
+                n.put("byteUpChange", 0ll);
+                n.put("byteDownLast", 0ll);
+                n.put("byteUpLast", 0ll);
+                n.put("byteUpChangeMax", 0ll);
+                n.put("byteDownChangeMax", 0ll);
+                n.put("sessionsCount", 0ll);
+                n.put("connectCount2", 0ll);
+                n.put("byteInfo", false);
+            }
+        }
+
+        if (!n.get_child_optional("byteDownChange").has_value()) {
+            n.put("byteInfo", false);
+        }
+        root.add_child("BaseInfo", n);
+    }
+
+    {
+        auto t0 = std::chrono::high_resolution_clock::now();
+
+        root.add_child("tcpPing",
+                       makeDI(std::move(a->delayCollect->getHistoryTcpPing())));
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+//        BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make tcpPing:"
+//                             << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0)
+//                                     .count();
+
+        root.add_child("httpPing",
+                       makeDI(std::move(a->delayCollect->getHistoryHttpPing())));
+
+        auto t2 = std::chrono::high_resolution_clock::now();
+//        BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make httpPing:"
+//                             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
+//                                     .count();
+
+        root.add_child("relayFirstPing",
+                       makeDI(std::move(a->delayCollect->getHistoryRelayFirstDelay())));
+
+        auto t3 = std::chrono::high_resolution_clock::now();
+//        BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make relayFirstPing:"
+//                             << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2)
+//                                     .count();
+//        BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make PingInfoTotal:"
+//                             << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0)
+//                                     .count();
+
+        {
+            boost::property_tree::ptree n;
+            n.put("tcpPingMax", a->delayCollect->getMaxSizeTcpPing());
+            n.put("httpPingMax", a->delayCollect->getMaxSizeHttpPing());
+            n.put("relayFirstPingMax", a->delayCollect->getMaxSizeFirstDelay());
+            root.add_child("PingSetting", n);
+        }
+        {
+            boost::property_tree::ptree n;
+            n.put("tcpPing",
+                  std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
+            n.put("httpPing",
+                  std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+            n.put("relayFirstPing",
+                  std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count());
+            n.put("total",
+                  std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0).count());
+            root.add_child("PingInfoTotal", n);
+        }
+    }
+
+    return std::move(root);
+}
+
 void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &queryPairs) {
 
     response_.result(boost::beast::http::status::ok);
@@ -827,148 +955,56 @@ void HttpConnectSession::path_delay_info(HttpConnectSession::QueryPairsType &que
         auto backendServerIndex = queryPairs.find("backendServerIndex");
 
         try {
-            if (queryPairs.end() == backendServerIndex) {
-                response_.result(boost::beast::http::status::bad_request);
-                response_.set(boost::beast::http::field::content_type, "text/plain");
-                return;
-            }
+//            if (queryPairs.end() == backendServerIndex) {
+//                response_.result(boost::beast::http::status::bad_request);
+//                response_.set(boost::beast::http::field::content_type, "text/plain");
+//                return;
+//            }
 
             if (auto pT = tcpRelayServer.lock()) {
                 auto up = pT->getUpstreamPool();
 
                 boost::property_tree::ptree root;
+                boost::property_tree::ptree nn;
                 bool ok = false;
-                for (const UpstreamServerRef &a: up->pool()) {
-                    if (std::to_string(a->index) == backendServerIndex->second) {
-                        ok = true;
-
-                        {
-                            boost::property_tree::ptree n;
-                            n.put("index", a->index);
-                            n.put("name", a->name);
-                            n.put("host", a->host);
-                            n.put("port", a->port);
-                            n.put("isOffline", a->isOffline);
-                            n.put("lastConnectFailed", a->lastConnectFailed);
-                            n.put("isManualDisable", a->isManualDisable);
-                            n.put("disable", a->disable);
-                            n.put("lastConnectCheckResult", a->lastConnectCheckResult);
-                            n.put("connectCount", a->connectCount.load());
-                            n.put("lastOnlinePing", (
-                                    a->lastOnlinePing.count() != -1 ?
-                                    boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
-                            n.put("lastConnectPing", (
-                                    a->lastConnectPing.count() != -1 ?
-                                    boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
-                            n.put("lastOnlineTime", (
-                                    a->lastOnlineTime.has_value() ?
-                                    printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
-                            n.put("lastConnectTime", (
-                                    a->lastConnectTime.has_value() ?
-                                    printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
-                            n.put("isWork", upstreamPool->checkServer(a));
-
-                            auto info = pT->getStatisticsInfo();
-                            if (info) {
-                                auto iInfo = info->getInfo(a->index);
-                                if (iInfo) {
-                                    n.put("byteDownChange", iInfo->byteDownChange);
-                                    n.put("byteUpChange", iInfo->byteUpChange);
-                                    n.put("byteDownLast", iInfo->byteDownLast);
-                                    n.put("byteUpLast", iInfo->byteUpLast);
-                                    n.put("byteUpChangeMax", iInfo->byteUpChangeMax);
-                                    n.put("byteDownChangeMax", iInfo->byteDownChangeMax);
-                                    n.put("sessionsCount", iInfo->calcSessionsNumber());
-                                    n.put("connectCount2", iInfo->connectCount.load());
-                                    n.put("byteInfo", true);
-                                } else {
-                                    n.put("byteDownChange", 0ll);
-                                    n.put("byteUpChange", 0ll);
-                                    n.put("byteDownLast", 0ll);
-                                    n.put("byteUpLast", 0ll);
-                                    n.put("byteUpChangeMax", 0ll);
-                                    n.put("byteDownChangeMax", 0ll);
-                                    n.put("sessionsCount", 0ll);
-                                    n.put("connectCount2", 0ll);
-                                    n.put("byteInfo", false);
-                                }
-                            }
-
-                            if (!n.get_child_optional("byteDownChange").has_value()) {
-                                n.put("byteInfo", false);
-                            }
-                            root.add_child("BaseInfo", n);
-                        }
-
-                        auto makeDI = [](std::deque<DelayCollection::TimeHistory::DelayInfo> &&di) {
-                            boost::property_tree::ptree dd;
-                            for (auto &aa: di) {
-                                boost::property_tree::ptree n;
-                                n.put("delay", aa.delay.count());
-                                n.put("time", printUpstreamTimePoint(aa.timeClock));
-                                dd.push_back(std::make_pair("", n));
-                            }
-                            return dd;
-                        };
-                        {
-                            auto t0 = std::chrono::high_resolution_clock::now();
-
-                            root.add_child("tcpPing",
-                                           makeDI(std::move(a->delayCollect->getHistoryTcpPing())));
-
-                            auto t1 = std::chrono::high_resolution_clock::now();
-                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make tcpPing:"
-                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0)
-                                                         .count();
-
-                            root.add_child("httpPing",
-                                           makeDI(std::move(a->delayCollect->getHistoryHttpPing())));
-
-                            auto t2 = std::chrono::high_resolution_clock::now();
-                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make httpPing:"
-                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
-                                                         .count();
-
-                            root.add_child("relayFirstPing",
-                                           makeDI(std::move(a->delayCollect->getHistoryRelayFirstDelay())));
-
-                            auto t3 = std::chrono::high_resolution_clock::now();
-                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make relayFirstPing:"
-                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2)
-                                                         .count();
-                            BOOST_LOG_S5B(trace) << "HttpConnectSession::path_delay_info make PingInfoTotal:"
-                                                 << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0)
-                                                         .count();
-
-                            {
-                                boost::property_tree::ptree n;
-                                n.put("tcpPingMax", a->delayCollect->getMaxSizeTcpPing());
-                                n.put("httpPingMax", a->delayCollect->getMaxSizeHttpPing());
-                                n.put("relayFirstPingMax", a->delayCollect->getMaxSizeFirstDelay());
-                                root.add_child("PingSetting", n);
-                            }
-                            {
-                                boost::property_tree::ptree n;
-                                n.put("tcpPing",
-                                      std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
-                                n.put("httpPing",
-                                      std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
-                                n.put("relayFirstPing",
-                                      std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count());
-                                n.put("total",
-                                      std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0).count());
-                                root.add_child("PingInfoTotal", n);
-                            }
-                        }
-                        root.put("startTime", printUpstreamTimePoint(startTime));
-                        root.put("runTime", std::chrono::duration_cast<std::chrono::milliseconds>(
-                                UpstreamTimePointNow() - startTime
-                        ).count());
-                        root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
-
-                        break;
-                    }
+                auto t0 = std::chrono::high_resolution_clock::now();
+                if (queryPairs.end() == backendServerIndex) {
+                    // all mode
+                    ok = true;
                 }
+                for (const UpstreamServerRef &a: up->pool()) {
+                    if (queryPairs.end() != backendServerIndex) {
+                        // only one mode
+                        if (std::to_string(a->index) != backendServerIndex->second) {
+                            // now we need find one, but not this one
+                            continue;
+                        } else {
+                            ok = true;
+
+                            root = makeUpstreamServerDI(a);
+
+                            break;
+                        }
+                    }
+                    // all mode
+
+                    nn.push_back(std::make_pair("", makeUpstreamServerDI(a)));
+                }
+                if (queryPairs.end() == backendServerIndex) {
+                    // all mode
+                    root.add_child("pool", nn);
+                }
+
+                root.put("startTime", printUpstreamTimePoint(startTime));
+                root.put("runTime", std::chrono::duration_cast<std::chrono::milliseconds>(
+                        UpstreamTimePointNow() - startTime
+                ).count());
+                root.put("nowTime", printUpstreamTimePoint(UpstreamTimePointNow()));
+
+                auto t00 = std::chrono::high_resolution_clock::now();
+                root.put("CollectWastTime",
+                         std::chrono::duration_cast<std::chrono::milliseconds>(t00 - t0).count());
+
                 if (ok) {
                     std::stringstream ss;
                     boost::property_tree::write_json(ss, root);

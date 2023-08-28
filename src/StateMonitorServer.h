@@ -104,6 +104,8 @@ protected:
 
     void path_per_info(QueryPairsType &queryPairs);
 
+    boost::property_tree::ptree makeUpstreamServerDI(const UpstreamServerRef &a);
+
     void path_delay_info(QueryPairsType &queryPairs);
 };
 
@@ -117,7 +119,7 @@ class StateMonitorServer : public std::enable_shared_from_this<StateMonitorServe
 public:
     StateMonitorServer(
             boost::asio::any_io_executor ex,
-            const std::shared_ptr<ConfigLoader>& configLoader,
+            const std::shared_ptr<ConfigLoader> &configLoader,
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::shared_ptr<TcpRelayServer> tcpRelayServer
     ) :
