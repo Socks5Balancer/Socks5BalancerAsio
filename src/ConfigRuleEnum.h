@@ -25,6 +25,8 @@ enum class RuleEnum {
     one_by_one,
     change_by_time,
     force_only_one,
+//    best_latency,
+//    best_stable,
     inherit,
 };
 

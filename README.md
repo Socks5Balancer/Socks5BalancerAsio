@@ -513,6 +513,7 @@ so i write this, hope it can work more faster and more stable.
 
 - [x] ~~support socks5 UDP~~ (socks5 UDP will work well if use on localhost or on LAN)
 - [ ] support Load Balance Rule `best_latency`
+- [ ] support Load Balance Rule `best_stable`
 - [ ] support Load Balance Rule `fast_download_speed`
 - [ ] support Load Balance Rule `fast_upload_speed`
 - [x] support Load Balance Rule `force_only_one`
@@ -526,7 +527,7 @@ so i write this, hope it can work more faster and more stable.
 - [X] show how many data was transfer in data monitor
 
 - [x] proxy Auth support (both client/server side) (warring: now not impl UDP part, will impl later)
-- [ ] proxy Auth support UDP
+- [x] proxy Auth support UDP
 - [ ] Analysis socks5 proxy
 - [X] Direct Impl Proxy Client
 - [x] ~~Impl Trojan Proxy Client~~ KISS(keep it simple stupid)
