@@ -282,8 +282,8 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
     c.embedWebServerConfig.backendHost = "";
     c.embedWebServerConfig.backendPort = 0;
     c.embedWebServerConfig.root_path = "./html/";
-    c.embedWebServerConfig.index_file_of_root = "state.html";
-    c.embedWebServerConfig.allowFileExtList = "htm html js json jpg jpeg png bmp gif ico svg";
+    c.embedWebServerConfig.index_file_of_root = "stateBootstrap.html";
+    c.embedWebServerConfig.allowFileExtList = "htm html js json jpg jpeg png bmp gif ico svg css";
 #ifndef DISABLE_EmbedWebServer
     if (tree.get_child_optional("EmbedWebServerConfig")) {
         auto pts = tree.get_child("EmbedWebServerConfig");

@@ -145,7 +145,7 @@ it must encode with `UTF-8 no BOM`
                                             //     all file access will be limit on this directory.
                                             //     Warning!!! make sure dont have any sensitive file or symlink on this dir.
                                             //     Notice: now the server will not decode url, so it will cannot find file that file name contained non-ascii characters or other need be encode strings
-    "index_file_of_root": "state.html",     // the `index` file of "/" path, it special how to provide the root page. default is "state.html".
+    "index_file_of_root": "stateBootstrap.html",     // the `index` file of "/" path, it special how to provide the root page. default is "stateBootstrap.html".
                                             //     Carefully!!!, it must is a relative path as `root_path`.
     "backendHost": "",                      // special the stateServerHost, it use to construct the backend json string. default is empty string, will auto fill by stateServerHost
     "backendPort": 0,                       // special the stateServerPort, it use to construct the backend json string. default is 0, will auto fill by stateServerPort
@@ -217,7 +217,7 @@ WantedBy=multi-user.target
 
 ---
 
-## Auth Support [update 2023-08-21]
+## Auth Support [update 2023-08-28]
 
 now support Auth (UserName/Password) in http AND socks5 mode.  
 BUT need Enable option flag `-DNeed_ProxyHandshakeAuth=ON` when building, <del> and will **lost** UDP support, **NOW**, **Temporary**. </del>
@@ -239,8 +239,8 @@ so if Enable Auth Support , you will lose socks5 UDP function (if backend server
 
 Now the UDP maybe work when your backend server support socks5 UDP, it is implemented but not be test (i don't have test evn now.).
 
-Now, **Temporary** , the connect test for `backend server auth` not impl now, it not affect client auth function,  
-but if a backend server have auth, the connect test compoment will not work, this problem will fix in later.
+<del> Now, **Temporary** , the connect test for `backend server auth` not impl now, it not affect client auth function,  
+but if a backend server have auth, the connect test compoment will not work, this problem will fix in later. </del>
 
 **the Auth Support not stable yet, it will become the main support version after full all feature implemented and stable.  
 the progress can see [here](https://github.com/Socks5Balancer/Socks5BalancerAsio/issues/4) .**
@@ -322,7 +322,7 @@ NOTE: the `host` is not require, it can lost or be a empty string like follow, b
         }
         location / {
             root   /usr/share/nginx/S5BA;
-            index  index.html index.html state.html;
+            index  index.html index.html stateBootstrap.html;
         }
 ```
 
