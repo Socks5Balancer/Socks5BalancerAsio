@@ -65,7 +65,7 @@ namespace DelayCollection {
                 return std::strong_ordering::equal;
             }
 
-            DelayInfo(TimeMs delay) : delay(delay), timeClock(nowTimePointClock()) {}
+            explicit DelayInfo(TimeMs delay) : delay(delay), timeClock(nowTimePointClock()) {}
 
             DelayInfo &operator=(const DelayInfo &o) = default;
 
@@ -141,6 +141,12 @@ namespace DelayCollection {
         TimeHistory historyHttpPing;
         TimeHistory historyRelayFirstDelay;
 
+        bool traditionTcpRelay;
+
+    public:
+
+        explicit DelayCollect(bool traditionTcpRelay) : traditionTcpRelay(traditionTcpRelay) {}
+
     public:
 
         std::deque<TimeHistory::DelayInfo> getHistoryTcpPing() {
@@ -182,16 +188,25 @@ namespace DelayCollection {
     public:
         void pushTcpPing(TimeMs t) {
             lastTcpPing = t;
+            if (traditionTcpRelay) {
+                return;
+            }
             historyTcpPing.addDelayInfo(t);
         }
 
         void pushHttpPing(TimeMs t) {
             lastHttpPing = t;
+            if (traditionTcpRelay) {
+                return;
+            }
             historyHttpPing.addDelayInfo(t);
         }
 
         void pushRelayFirstDelay(TimeMs t) {
             lastRelayFirstDelay = t;
+            if (traditionTcpRelay) {
+                return;
+            }
             historyRelayFirstDelay.addDelayInfo(t);
         }
 

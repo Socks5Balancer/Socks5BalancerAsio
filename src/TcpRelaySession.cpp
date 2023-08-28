@@ -296,21 +296,23 @@ void TcpRelaySession::do_upstream_read() {
                     if (ct) {
                         ct->relayGotoDown(upstream_data_, bytes_transferred);
                     }
-                    if (!firstDelayUpEnd) {
-                        firstDelayUpEnd = true;
-                        int64_t tt = -1;
-                        int64_t ttt = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                std::chrono::steady_clock::now().time_since_epoch()).count();
-                        if (firstDelayTimestamp.compare_exchange_strong(tt, ttt)) {
-                            // firstDelayTimestamp is first write
-                            // the first package timestamp write ok
-                            /*empty*/
-                        } else {
-                            // firstDelayTimestamp have first package timestamp now
-                            int64_t d = ttt - tt;
-                            nowServer->delayCollect->pushRelayFirstDelay(
-                                    std::chrono::milliseconds{d}
-                            );
+                    if (!traditionTcpRelay) {
+                        if (!firstDelayUpEnd) {
+                            firstDelayUpEnd = true;
+                            int64_t tt = -1;
+                            int64_t ttt = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::steady_clock::now().time_since_epoch()).count();
+                            if (firstDelayTimestamp.compare_exchange_strong(tt, ttt)) {
+                                // firstDelayTimestamp is first write
+                                // the first package timestamp write ok
+                                /*empty*/
+                            } else {
+                                // firstDelayTimestamp have first package timestamp now
+                                int64_t d = ttt - tt;
+                                nowServer->delayCollect->pushRelayFirstDelay(
+                                        std::chrono::milliseconds{d}
+                                );
+                            }
                         }
                     }
 
@@ -358,21 +360,23 @@ void TcpRelaySession::do_downstream_read() {
                     if (ct) {
                         ct->relayGotoUp(downstream_data_, bytes_transferred);
                     }
-                    if (!firstDelayDownEnd) {
-                        firstDelayDownEnd = true;
-                        int64_t tt = -1;
-                        int64_t ttt = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                std::chrono::steady_clock::now().time_since_epoch()).count();
-                        if (firstDelayTimestamp.compare_exchange_strong(tt, ttt)) {
-                            // firstDelayTimestamp is first write
-                            // the first package timestamp write ok
-                            /*empty*/
-                        } else {
-                            // firstDelayTimestamp have first package timestamp now
-                            int64_t d = ttt - tt;
-                            nowServer->delayCollect->pushRelayFirstDelay(
-                                    std::chrono::milliseconds{d}
-                            );
+                    if (!traditionTcpRelay) {
+                        if (!firstDelayDownEnd) {
+                            firstDelayDownEnd = true;
+                            int64_t tt = -1;
+                            int64_t ttt = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::steady_clock::now().time_since_epoch()).count();
+                            if (firstDelayTimestamp.compare_exchange_strong(tt, ttt)) {
+                                // firstDelayTimestamp is first write
+                                // the first package timestamp write ok
+                                /*empty*/
+                            } else {
+                                // firstDelayTimestamp have first package timestamp now
+                                int64_t d = ttt - tt;
+                                nowServer->delayCollect->pushRelayFirstDelay(
+                                        std::chrono::milliseconds{d}
+                                );
+                            }
                         }
                     }
 

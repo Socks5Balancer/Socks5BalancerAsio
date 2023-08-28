@@ -86,7 +86,8 @@ void UpstreamPool::setConfig(std::shared_ptr<ConfigLoader> configLoader) {
                 i, r.name,
                 r.host, r.port,
                 r.authUser, r.authPwd,
-                r.disable, r.slowImpl
+                r.disable, r.slowImpl,
+                _configLoader->config.traditionTcpRelay
         );
         _pool.push_back(u);
     }

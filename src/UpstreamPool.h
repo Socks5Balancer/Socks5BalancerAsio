@@ -71,7 +71,8 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     std::chrono::milliseconds lastOnlinePing{-1};
     std::chrono::milliseconds lastConnectPing{-1};
 
-    std::shared_ptr<DelayCollection::DelayCollect> delayCollect = std::make_shared<DelayCollection::DelayCollect>();
+    bool traditionTcpRelay;
+    std::shared_ptr<DelayCollection::DelayCollect> delayCollect;
 
     UpstreamServer(
             size_t index,
@@ -81,7 +82,8 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
             std::string authUser,
             std::string authPwd,
             bool disable,
-            bool slowImpl
+            bool slowImpl,
+            bool traditionTcpRelay
     ) :
             host(std::move(host)),
             port(port),
@@ -91,7 +93,9 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
             authPwd(std::move(authPwd)),
             isManualDisable(disable),
             disable(disable),
-            slowImpl(slowImpl) {}
+            slowImpl(slowImpl),
+            traditionTcpRelay(traditionTcpRelay),
+            delayCollect(std::make_shared<DelayCollection::DelayCollect>(traditionTcpRelay)) {}
 
     std::string print();
 
