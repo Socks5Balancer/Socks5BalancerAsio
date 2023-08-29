@@ -97,6 +97,9 @@ public:
 
         size_t authUserId{0};
 
+    protected:
+        friend TcpRelayStatisticsInfo;
+
         void updateTargetInfo(const std::shared_ptr<TcpRelaySession> &s);
     };
 
@@ -156,9 +159,11 @@ public:
         RuleEnum rule = RuleEnum::inherit;
         size_t lastUseUpstreamIndex = 0;
 
-        void removeExpiredSession();
 
-        void closeAllSession();
+    protected:
+        friend TcpRelayStatisticsInfo;
+
+        void removeExpiredSession();
 
         void calcByte();
 
@@ -166,10 +171,16 @@ public:
 
         void connectCountSub();
 
+    public:
+
+        void closeAllSession();
+
         size_t calcSessionsNumber();
     };
 
 private:
+    std::recursive_mutex mtx;
+
     // upstreamIndex
     std::map<size_t, std::shared_ptr<Info>> upstreamIndex;
     // clientEndpointAddrString "ip"
@@ -184,15 +195,15 @@ public:
 
 public:
     // nowServer->index
-    std::map<size_t, std::shared_ptr<Info>> &getUpstreamIndex();
+    std::map<size_t, std::shared_ptr<Info>> getUpstreamIndex();
 
     // ClientEndpointAddrString : (127.0.0.1)
-    std::map<std::string, std::shared_ptr<Info>> &getClientIndex();
+    std::map<std::string, std::shared_ptr<Info>> getClientIndex();
 
     // ListenEndpointAddrString : (127.0.0.1:661133)
-    std::map<std::string, std::shared_ptr<Info>> &getListenIndex();
+    std::map<std::string, std::shared_ptr<Info>> getListenIndex();
 
-    std::map<size_t, std::shared_ptr<Info>> &getAuthUserIndex();
+    std::map<size_t, std::shared_ptr<Info>> getAuthUserIndex();
 
 public:
     void addSession(size_t index, const std::shared_ptr<TcpRelaySession> &s);

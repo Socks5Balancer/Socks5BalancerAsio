@@ -50,6 +50,8 @@ UpstreamTimePoint UpstreamTimePointNow();
 std::string printUpstreamTimePoint(UpstreamTimePoint p);
 
 struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
+    std::recursive_mutex mtx;
+
     std::string host;
     uint16_t port;
     std::string name;
@@ -105,6 +107,7 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
 using UpstreamServerRef = std::shared_ptr<UpstreamServer>;
 
 class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
+    std::recursive_mutex mtx;
     boost::asio::any_io_executor ex;
 
     std::deque<UpstreamServerRef> _pool;
@@ -166,12 +169,13 @@ private:
     std::weak_ptr<CheckerTimerType> forceCheckerTimer;
 
     std::shared_ptr<boost::asio::steady_timer> additionTimer;
-public:
+protected:
     void endCheckTimer();
 
-    void startCheckTimer();
-
     std::string print();
+
+public:
+    void startCheckTimer();
 
     void stop();
 

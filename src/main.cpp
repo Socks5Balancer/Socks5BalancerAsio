@@ -93,21 +93,20 @@ int main(int argc, const char *argv[]) {
 
     try {
         boost::asio::io_context ioc;
-        boost::asio::any_io_executor ex = boost::asio::make_strand(ioc);
 
         auto configLoader = std::make_shared<ConfigLoader>();
         configLoader->load(config_file);
         configLoader->print();
 
-        auto tcpTest = std::make_shared<TcpTest>(ex);
-        auto connectTestHttps = std::make_shared<ConnectTestHttps>(ex);
+        auto tcpTest = std::make_shared<TcpTest>(boost::asio::make_strand(ioc));
+        auto connectTestHttps = std::make_shared<ConnectTestHttps>(boost::asio::make_strand(ioc));
 
         auto authClientManager = std::make_shared<AuthClientManager>(configLoader->shared_from_this());
 
-        auto upstreamPool = std::make_shared<UpstreamPool>(ex, tcpTest, connectTestHttps);
+        auto upstreamPool = std::make_shared<UpstreamPool>(boost::asio::make_strand(ioc), tcpTest, connectTestHttps);
         upstreamPool->setConfig(configLoader);
 
-        auto tcpRelay = std::make_shared<TcpRelayServer>(ex, configLoader, upstreamPool, authClientManager);
+        auto tcpRelay = std::make_shared<TcpRelayServer>(boost::asio::make_strand(ioc), configLoader, upstreamPool, authClientManager);
         auto stateMonitor = std::make_shared<StateMonitorServer>(
                 boost::asio::make_strand(ioc), configLoader, upstreamPool, tcpRelay);
 

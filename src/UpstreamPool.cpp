@@ -94,6 +94,7 @@ void UpstreamPool::setConfig(std::shared_ptr<ConfigLoader> configLoader) {
 }
 
 void UpstreamPool::forceSetLastUseUpstreamIndex(size_t i) {
+    std::lock_guard lg{mtx};
     if (i >= 0 && i < _pool.size()) {
         lastUseUpstreamIndex = i;
     }
@@ -174,6 +175,7 @@ auto UpstreamPool::getServerByHint(
         size_t &_lastUseUpstreamIndex,
         const size_t &relayId,
         bool dontFallbackToGlobal) -> UpstreamServerRef {
+    std::lock_guard lg{mtx};
 
     RuleEnum __upstreamSelectRule = _upstreamSelectRule;
 
@@ -231,6 +233,7 @@ auto UpstreamPool::getServerByHint(
 }
 
 auto UpstreamPool::getServerGlobal(const size_t &relayId) -> UpstreamServerRef {
+    std::lock_guard lg{mtx};
     const auto &_upstreamSelectRule = _configLoader->config.upstreamSelectRule;
     auto &_lastUseUpstreamIndex = lastUseUpstreamIndex;
     return getServerByHint(_upstreamSelectRule, _lastUseUpstreamIndex, relayId, true);
@@ -274,6 +277,7 @@ void UpstreamPool::startAdditionTimer() {
 }
 
 void UpstreamPool::startCheckTimer() {
+    std::lock_guard lg{mtx};
     if (tcpCheckerTimer && connectCheckerTimer) {
         return;
     }
@@ -320,6 +324,7 @@ std::string UpstreamPool::print() {
 }
 
 void UpstreamPool::stop() {
+    std::lock_guard lg{mtx};
     endAdditionTimer();
     endCheckTimer();
     if (auto ptr = forceCheckerTimer.lock()) {
@@ -346,6 +351,7 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
             auto p = std::to_string(a->port);
             auto t = tcpTest->createTest(a->host, p, maxDelayTime);
             t->run([t, a](std::chrono::milliseconds ping) {
+                       std::lock_guard lg{a->mtx};
                        // on ok
                        if (a->isOffline) {
                            a->lastConnectFailed = false;
@@ -357,6 +363,7 @@ void UpstreamPool::do_tcpCheckerTimer_impl() {
                    },
                    [t, a](std::string reason) {
                        boost::ignore_unused(reason);
+                       std::lock_guard lg{a->mtx};
                        // ok error
                        a->isOffline = true;
                        a->lastOnlinePing = std::chrono::milliseconds{-1};
@@ -373,6 +380,7 @@ void UpstreamPool::do_tcpCheckerOne_impl(UpstreamServerRef a) {
     auto p = std::to_string(a->port);
     auto t = tcpTest->createTest(a->host, p);
     t->run([t, a](std::chrono::milliseconds ping) {
+               std::lock_guard lg{a->mtx};
                // on ok
                if (a->isOffline) {
                    a->lastConnectFailed = false;
@@ -384,6 +392,7 @@ void UpstreamPool::do_tcpCheckerOne_impl(UpstreamServerRef a) {
            },
            [t, a](std::string reason) {
                boost::ignore_unused(reason);
+               std::lock_guard lg{a->mtx};
                // ok error
                a->isOffline = true;
                a->lastOnlinePing = std::chrono::milliseconds{-1};
@@ -487,6 +496,7 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
                     maxDelayTime
             );
             t->run([t, a](std::chrono::milliseconds ping, ConnectTestHttpsSession::SuccessfulInfo info) {
+                       std::lock_guard lg{a->mtx};
                        // on ok
                        // BOOST_LOG_S5B(trace) << "SuccessfulInfo:" << info;
                        a->lastConnectTime = UpstreamTimePointNow();
@@ -500,6 +510,7 @@ void UpstreamPool::do_connectCheckerTimer_impl() {
                    },
                    [t, a](std::string reason) {
                        boost::ignore_unused(reason);
+                       std::lock_guard lg{a->mtx};
                        // ok error
                        a->lastConnectFailed = true;
                        a->lastConnectPing = std::chrono::milliseconds{-1};
@@ -524,6 +535,7 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
             R"(\)"
     );
     t->run([t, a](std::chrono::milliseconds ping, ConnectTestHttpsSession::SuccessfulInfo info) {
+               std::lock_guard lg{a->mtx};
                // on ok
                // BOOST_LOG_S5B(trace) << "SuccessfulInfo:" << info;
                a->lastConnectTime = UpstreamTimePointNow();
@@ -537,6 +549,7 @@ void UpstreamPool::do_connectCheckerOne_impl(UpstreamServerRef a) {
            },
            [t, a](std::string reason) {
                boost::ignore_unused(reason);
+               std::lock_guard lg{a->mtx};
                // ok error
                a->lastConnectFailed = true;
                a->lastConnectPing = std::chrono::milliseconds{-1};
@@ -565,6 +578,7 @@ void UpstreamPool::do_connectCheckerTimer() {
 }
 
 void UpstreamPool::forceCheckNow() {
+    std::lock_guard lg{mtx};
     if (_configLoader->config.disableConnectTest) {
         return;
     }
@@ -578,6 +592,7 @@ void UpstreamPool::forceCheckNow() {
 }
 
 void UpstreamPool::forceCheckOne(size_t index) {
+    std::lock_guard lg{mtx};
     if (_configLoader->config.disableConnectTest) {
         return;
     }
@@ -609,9 +624,11 @@ void UpstreamPool::do_forceCheckNow(std::shared_ptr<CheckerTimerType> _forceChec
 }
 
 void UpstreamPool::updateLastConnectComeTime() {
+    std::lock_guard lg{mtx};
     this->lastConnectComeTime = UpstreamTimePointNow();
 }
 
 UpstreamTimePoint UpstreamPool::getLastConnectComeTime() {
+    std::lock_guard lg{mtx};
     return this->lastConnectComeTime;
 }

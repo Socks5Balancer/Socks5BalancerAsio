@@ -92,8 +92,8 @@ TcpRelayStatisticsInfo::SessionInfo::SessionInfo(const std::shared_ptr<TcpRelayS
     updateTargetInfo(s);
 }
 
-TcpRelayStatisticsInfo::SessionInfo::SessionInfo(const std::weak_ptr<TcpRelaySession> &s) : SessionInfo(s.lock()) {
-}
+TcpRelayStatisticsInfo::SessionInfo::SessionInfo(const std::weak_ptr<TcpRelaySession> &s)
+        : SessionInfo(s.lock()) {}
 
 void TcpRelayStatisticsInfo::SessionInfo::updateTargetInfo(const std::shared_ptr<TcpRelaySession> &s) {
     if (const auto &p = s) {
@@ -109,6 +109,7 @@ void TcpRelayStatisticsInfo::SessionInfo::updateTargetInfo(const std::shared_ptr
 
 void TcpRelayStatisticsInfo::addSession(size_t index, const std::shared_ptr<TcpRelaySession> &s) {
     BOOST_ASSERT(s);
+    std::lock_guard lgG{mtx};
     if (auto ptr = s) {
         if (upstreamIndex.find(index) == upstreamIndex.end()) {
             upstreamIndex.try_emplace(index, std::make_shared<Info>());
@@ -136,6 +137,7 @@ void TcpRelayStatisticsInfo::addSession(size_t index, const std::shared_ptr<TcpR
 
 void TcpRelayStatisticsInfo::addSessionClient(const std::shared_ptr<TcpRelaySession> &s) {
     BOOST_ASSERT(s);
+    std::lock_guard lgG{mtx};
     if (auto ptr = s) {
         const std::string &addr = ptr->getClientEndpointAddrString();
         if (clientIndex.find(addr) == clientIndex.end()) {
@@ -164,6 +166,7 @@ void TcpRelayStatisticsInfo::addSessionClient(const std::shared_ptr<TcpRelaySess
 
 void TcpRelayStatisticsInfo::addSessionListen(const std::shared_ptr<TcpRelaySession> &s) {
     BOOST_ASSERT(s);
+    std::lock_guard lgG{mtx};
     if (auto ptr = s) {
         const std::string &addr = ptr->getListenEndpointAddrString();
         if (listenIndex.find(addr) == listenIndex.end()) {
@@ -192,6 +195,7 @@ void TcpRelayStatisticsInfo::addSessionListen(const std::shared_ptr<TcpRelaySess
 
 void TcpRelayStatisticsInfo::addSessionAuthUser(const std::shared_ptr<TcpRelaySession> &s) {
     BOOST_ASSERT(s);
+    std::lock_guard lgG{mtx};
     if (auto ptr = s) {
         BOOST_ASSERT(ptr->authUser);
         size_t id = ptr->authUser->id;
@@ -223,6 +227,7 @@ void TcpRelayStatisticsInfo::addSessionAuthUser(const std::shared_ptr<TcpRelaySe
 
 void TcpRelayStatisticsInfo::updateSessionInfo(std::shared_ptr<TcpRelaySession> s) {
     BOOST_ASSERT(s);
+    std::lock_guard lgG{mtx};
     if (s) {
         {
             auto ui = upstreamIndex.find(s->getNowServer()->index);
@@ -276,6 +281,7 @@ void TcpRelayStatisticsInfo::updateSessionInfo(std::shared_ptr<TcpRelaySession> 
 }
 
 std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(size_t index) {
+    std::lock_guard lg{mtx};
     auto n = upstreamIndex.find(index);
     if (n != upstreamIndex.end()) {
         return n->second;
@@ -285,6 +291,7 @@ std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfo(si
 }
 
 std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoClient(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto n = clientIndex.find(addr);
     if (n != clientIndex.end()) {
         return n->second;
@@ -294,6 +301,7 @@ std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoCli
 }
 
 std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoListen(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto n = listenIndex.find(addr);
     if (n != listenIndex.end()) {
         return n->second;
@@ -303,6 +311,7 @@ std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoLis
 }
 
 std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoAuthUser(size_t id) {
+    std::lock_guard lg{mtx};
     auto n = authUserIndex.find(id);
     BOOST_ASSERT(n != authUserIndex.end());
     if (n != authUserIndex.end()) {
@@ -313,6 +322,7 @@ std::shared_ptr<TcpRelayStatisticsInfo::Info> TcpRelayStatisticsInfo::getInfoAut
 }
 
 void TcpRelayStatisticsInfo::removeExpiredSession(size_t index) {
+    std::lock_guard lg{mtx};
     auto p = getInfo(index);
     if (p) {
         p->removeExpiredSession();
@@ -320,6 +330,7 @@ void TcpRelayStatisticsInfo::removeExpiredSession(size_t index) {
 }
 
 void TcpRelayStatisticsInfo::removeExpiredSessionClient(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoClient(addr);
     if (p) {
         p->removeExpiredSession();
@@ -327,6 +338,7 @@ void TcpRelayStatisticsInfo::removeExpiredSessionClient(const std::string &addr)
 }
 
 void TcpRelayStatisticsInfo::removeExpiredSessionListen(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoListen(addr);
     if (p) {
         p->removeExpiredSession();
@@ -334,6 +346,7 @@ void TcpRelayStatisticsInfo::removeExpiredSessionListen(const std::string &addr)
 }
 
 void TcpRelayStatisticsInfo::removeExpiredSessionAuthUser(size_t id) {
+    std::lock_guard lg{mtx};
     auto p = getInfoAuthUser(id);
     if (p) {
         p->removeExpiredSession();
@@ -341,6 +354,7 @@ void TcpRelayStatisticsInfo::removeExpiredSessionAuthUser(size_t id) {
 }
 
 void TcpRelayStatisticsInfo::addByteUp(size_t index, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfo(index);
     if (p) {
         p->byteUp += b;
@@ -348,6 +362,7 @@ void TcpRelayStatisticsInfo::addByteUp(size_t index, size_t b) {
 }
 
 void TcpRelayStatisticsInfo::addByteUpClient(const std::string &addr, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfoClient(addr);
     if (p) {
         p->byteUp += b;
@@ -355,6 +370,7 @@ void TcpRelayStatisticsInfo::addByteUpClient(const std::string &addr, size_t b) 
 }
 
 void TcpRelayStatisticsInfo::addByteUpListen(const std::string &addr, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfoListen(addr);
     if (p) {
         p->byteUp += b;
@@ -362,6 +378,7 @@ void TcpRelayStatisticsInfo::addByteUpListen(const std::string &addr, size_t b) 
 }
 
 void TcpRelayStatisticsInfo::addByteUpAuthUser(size_t id, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfoAuthUser(id);
     if (p) {
         p->byteUp += b;
@@ -369,6 +386,7 @@ void TcpRelayStatisticsInfo::addByteUpAuthUser(size_t id, size_t b) {
 }
 
 void TcpRelayStatisticsInfo::addByteDown(size_t index, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfo(index);
     if (p) {
         p->byteDown += b;
@@ -376,6 +394,7 @@ void TcpRelayStatisticsInfo::addByteDown(size_t index, size_t b) {
 }
 
 void TcpRelayStatisticsInfo::addByteDownClient(const std::string &addr, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfoClient(addr);
     if (p) {
         p->byteDown += b;
@@ -383,6 +402,7 @@ void TcpRelayStatisticsInfo::addByteDownClient(const std::string &addr, size_t b
 }
 
 void TcpRelayStatisticsInfo::addByteDownListen(const std::string &addr, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfoListen(addr);
     if (p) {
         p->byteDown += b;
@@ -390,6 +410,7 @@ void TcpRelayStatisticsInfo::addByteDownListen(const std::string &addr, size_t b
 }
 
 void TcpRelayStatisticsInfo::addByteDownAuthUser(size_t id, size_t b) {
+    std::lock_guard lg{mtx};
     auto p = getInfoAuthUser(id);
     if (p) {
         p->byteDown += b;
@@ -397,6 +418,7 @@ void TcpRelayStatisticsInfo::addByteDownAuthUser(size_t id, size_t b) {
 }
 
 void TcpRelayStatisticsInfo::calcByteAll() {
+    std::lock_guard lg{mtx};
     for (auto &a: upstreamIndex) {
         a.second->calcByte();
     }
@@ -412,6 +434,7 @@ void TcpRelayStatisticsInfo::calcByteAll() {
 }
 
 void TcpRelayStatisticsInfo::removeExpiredSessionAll() {
+    std::lock_guard lg{mtx};
     for (auto &a: upstreamIndex) {
         a.second->removeExpiredSession();
     }
@@ -427,6 +450,7 @@ void TcpRelayStatisticsInfo::removeExpiredSessionAll() {
 }
 
 void TcpRelayStatisticsInfo::closeAllSession(size_t index) {
+    std::lock_guard lg{mtx};
     auto p = getInfo(index);
     if (p) {
         p->closeAllSession();
@@ -434,6 +458,7 @@ void TcpRelayStatisticsInfo::closeAllSession(size_t index) {
 }
 
 void TcpRelayStatisticsInfo::closeAllSessionClient(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoClient(addr);
     if (p) {
         p->closeAllSession();
@@ -441,6 +466,7 @@ void TcpRelayStatisticsInfo::closeAllSessionClient(const std::string &addr) {
 }
 
 void TcpRelayStatisticsInfo::closeAllSessionListen(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoListen(addr);
     if (p) {
         p->closeAllSession();
@@ -448,6 +474,7 @@ void TcpRelayStatisticsInfo::closeAllSessionListen(const std::string &addr) {
 }
 
 void TcpRelayStatisticsInfo::closeAllSessionAuthUser(size_t id) {
+    std::lock_guard lg{mtx};
     auto p = getInfoAuthUser(id);
     if (p) {
         p->closeAllSession();
@@ -455,6 +482,7 @@ void TcpRelayStatisticsInfo::closeAllSessionAuthUser(size_t id) {
 }
 
 void TcpRelayStatisticsInfo::connectCountAdd(size_t index) {
+    std::lock_guard lg{mtx};
     auto p = getInfo(index);
     if (p) {
         p->connectCountAdd();
@@ -462,6 +490,7 @@ void TcpRelayStatisticsInfo::connectCountAdd(size_t index) {
 }
 
 void TcpRelayStatisticsInfo::connectCountAddClient(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoClient(addr);
     if (p) {
         p->connectCountAdd();
@@ -469,6 +498,7 @@ void TcpRelayStatisticsInfo::connectCountAddClient(const std::string &addr) {
 }
 
 void TcpRelayStatisticsInfo::connectCountAddListen(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoListen(addr);
     if (p) {
         p->connectCountAdd();
@@ -476,6 +506,7 @@ void TcpRelayStatisticsInfo::connectCountAddListen(const std::string &addr) {
 }
 
 void TcpRelayStatisticsInfo::connectCountAddAuthUser(size_t id) {
+    std::lock_guard lg{mtx};
     auto p = getInfoAuthUser(id);
     if (p) {
         p->connectCountAdd();
@@ -483,6 +514,7 @@ void TcpRelayStatisticsInfo::connectCountAddAuthUser(size_t id) {
 }
 
 void TcpRelayStatisticsInfo::connectCountSub(size_t index) {
+    std::lock_guard lg{mtx};
     auto p = getInfo(index);
     if (p) {
         p->connectCountSub();
@@ -490,6 +522,7 @@ void TcpRelayStatisticsInfo::connectCountSub(size_t index) {
 }
 
 void TcpRelayStatisticsInfo::connectCountSubClient(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoClient(addr);
     if (p) {
         p->connectCountSub();
@@ -497,6 +530,7 @@ void TcpRelayStatisticsInfo::connectCountSubClient(const std::string &addr) {
 }
 
 void TcpRelayStatisticsInfo::connectCountSubListen(const std::string &addr) {
+    std::lock_guard lg{mtx};
     auto p = getInfoListen(addr);
     if (p) {
         p->connectCountSub();
@@ -504,24 +538,29 @@ void TcpRelayStatisticsInfo::connectCountSubListen(const std::string &addr) {
 }
 
 void TcpRelayStatisticsInfo::connectCountSubAuthUser(size_t id) {
+    std::lock_guard lg{mtx};
     auto p = getInfoAuthUser(id);
     if (p) {
         p->connectCountSub();
     }
 }
 
-std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getUpstreamIndex() {
-    return upstreamIndex;
+std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> TcpRelayStatisticsInfo::getUpstreamIndex() {
+    std::lock_guard lg{mtx};
+    return decltype(upstreamIndex){upstreamIndex.begin(), upstreamIndex.end()};
 }
 
-std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getClientIndex() {
-    return clientIndex;
+std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> TcpRelayStatisticsInfo::getClientIndex() {
+    std::lock_guard lg{mtx};
+    return decltype(clientIndex){clientIndex.begin(), clientIndex.end()};
 }
 
-std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getListenIndex() {
-    return listenIndex;
+std::map<std::string, std::shared_ptr<TcpRelayStatisticsInfo::Info>> TcpRelayStatisticsInfo::getListenIndex() {
+    std::lock_guard lg{mtx};
+    return decltype(listenIndex){listenIndex.begin(), listenIndex.end()};
 }
 
-std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> &TcpRelayStatisticsInfo::getAuthUserIndex() {
-    return authUserIndex;
+std::map<size_t, std::shared_ptr<TcpRelayStatisticsInfo::Info>> TcpRelayStatisticsInfo::getAuthUserIndex() {
+    std::lock_guard lg{mtx};
+    return decltype(authUserIndex){authUserIndex.begin(), authUserIndex.end()};
 }
