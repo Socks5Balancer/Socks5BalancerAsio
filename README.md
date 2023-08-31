@@ -503,6 +503,7 @@ so i write this, hope it can work more faster and more stable.
 
 ## TODO
 - [x] listen on multi port
+- [ ] socks4/socks4a proxy To socks5 proxy
 - [x] http proxy To socks5 proxy
 - [x] http/socks5 on same port (mixed-port mode)
 - [ ] analysis socks5 protocol and communicate protocol type

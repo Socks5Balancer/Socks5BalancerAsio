@@ -133,6 +133,8 @@ if (Need_ProxyHandshakeAuth)
             src/ProxyHandshakeUtils/Socks5ServerImpl.h
             src/ProxyHandshakeUtils/Socks5ClientImpl.cpp
             src/ProxyHandshakeUtils/Socks5ClientImpl.h
+            src/ProxyHandshakeUtils/Socks4ServerImpl.cpp
+            src/ProxyHandshakeUtils/Socks4ServerImpl.h
             src/ProxyHandshakeAuth.cpp
             src/ProxyHandshakeAuth.h
             src/ProxyHandshakeUtils/ProxyRelayMode.h)

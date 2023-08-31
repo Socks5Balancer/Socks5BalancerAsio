@@ -48,6 +48,7 @@
 #include "./ProxyHandshakeUtils/HttpClientImpl.h"
 #include "./ProxyHandshakeUtils/Socks5ServerImpl.h"
 #include "./ProxyHandshakeUtils/Socks5ClientImpl.h"
+#include "./ProxyHandshakeUtils/Socks4ServerImpl.h"
 #include "./ProxyHandshakeUtils/ProxyRelayMode.h"
 
 #include "./log/Log.h"
@@ -98,6 +99,7 @@ private:
 
     enum class UpsideConnectType {
         socks5,
+        socks4,
         http,
         none,
     };
@@ -113,6 +115,7 @@ private:
     std::shared_ptr<HttpServerImpl> util_HttpServerImpl_;
     std::shared_ptr<Socks5ClientImpl> util_Socks5ClientImpl_;
     std::shared_ptr<Socks5ServerImpl> util_Socks5ServerImpl_;
+    std::shared_ptr<Socks4ServerImpl> util_Socks4ServerImpl_;
 
 public:
 

@@ -107,6 +107,7 @@ ConnectionTracker::AnalysisResult ConnectionTracker::analysisData(const std::str
             }
             break;
         case ConnectType::socks5:
+        case ConnectType::socks4:
             if (!host.empty() && port != 0) {
                 // all the base info now we have
                 // only the ProxyHandshakeAuth mode go there.

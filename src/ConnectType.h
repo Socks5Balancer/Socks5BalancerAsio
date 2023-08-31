@@ -25,6 +25,7 @@
 
 enum class ConnectType {
     socks5,
+    socks4,
     httpConnect,
     httpOther,
     unknown,
