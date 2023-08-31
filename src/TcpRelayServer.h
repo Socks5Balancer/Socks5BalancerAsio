@@ -24,6 +24,7 @@
 #endif
 
 #include <boost/asio/any_io_executor.hpp>
+#include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <string>
@@ -44,6 +45,7 @@ class TcpRelaySession;
 class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
 
     boost::asio::any_io_executor ex;
+    boost::asio::io_context& ioc;
     std::shared_ptr<ConfigLoader> configLoader;
     std::shared_ptr<UpstreamPool> upstreamPool;
     std::shared_ptr<AuthClientManager> authClientManager;
@@ -56,11 +58,12 @@ class TcpRelayServer : public std::enable_shared_from_this<TcpRelayServer> {
     std::shared_ptr<boost::asio::steady_timer> speedCalcTimer;
 public:
     TcpRelayServer(
-            boost::asio::any_io_executor ex,
+            boost::asio::io_context& ioc,
             std::shared_ptr<ConfigLoader> configLoader,
             std::shared_ptr<UpstreamPool> upstreamPool,
             std::shared_ptr<AuthClientManager> authClientManager
-    ) : ex(ex),
+    ) : ioc(ioc),
+        ex(boost::asio::make_strand(ioc)),
         configLoader(std::move(configLoader)),
         upstreamPool(std::move(upstreamPool)),
         authClientManager(std::move(authClientManager)),

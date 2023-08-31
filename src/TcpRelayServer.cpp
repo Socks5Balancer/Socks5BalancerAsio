@@ -65,7 +65,7 @@ void TcpRelayServer::stop() {
 
 void TcpRelayServer::async_accept(boost::asio::ip::tcp::acceptor &sa) {
     auto session = std::make_shared<TcpRelaySession>(
-            ex,
+            boost::asio::make_strand(ioc),
             upstreamPool,
             statisticsInfo->weak_from_this(),
             configLoader->shared_from_this(),

@@ -106,7 +106,7 @@ int main(int argc, const char *argv[]) {
         auto upstreamPool = std::make_shared<UpstreamPool>(boost::asio::make_strand(ioc), tcpTest, connectTestHttps);
         upstreamPool->setConfig(configLoader);
 
-        auto tcpRelay = std::make_shared<TcpRelayServer>(boost::asio::make_strand(ioc), configLoader, upstreamPool, authClientManager);
+        auto tcpRelay = std::make_shared<TcpRelayServer>(ioc, configLoader, upstreamPool, authClientManager);
         auto stateMonitor = std::make_shared<StateMonitorServer>(
                 boost::asio::make_strand(ioc), configLoader, upstreamPool, tcpRelay);
 
