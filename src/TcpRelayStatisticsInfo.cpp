@@ -56,10 +56,10 @@ void TcpRelayStatisticsInfo::Info::calcByte() {
     byteUpLast = newByteUp;
     byteDownLast = newByteDown;
     if (byteUpChange > byteUpChangeMax) {
-        byteUpChangeMax = byteUpChange;
+        byteUpChangeMax = byteUpChange.load();
     }
     if (byteDownChange > byteDownChangeMax) {
-        byteDownChangeMax = byteDownChange;
+        byteDownChangeMax = byteDownChange.load();
     }
 }
 
@@ -130,6 +130,7 @@ void TcpRelayStatisticsInfo::addSession(size_t index, const std::shared_ptr<TcpR
         )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
         n->sessions.emplace_back(s);
         if (auto ns = ptr->getNowServer()) {
+            std::lock_guard lgLM{n->lastUseUpstreamIndexMtx};
             n->lastUseUpstreamIndex = ns->index;
         }
     }
@@ -159,6 +160,7 @@ void TcpRelayStatisticsInfo::addSessionClient(const std::shared_ptr<TcpRelaySess
         )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
         n->sessions.emplace_back(s);
         if (auto ns = ptr->getNowServer()) {
+            std::lock_guard lgLM{n->lastUseUpstreamIndexMtx};
             n->lastUseUpstreamIndex = ns->index;
         }
     }
@@ -188,6 +190,7 @@ void TcpRelayStatisticsInfo::addSessionListen(const std::shared_ptr<TcpRelaySess
         )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
         n->sessions.emplace_back(s);
         if (auto ns = ptr->getNowServer()) {
+            std::lock_guard lgLM{n->lastUseUpstreamIndexMtx};
             n->lastUseUpstreamIndex = ns->index;
         }
     }
@@ -220,6 +223,7 @@ void TcpRelayStatisticsInfo::addSessionAuthUser(const std::shared_ptr<TcpRelaySe
         )) == n->sessions.get<SessionInfo::ListenClientAddrPortPair>().end());
         n->sessions.emplace_back(s);
 //        if (auto ns = ptr->getNowServer()) {
+//            std::lock_guard lgLM{n->lastUseUpstreamIndexMtx};
 //            n->lastUseUpstreamIndex = ns->index;
 //        }
     }

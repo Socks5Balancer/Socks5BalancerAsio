@@ -110,8 +110,8 @@ bool UpstreamPool::checkServer(const UpstreamServerRef &u) const {
                && !u->isManualDisable;
     }
     return u
-           && u->lastConnectTime.has_value()
-           && u->lastOnlineTime.has_value()
+           && u->lastConnectTime.load().time_since_epoch() != UpstreamTimePoint::duration::zero()
+           && u->lastOnlineTime.load().time_since_epoch() != UpstreamTimePoint::duration::zero()
            && !u->lastConnectFailed
            && !u->isOffline
            && !u->isManualDisable;
@@ -205,7 +205,7 @@ auto UpstreamPool::getServerByHint(
         case RuleEnum::change_by_time: {
             UpstreamTimePoint t = UpstreamTimePointNow();
             const auto &d = _configLoader->config.serverChangeTime;
-            if ((t - lastChangeUpstreamTime) > d) {
+            if ((t - lastChangeUpstreamTime.load()) > d) {
                 s = getNextServer(_lastUseUpstreamIndex);
                 lastChangeUpstreamTime = UpstreamTimePointNow();
             } else {
@@ -309,11 +309,11 @@ std::string UpstreamPool::print() {
            << "\t" << "isOffline :" << r->isOffline << "\n"
            << "\t" << "lastConnectFailed :" << r->lastConnectFailed << "\n"
            << "\t" << "lastOnlineTime :" << (
-                   r->lastOnlineTime.has_value() ?
-                   printUpstreamTimePoint(r->lastOnlineTime.value()) : "empty") << "\n"
+                   r->lastOnlineTime.load() != UpstreamTimePoint{} ?
+                   printUpstreamTimePoint(r->lastOnlineTime.load()) : "empty") << "\n"
            << "\t" << "lastConnectTime :" << (
-                   r->lastConnectTime.has_value() ?
-                   printUpstreamTimePoint(r->lastConnectTime.value()) : "empty") << "\n"
+                   r->lastConnectTime.load() != UpstreamTimePoint{} ?
+                   printUpstreamTimePoint(r->lastConnectTime.load()) : "empty") << "\n"
            << "\t" << "lastConnectCheckResult :" << r->lastConnectCheckResult << "\n"
            << "\t" << "disable :" << r->disable << "\n"
            << "\t" << "isManualDisable :" << r->isManualDisable << "\n"
@@ -418,7 +418,7 @@ void UpstreamPool::do_AdditionTimer() {
                 }
         );
         if (isAllDown) {
-            if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
+            if ((UpstreamTimePointNow() - lastConnectComeTime.load()) <= _configLoader->config.sleepTime) {
                 do_AdditionTimer_impl();
             }
         }
@@ -459,7 +459,7 @@ void UpstreamPool::do_tcpCheckerTimer() {
 //        BOOST_LOG_S5B(trace) << "do_tcpCheckerTimer()";
 //        BOOST_LOG_S5B(trace) << print();
 
-        if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
+        if ((UpstreamTimePointNow() - lastConnectComeTime.load()) <= _configLoader->config.sleepTime) {
             do_tcpCheckerTimer_impl();
         }
 
@@ -567,7 +567,7 @@ void UpstreamPool::do_connectCheckerTimer() {
         }
 //        BOOST_LOG_S5B(trace) << "do_connectCheckerTimer()";
 
-        if ((UpstreamTimePointNow() - lastConnectComeTime) <= _configLoader->config.sleepTime) {
+        if ((UpstreamTimePointNow() - lastConnectComeTime.load()) <= _configLoader->config.sleepTime) {
             do_connectCheckerTimer_impl();
         }
 

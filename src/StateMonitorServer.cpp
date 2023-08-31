@@ -108,24 +108,24 @@ std::string HttpConnectSession::createJsonString() {
             n.put("name", a->name);
             n.put("host", a->host);
             n.put("port", a->port);
-            n.put("isOffline", a->isOffline);
-            n.put("lastConnectFailed", a->lastConnectFailed);
-            n.put("isManualDisable", a->isManualDisable);
-            n.put("disable", a->disable);
+            n.put("isOffline", a->isOffline.load());
+            n.put("lastConnectFailed", a->lastConnectFailed.load());
+            n.put("isManualDisable", a->isManualDisable.load());
+            n.put("disable", a->disable.load());
             n.put("lastConnectCheckResult", a->lastConnectCheckResult);
             n.put("connectCount", a->connectCount.load());
             n.put("lastOnlinePing", (
-                    a->lastOnlinePing.count() != -1 ?
-                    boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
+                    a->lastOnlinePing.load().count() != -1 ?
+                    boost::lexical_cast<std::string>(a->lastOnlinePing.load().count()) : "<empty>"));
             n.put("lastConnectPing", (
-                    a->lastConnectPing.count() != -1 ?
-                    boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
+                    a->lastConnectPing.load().count() != -1 ?
+                    boost::lexical_cast<std::string>(a->lastConnectPing.load().count()) : "<empty>"));
             n.put("lastOnlineTime", (
-                    a->lastOnlineTime.has_value() ?
-                    printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
+                    a->lastOnlineTime.load() != UpstreamTimePoint{} ?
+                    printUpstreamTimePoint(a->lastOnlineTime.load()) : "<empty>"));
             n.put("lastConnectTime", (
-                    a->lastConnectTime.has_value() ?
-                    printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
+                    a->lastConnectTime.load() != UpstreamTimePoint{} ?
+                    printUpstreamTimePoint(a->lastConnectTime.load()) : "<empty>"));
             n.put("isWork", upstreamPool->checkServer(a));
 
             if (info) {
@@ -194,7 +194,10 @@ std::string HttpConnectSession::createJsonString() {
                 n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                 n.put("byteDownChangeMax", a.second->byteDownChangeMax);
                 n.put("rule", ruleEnum2string(a.second->rule));
-                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                {
+                    std::lock_guard lgLM{a.second->lastUseUpstreamIndexMtx};
+                    n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                }
 
                 pS.push_back(std::make_pair("", n));
             }
@@ -214,7 +217,10 @@ std::string HttpConnectSession::createJsonString() {
                 n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                 n.put("byteDownChangeMax", a.second->byteDownChangeMax);
                 n.put("rule", ruleEnum2string(a.second->rule));
-                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                {
+                    std::lock_guard lgLM{a.second->lastUseUpstreamIndexMtx};
+                    n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                }
 
                 pC.push_back(std::make_pair("", n));
             }
@@ -234,7 +240,10 @@ std::string HttpConnectSession::createJsonString() {
                 n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                 n.put("byteDownChangeMax", a.second->byteDownChangeMax);
                 n.put("rule", ruleEnum2string(a.second->rule));
-                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                {
+                    std::lock_guard lgLM{a.second->lastUseUpstreamIndexMtx};
+                    n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                }
 
                 pL.push_back(std::make_pair("", n));
             }
@@ -255,7 +264,10 @@ std::string HttpConnectSession::createJsonString() {
                 n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                 n.put("byteDownChangeMax", a.second->byteDownChangeMax);
                 n.put("rule", ruleEnum2string(a.second->rule));
-                n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                {
+                    std::lock_guard lgLM{a.second->lastUseUpstreamIndexMtx};
+                    n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                }
 
                 auto au = am->getById(a.first);
                 boost::property_tree::ptree pAU;
@@ -396,6 +408,7 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                                 if (ptr->getStatisticsInfo()) {
                                     auto info = ptr->getStatisticsInfo()->getInfoClient(target->second);
                                     if (info) {
+                                        std::lock_guard lg{info->lastUseUpstreamIndexMtx};
                                         info->lastUseUpstreamIndex = index;
                                     }
                                 }
@@ -403,6 +416,16 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                                 if (ptr->getStatisticsInfo()) {
                                     auto info = ptr->getStatisticsInfo()->getInfoListen(target->second);
                                     if (info) {
+                                        std::lock_guard lg{info->lastUseUpstreamIndexMtx};
+                                        info->lastUseUpstreamIndex = index;
+                                    }
+                                }
+                            } else if ("auth" == t) {
+                                if (ptr->getStatisticsInfo()) {
+                                    auto info = ptr->getStatisticsInfo()->getInfoAuthUser(
+                                            boost::lexical_cast<size_t>(target->second));
+                                    if (info) {
+                                        std::lock_guard lg{info->lastUseUpstreamIndexMtx};
                                         info->lastUseUpstreamIndex = index;
                                     }
                                 }
@@ -446,9 +469,9 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                     for (auto &a: upstreamPool->pool()) {
                         a->isOffline = false;
                         a->lastConnectFailed = false;
-                        a->lastOnlineTime.reset();
+                        a->lastOnlineTime = UpstreamTimePoint{};
                         a->lastOnlinePing = std::chrono::milliseconds{-1};
-                        a->lastConnectTime.reset();
+                        a->lastConnectTime = UpstreamTimePoint{};
                         a->lastConnectPing = std::chrono::milliseconds{-1};
                     }
                     // recheck
@@ -643,24 +666,24 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                         n.put("name", a->name);
                         n.put("host", a->host);
                         n.put("port", a->port);
-                        n.put("isOffline", a->isOffline);
-                        n.put("lastConnectFailed", a->lastConnectFailed);
-                        n.put("isManualDisable", a->isManualDisable);
-                        n.put("disable", a->disable);
+                        n.put("isOffline", a->isOffline.load());
+                        n.put("lastConnectFailed", a->lastConnectFailed.load());
+                        n.put("isManualDisable", a->isManualDisable.load());
+                        n.put("disable", a->disable.load());
                         n.put("lastConnectCheckResult", a->lastConnectCheckResult);
                         n.put("connectCount", a->connectCount.load());
                         n.put("lastOnlinePing", (
-                                a->lastOnlinePing.count() != -1 ?
-                                boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
+                                a->lastOnlinePing.load().count() != -1 ?
+                                boost::lexical_cast<std::string>(a->lastOnlinePing.load().count()) : "<empty>"));
                         n.put("lastConnectPing", (
-                                a->lastConnectPing.count() != -1 ?
-                                boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
+                                a->lastConnectPing.load().count() != -1 ?
+                                boost::lexical_cast<std::string>(a->lastConnectPing.load().count()) : "<empty>"));
                         n.put("lastOnlineTime", (
-                                a->lastOnlineTime.has_value() ?
-                                printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
+                                a->lastOnlineTime.load() != UpstreamTimePoint{} ?
+                                printUpstreamTimePoint(a->lastOnlineTime.load()) : "<empty>"));
                         n.put("lastConnectTime", (
-                                a->lastConnectTime.has_value() ?
-                                printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
+                                a->lastConnectTime.load() != UpstreamTimePoint{} ?
+                                printUpstreamTimePoint(a->lastConnectTime.load()) : "<empty>"));
                         n.put("isWork", upstreamPool->checkServer(a));
 
                         if (info) {
@@ -710,7 +733,10 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                         n.put("byteUpChangeMax", a.second->byteUpChangeMax);
                         n.put("byteDownChangeMax", a.second->byteDownChangeMax);
                         n.put("rule", ruleEnum2string(a.second->rule));
-                        n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                        {
+                            std::lock_guard lgLM{a.second->lastUseUpstreamIndexMtx};
+                            n.put("lastUseUpstreamIndex", a.second->lastUseUpstreamIndex);
+                        }
 
                         pS.push_back(std::make_pair("", n));
                     }
@@ -755,7 +781,10 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                             baseInfo.put("byteUpChangeMax", in->byteUpChangeMax);
                             baseInfo.put("byteDownChangeMax", in->byteDownChangeMax);
                             baseInfo.put("rule", ruleEnum2string(in->rule));
-                            baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            {
+                                std::lock_guard lgLM{in->lastUseUpstreamIndexMtx};
+                                baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            }
                             root.add_child("BaseInfo", baseInfo);
                         }
                     }
@@ -798,7 +827,10 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                             baseInfo.put("byteUpChangeMax", in->byteUpChangeMax);
                             baseInfo.put("byteDownChangeMax", in->byteDownChangeMax);
                             baseInfo.put("rule", ruleEnum2string(in->rule));
-                            baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            {
+                                std::lock_guard lgLM{in->lastUseUpstreamIndexMtx};
+                                baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            }
                             root.add_child("BaseInfo", baseInfo);
                         }
                     }
@@ -841,7 +873,10 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                             baseInfo.put("byteUpChangeMax", in->byteUpChangeMax);
                             baseInfo.put("byteDownChangeMax", in->byteDownChangeMax);
                             baseInfo.put("rule", ruleEnum2string(in->rule));
-                            baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            {
+                                std::lock_guard lgLM{in->lastUseUpstreamIndexMtx};
+                                baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            }
                             root.add_child("BaseInfo", baseInfo);
                         }
                     }
@@ -899,24 +934,24 @@ boost::property_tree::ptree HttpConnectSession::makeUpstreamServerDI(const Upstr
         n.put("name", a->name);
         n.put("host", a->host);
         n.put("port", a->port);
-        n.put("isOffline", a->isOffline);
-        n.put("lastConnectFailed", a->lastConnectFailed);
-        n.put("isManualDisable", a->isManualDisable);
-        n.put("disable", a->disable);
+        n.put("isOffline", a->isOffline.load());
+        n.put("lastConnectFailed", a->lastConnectFailed.load());
+        n.put("isManualDisable", a->isManualDisable.load());
+        n.put("disable", a->disable.load());
         n.put("lastConnectCheckResult", a->lastConnectCheckResult);
         n.put("connectCount", a->connectCount.load());
         n.put("lastOnlinePing", (
-                a->lastOnlinePing.count() != -1 ?
-                boost::lexical_cast<std::string>(a->lastOnlinePing.count()) : "<empty>"));
+                a->lastOnlinePing.load().count() != -1 ?
+                boost::lexical_cast<std::string>(a->lastOnlinePing.load().count()) : "<empty>"));
         n.put("lastConnectPing", (
-                a->lastConnectPing.count() != -1 ?
-                boost::lexical_cast<std::string>(a->lastConnectPing.count()) : "<empty>"));
+                a->lastConnectPing.load().count() != -1 ?
+                boost::lexical_cast<std::string>(a->lastConnectPing.load().count()) : "<empty>"));
         n.put("lastOnlineTime", (
-                a->lastOnlineTime.has_value() ?
-                printUpstreamTimePoint(a->lastOnlineTime.value()) : "<empty>"));
+                a->lastOnlineTime.load() != UpstreamTimePoint{} ?
+                printUpstreamTimePoint(a->lastOnlineTime.load()) : "<empty>"));
         n.put("lastConnectTime", (
-                a->lastConnectTime.has_value() ?
-                printUpstreamTimePoint(a->lastConnectTime.value()) : "<empty>"));
+                a->lastConnectTime.load() != UpstreamTimePoint{} ?
+                printUpstreamTimePoint(a->lastConnectTime.load()) : "<empty>"));
         n.put("isWork", upstreamPool->checkServer(a));
 
         auto info = pT->getStatisticsInfo();

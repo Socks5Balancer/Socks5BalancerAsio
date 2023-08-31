@@ -60,18 +60,20 @@ struct UpstreamServer : public std::enable_shared_from_this<UpstreamServer> {
     std::string authUser;
     std::string authPwd;
 
-    std::optional<UpstreamTimePoint> lastOnlineTime;
-    std::optional<UpstreamTimePoint> lastConnectTime;
-    bool lastConnectFailed = true;
+    std::atomic<UpstreamTimePoint> lastOnlineTime{UpstreamTimePoint{UpstreamTimePoint::duration::zero()}};
+    std::atomic<UpstreamTimePoint> lastConnectTime{UpstreamTimePoint{UpstreamTimePoint::duration::zero()}};
+    std::atomic_bool lastConnectFailed = true;
+
     std::string lastConnectCheckResult;
-    bool isOffline = true;
+
+    std::atomic_bool isOffline = true;
     std::atomic_size_t connectCount{0};
-    bool isManualDisable = false;
-    bool disable = false;
+    std::atomic_bool isManualDisable = false;
+    std::atomic_bool disable = false;
     bool slowImpl = false;
 
-    std::chrono::milliseconds lastOnlinePing{-1};
-    std::chrono::milliseconds lastConnectPing{-1};
+    std::atomic<std::chrono::milliseconds> lastOnlinePing{std::chrono::milliseconds{-1}};
+    std::atomic<std::chrono::milliseconds> lastConnectPing{std::chrono::milliseconds{-1}};
 
     bool traditionTcpRelay;
     std::shared_ptr<DelayCollection::DelayCollect> delayCollect;
@@ -117,9 +119,9 @@ class UpstreamPool : public std::enable_shared_from_this<UpstreamPool> {
 
     std::default_random_engine randomGenerator;
 
-    UpstreamTimePoint lastChangeUpstreamTime;
+    std::atomic<UpstreamTimePoint> lastChangeUpstreamTime;
 
-    UpstreamTimePoint lastConnectComeTime;
+    std::atomic<UpstreamTimePoint> lastConnectComeTime;
 
     std::shared_ptr<TcpTest> tcpTest;
     std::shared_ptr<ConnectTestHttps> connectTestHttps;

@@ -147,16 +147,17 @@ public:
 
         std::atomic_size_t byteUp = 0;
         std::atomic_size_t byteDown = 0;
-        size_t byteUpLast = 0;
-        size_t byteDownLast = 0;
-        size_t byteUpChange = 0;
-        size_t byteDownChange = 0;
-        size_t byteUpChangeMax = 0;
-        size_t byteDownChangeMax = 0;
+        std::atomic_size_t byteUpLast = 0;
+        std::atomic_size_t byteDownLast = 0;
+        std::atomic_size_t byteUpChange = 0;
+        std::atomic_size_t byteDownChange = 0;
+        std::atomic_size_t byteUpChangeMax = 0;
+        std::atomic_size_t byteDownChangeMax = 0;
 
         std::atomic_size_t connectCount{0};
 
         RuleEnum rule = RuleEnum::inherit;
+        std::recursive_mutex lastUseUpstreamIndexMtx;
         size_t lastUseUpstreamIndex = 0;
 
 

@@ -104,6 +104,7 @@ void TcpRelaySession::try_connect_upstream() {
             if (ic && ic->rule != RuleEnum::inherit) {
                 BOOST_LOG_S5B_ID(relayId, trace)
                     << "TcpRelaySession::try_connect_upstream() get by client getServerByHint";
+                std::lock_guard lg{ic->lastUseUpstreamIndexMtx};
                 s = upstreamPool->getServerByHint(ic->rule, ic->lastUseUpstreamIndex, relayId);
             }
             if (!s) {
@@ -112,6 +113,7 @@ void TcpRelaySession::try_connect_upstream() {
                 if (il && il->rule != RuleEnum::inherit) {
                     BOOST_LOG_S5B_ID(relayId, trace)
                         << "TcpRelaySession::try_connect_upstream() get by listen getServerByHint";
+                    std::lock_guard lg{il->lastUseUpstreamIndexMtx};
                     s = upstreamPool->getServerByHint(il->rule, il->lastUseUpstreamIndex, relayId);
                 }
             }
