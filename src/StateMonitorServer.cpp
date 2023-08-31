@@ -583,6 +583,21 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                     }
                 }
             }
+            if (queryPairs.count("removeBefore") > 0 && queryPairs.count("timestamp") > 0) {
+                auto q = *queryPairs.find("newRule");
+                auto timestampMs = *queryPairs.find("timestamp");
+                auto timestamp = std::chrono::system_clock::time_point{
+                        std::chrono::milliseconds{boost::lexical_cast<size_t>(timestampMs.second)}
+                };
+                if (auto pT = tcpRelayServer.lock()) {
+                    auto up = pT->getUpstreamPool();
+                    for (const UpstreamServerRef &a: up->pool()) {
+                        a->delayCollect->removeBeforeTcpPing(timestamp);
+                        a->delayCollect->removeBeforeHttpPing(timestamp);
+                        a->delayCollect->removeBeforeFirstDelay(timestamp);
+                    }
+                }
+            }
         } catch (const boost::bad_lexical_cast &e) {
             BOOST_LOG_S5B(error) << "boost::bad_lexical_cast:" << e.what();
             response_.result(boost::beast::http::status::bad_request);

@@ -128,6 +128,13 @@ namespace DelayCollection {
         [[nodiscard]] decltype(maxSize) getMaxSize() {
             return maxSize;
         }
+
+        void removeBefore(TimePointClock time) {
+            std::lock_guard lg{mtx};
+            std::erase_if(q, [&time](const DelayInfo &di) {
+                return di.timeClock < time;
+            });
+        }
     };
 
     class DelayCollect : public std::enable_shared_from_this<DelayCollect> {
@@ -183,6 +190,18 @@ namespace DelayCollection {
 
         size_t getMaxSizeFirstDelay() {
             return historyRelayFirstDelay.getMaxSize();
+        }
+
+        void removeBeforeTcpPing(TimePointClock time) {
+            historyTcpPing.removeBefore(time);
+        }
+
+        void removeBeforeHttpPing(TimePointClock time) {
+            historyHttpPing.removeBefore(time);
+        }
+
+        void removeBeforeFirstDelay(TimePointClock time) {
+            historyRelayFirstDelay.removeBefore(time);
         }
 
     public:
