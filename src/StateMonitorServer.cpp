@@ -803,6 +803,49 @@ void HttpConnectSession::path_per_info(HttpConnectSession::QueryPairsType &query
                         }
                     }
 
+                    if ("auth" == targetMode->second) {
+                        if (auto in = info->getInfoAuthUser(boost::lexical_cast<size_t>(target->second))) {
+                            valid = true;
+
+                            boost::property_tree::ptree pL;
+                            {
+                                std::lock_guard lg{in->sessionsMtx};
+                                for (const auto &wp: in->sessions) {
+                                    if (auto a = wp.ptr.lock()) {
+                                        boost::property_tree::ptree n;
+
+                                        if (auto s = a->getNowServer()) {
+                                            n.put("serverIndex", s->index);
+                                        }
+                                        n.put("ClientEndpoint", a->getClientEndpointAddrString());
+                                        n.put("ListenEnd", a->getListenEndpointAddrString());
+                                        n.put("TargetEndpoint", a->getTargetEndpointAddrString());
+                                        n.put("TargetHost", wp.host);
+                                        n.put("TargetPort", wp.post);
+                                        n.put("StartTime", wp.startTime);
+
+                                        pL.push_back(std::make_pair("", n));
+                                    }
+                                }
+                            }
+                            root.add_child("AuthIndex", pL);
+
+                            boost::property_tree::ptree baseInfo;
+                            baseInfo.put("index", targetMode->second);
+                            baseInfo.put("connectCount", in->connectCount.load());
+                            baseInfo.put("sessionsCount", in->calcSessionsNumber());
+                            baseInfo.put("byteDownChange", in->byteDownChange);
+                            baseInfo.put("byteUpChange", in->byteUpChange);
+                            baseInfo.put("byteDownLast", in->byteDownLast);
+                            baseInfo.put("byteUpLast", in->byteUpLast);
+                            baseInfo.put("byteUpChangeMax", in->byteUpChangeMax);
+                            baseInfo.put("byteDownChangeMax", in->byteDownChangeMax);
+                            baseInfo.put("rule", ruleEnum2string(in->rule));
+                            baseInfo.put("lastUseUpstreamIndex", in->lastUseUpstreamIndex);
+                            root.add_child("BaseInfo", baseInfo);
+                        }
+                    }
+
                     if (valid) {
                         std::stringstream ss;
                         boost::property_tree::write_json(ss, root);
@@ -1113,6 +1156,9 @@ void HttpConnectSession::create_response() {
             return path_per_info(queryPairs);
         }
         if (path == "/listenInfo") {
+            return path_per_info(queryPairs);
+        }
+        if (path == "/authInfo") {
             return path_per_info(queryPairs);
         }
         if (path == "/delayInfo") {
