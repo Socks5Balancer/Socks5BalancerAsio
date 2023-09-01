@@ -44,6 +44,10 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
             fail({}, "do_analysis_client_first_socks4_header (!pLenOk), never go there");
             return;
         }
+        // NOTE: maybe we will face a bad or slow impl client , witch split a package into two or more piece
+        //      so, we will not receive all the data in the package
+        //      that is a bad impl, now , only the Golang impl have this issue
+        //      BUT, in this place , we cannot detect is the client slow OR the client invalid
         if (!pEndWithNull) {
             // never go there
             fail({}, "do_analysis_client_first_socks4_header (!pEndWithNull), never go there");
@@ -73,14 +77,14 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
             if (nullByteIndex.size() != 2) {
                 // more or less \x00
                 BOOST_LOG_S5B_ID(relayId, error)
-                    << "do_analysis_client_first_socks4_header (nullByteIndex.size() != 2)";
-                fail({}, std::string{"do_analysis_client_first_socks4_header (nullByteIndex.size() != 2)"});
+                    << "do_analysis_client_first_socks4_header (nullByteIndex.size() != 2) invalid socks4a package";
+                fail({}, "do_analysis_client_first_socks4_header (nullByteIndex.size() != 2) invalid socks4a package");
                 return;
             }
             if (nullByteIndex[1] - nullByteIndex[0] < 2) {
                 // invalid HOSTNAME
                 BOOST_LOG_S5B_ID(relayId, error)
-                    << "do_analysis_client_first_socks4_header (nullByteIndex[1] - nullByteIndex[0] < 2)";
+                    << "do_analysis_client_first_socks4_header (nullByteIndex[1] - nullByteIndex[0] < 2) invalid HOSTNAME";
                 fail({}, "do_analysis_client_first_socks4_header (nullByteIndex[1] - nullByteIndex[0] < 2)");
                 return;
             }
@@ -95,8 +99,8 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
             if (nullByteIndex.size() != 1) {
                 // more or less \x00
                 BOOST_LOG_S5B_ID(relayId, error)
-                    << "do_analysis_client_first_socks4_header (nullByteIndex.size() != 1)";
-                fail({}, std::string{"do_analysis_client_first_socks4_header (nullByteIndex.size() != 1)"});
+                    << "do_analysis_client_first_socks4_header (nullByteIndex.size() != 1) invalid socks4 package";
+                fail({}, "do_analysis_client_first_socks4_header (nullByteIndex.size() != 1) invalid socks4 package");
                 return;
             }
             // get IP
