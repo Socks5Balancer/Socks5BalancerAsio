@@ -473,6 +473,9 @@ void HttpConnectSession::path_op(HttpConnectSession::QueryPairsType &queryPairs)
                         a->lastOnlinePing = std::chrono::milliseconds{-1};
                         a->lastConnectTime = UpstreamTimePoint{};
                         a->lastConnectPing = std::chrono::milliseconds{-1};
+                        a->delayCollect->cleanTcpPing();
+                        a->delayCollect->cleanHttpPing();
+                        a->delayCollect->cleanFirstDelay();
                     }
                     // recheck
                     upstreamPool->forceCheckNow();

@@ -135,6 +135,11 @@ namespace DelayCollection {
                 return di.timeClock < time;
             });
         }
+
+        void clean() {
+            std::lock_guard lg{mtx};
+            q.clear();
+        }
     };
 
     class DelayCollect : public std::enable_shared_from_this<DelayCollect> {
@@ -202,6 +207,21 @@ namespace DelayCollection {
 
         void removeBeforeFirstDelay(TimePointClock time) {
             historyRelayFirstDelay.removeBefore(time);
+        }
+
+        void cleanTcpPing() {
+            historyTcpPing.clean();
+            lastTcpPing = TimeMsInvalid;
+        }
+
+        void cleanHttpPing() {
+            historyHttpPing.clean();
+            lastHttpPing = TimeMsInvalid;
+        }
+
+        void cleanFirstDelay() {
+            historyRelayFirstDelay.clean();
+            lastRelayFirstDelay = TimeMsInvalid;
         }
 
     public:
