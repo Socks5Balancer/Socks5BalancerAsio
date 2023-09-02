@@ -160,6 +160,7 @@ public:
         std::recursive_mutex lastUseUpstreamIndexMtx;
         size_t lastUseUpstreamIndex = 0;
 
+        std::recursive_mutex calcByteMtx;
 
     protected:
         friend TcpRelayStatisticsInfo;

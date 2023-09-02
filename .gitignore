@@ -121,5 +121,8 @@ _deps
 
 
 src/VERSION/CodeVersion.h
+out
+.vs
+CMakeSettings.json	Untracked
 
 

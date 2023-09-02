@@ -49,6 +49,7 @@ void TcpRelayStatisticsInfo::Info::closeAllSession() {
 }
 
 void TcpRelayStatisticsInfo::Info::calcByte() {
+    std::lock_guard lg{calcByteMtx};
     size_t newByteUp = byteUp.load();
     size_t newByteDown = byteDown.load();
     byteUpChange = newByteUp - byteUpLast;

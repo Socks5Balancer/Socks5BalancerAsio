@@ -416,11 +416,13 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
 }
 
 void TcpRelaySession::close(boost::system::error_code error) {
-    BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession::close error:" << error.what();
     if (error == boost::asio::error::eof) {
         // Rationale:
         // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
         error = {};
+    }
+    if (error) {
+        BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession::close error:" << error.what();
     }
 
     if (downstream_socket_.is_open()) {
