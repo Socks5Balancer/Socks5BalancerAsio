@@ -111,7 +111,7 @@ public:
     uint16_t port{0};
 
 private:
-    std::shared_ptr<HttpClientImpl> util_HttpClientImpl_;
+//    std::shared_ptr<HttpClientImpl> util_HttpClientImpl_;
     std::shared_ptr<HttpServerImpl> util_HttpServerImpl_;
     std::shared_ptr<Socks5ClientImpl> util_Socks5ClientImpl_;
     std::shared_ptr<Socks5ServerImpl> util_Socks5ServerImpl_;

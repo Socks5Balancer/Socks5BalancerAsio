@@ -19,6 +19,7 @@
   "disableConnectTest": false,
   "disableConnectionTracker": false,
   "traditionTcpRelay": false,
+  "disableSocks4": true,
   "multiListen": [
     {
       "host": "127.0.0.1",

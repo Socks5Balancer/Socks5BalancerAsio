@@ -90,6 +90,8 @@ void ConfigLoader::print() {
     ss << "config.disableConnectionTracker:" << config.disableConnectionTracker << "\n";
     ss << "config.traditionTcpRelay:" << config.traditionTcpRelay << "\n";
 
+    ss << "config.disableSocks4:" << config.disableSocks4 << "\n";
+
     ss << "config.serverChangeTime:" << config.serverChangeTime.count() << "\n";
 
     ss << "config.connectTimeout:" << config.connectTimeout.count() << "\n";
@@ -210,6 +212,9 @@ void ConfigLoader::parse_json(const boost::property_tree::ptree &tree) {
 #else
     c.traditionTcpRelay = true;
 #endif // FORCE_traditionTcpRelay
+
+    auto disableSocks4 = tree.get("disableSocks4", true);
+    c.disableSocks4 = disableSocks4;
 
     auto serverChangeTime = tree.get("serverChangeTime", static_cast<long long>(60 * 1000));
     c.serverChangeTime = ConfigTimeDuration{serverChangeTime};

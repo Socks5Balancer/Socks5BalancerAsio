@@ -98,6 +98,8 @@ struct Config {
     bool disableConnectionTracker;
     bool traditionTcpRelay;
 
+    bool disableSocks4;
+
     EmbedWebServerConfig embedWebServerConfig;
 
     ConfigTimeDuration connectTimeout;

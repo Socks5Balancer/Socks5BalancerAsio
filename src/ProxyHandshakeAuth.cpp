@@ -57,9 +57,24 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             connectType = ConnectType::socks5;
                             // do socks5 handshake with client (downside)
                             upsideConnectType = UpsideConnectType::socks5;
+                            BOOST_ASSERT(!util_Socks5ServerImpl_);
+                            util_Socks5ServerImpl_ = std::make_shared<decltype(util_Socks5ServerImpl_)::element_type>(
+                                    shared_from_this()
+                            );
+                            BOOST_ASSERT(util_Socks5ServerImpl_);
                             util_Socks5ServerImpl_->do_analysis_client_first_socks5_header();
                         } else if (d[0] == 0x04 &&
                                    (d[1] == 0x02 || d[1] == 0x01)) {
+                            if (configLoader->config.disableSocks4) {
+                                BOOST_LOG_S5B_ID(relayId, warning)
+                                    << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
+                                    << " seems like a socks4/socks4a income, but socks4 is disabled. denny!";
+                                fail(error,
+                                     std::string{"ProxyHandshakeAuth::do_read_client_first_3_byte()"} +
+                                     std::string{" seems like a socks4/socks4a income, but socks4 is disabled. denny!"}
+                                );
+                                return;
+                            }
                             auto data = downstream_buf_.data();
                             size_t len = data.size();
                             auto dd = reinterpret_cast<const unsigned char *>(data.data());
@@ -69,7 +84,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                 BOOST_LOG_S5B_ID(relayId, error)
                                     << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
                                     << " (!pLenOk || !pEndWithNull)";
-                                BOOST_LOG_S5B_ID(relayId, error)
+                                BOOST_LOG_S5B_ID(relayId, trace)
                                     << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
                                     << " pLenOk:" << pLenOk
                                     << " pEndWithNull:" << pEndWithNull
@@ -88,6 +103,11 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             // do socks5 handshake with server (upside)
                             upsideConnectType = UpsideConnectType::socks5;
                             // do socks4 handshake with client (downside)
+                            BOOST_ASSERT(!util_Socks4ServerImpl_);
+                            util_Socks4ServerImpl_ = std::make_shared<decltype(util_Socks4ServerImpl_)::element_type>(
+                                    shared_from_this()
+                            );
+                            BOOST_ASSERT(util_Socks4ServerImpl_);
                             util_Socks4ServerImpl_->do_analysis_client_first_socks4_header();
                         } else if ((d[0] == 'C' || d[0] == 'c') &&
                                    (d[1] == 'O' || d[1] == 'o') &&
@@ -98,6 +118,11 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             upsideConnectType = UpsideConnectType::socks5;
                             // do http handshake with client (downside)
                             connectType = ConnectType::httpConnect;
+                            BOOST_ASSERT(!util_HttpServerImpl_);
+                            util_HttpServerImpl_ = std::make_shared<decltype(util_HttpServerImpl_)::element_type>(
+                                    shared_from_this()
+                            );
+                            BOOST_ASSERT(util_HttpServerImpl_);
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         } else {
                             // is other protocol
@@ -150,6 +175,11 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             upsideConnectType = UpsideConnectType::socks5;
                             // do http handshake with client (downside)
                             //connectType = ConnectType::httpConnect;
+                            BOOST_ASSERT(!util_HttpServerImpl_);
+                            util_HttpServerImpl_ = std::make_shared<decltype(util_HttpServerImpl_)::element_type>(
+                                    shared_from_this()
+                            );
+                            BOOST_ASSERT(util_HttpServerImpl_);
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         }
 
@@ -169,11 +199,11 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
 }
 
 void ProxyHandshakeAuth::start() {
-    util_HttpClientImpl_ = std::make_shared<decltype(util_HttpClientImpl_)::element_type>(shared_from_this());
-    util_HttpServerImpl_ = std::make_shared<decltype(util_HttpServerImpl_)::element_type>(shared_from_this());
-    util_Socks5ClientImpl_ = std::make_shared<decltype(util_Socks5ClientImpl_)::element_type>(shared_from_this());
-    util_Socks5ServerImpl_ = std::make_shared<decltype(util_Socks5ServerImpl_)::element_type>(shared_from_this());
-    util_Socks4ServerImpl_ = std::make_shared<decltype(util_Socks4ServerImpl_)::element_type>(shared_from_this());
+//    util_HttpClientImpl_ = std::make_shared<decltype(util_HttpClientImpl_)::element_type>(shared_from_this());
+//    util_HttpServerImpl_ = std::make_shared<decltype(util_HttpServerImpl_)::element_type>(shared_from_this());
+//    util_Socks5ClientImpl_ = std::make_shared<decltype(util_Socks5ClientImpl_)::element_type>(shared_from_this());
+//    util_Socks5ServerImpl_ = std::make_shared<decltype(util_Socks5ServerImpl_)::element_type>(shared_from_this());
+//    util_Socks4ServerImpl_ = std::make_shared<decltype(util_Socks4ServerImpl_)::element_type>(shared_from_this());
 
     auto ptr = tcpRelaySession;
     if (ptr) {
@@ -195,13 +225,16 @@ void ProxyHandshakeAuth::do_whenUpReady() {
     // do send last ok package to client in downside
     switch (connectType) {
         case ConnectType::socks5:
+            BOOST_ASSERT(util_Socks5ServerImpl_);
             util_Socks5ServerImpl_->to_send_last_ok_package();
             break;
         case ConnectType::socks4:
+            BOOST_ASSERT(util_Socks4ServerImpl_);
             util_Socks4ServerImpl_->to_send_last_ok_package();
             break;
         case ConnectType::httpConnect:
         case ConnectType::httpOther:
+            BOOST_ASSERT(util_HttpServerImpl_);
             util_HttpServerImpl_->to_send_last_ok_package();
             break;
         case ConnectType::unknown:
@@ -226,13 +259,16 @@ void ProxyHandshakeAuth::do_whenUpReadyError() {
     // do send last error package to client in downside
     switch (connectType) {
         case ConnectType::socks5:
+            BOOST_ASSERT(util_Socks5ServerImpl_);
             util_Socks5ServerImpl_->to_send_last_error_package();
             break;
         case ConnectType::socks4:
+            BOOST_ASSERT(util_Socks4ServerImpl_);
             util_Socks4ServerImpl_->to_send_last_error_package();
             break;
         case ConnectType::httpConnect:
         case ConnectType::httpOther:
+            BOOST_ASSERT(util_HttpServerImpl_);
             util_HttpServerImpl_->to_send_last_error_package();
             break;
         case ConnectType::unknown:
@@ -261,6 +297,9 @@ void ProxyHandshakeAuth::do_whenDownReady() {
     readyDown = true;
     // start upside handshake
     BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenDownReady() start upside handshake";
+    BOOST_ASSERT(!util_Socks5ClientImpl_);
+    util_Socks5ClientImpl_ = std::make_shared<decltype(util_Socks5ClientImpl_)::element_type>(shared_from_this());
+    BOOST_ASSERT(util_Socks5ClientImpl_);
     util_Socks5ClientImpl_->start();
     // util_HttpClientImpl_->start();
 }
@@ -338,6 +377,7 @@ bool ProxyHandshakeAuth::upside_support_udp_mode() {
 bool ProxyHandshakeAuth::upside_in_udp_mode() {
     switch (upsideConnectType) {
         case UpsideConnectType::socks5:
+            BOOST_ASSERT(util_Socks5ClientImpl_);
             return util_Socks5ClientImpl_->udpEnabled;
             break;
         case UpsideConnectType::socks4:
@@ -356,9 +396,11 @@ bool ProxyHandshakeAuth::upside_in_udp_mode() {
 bool ProxyHandshakeAuth::downside_in_udp_mode() {
     switch (connectType) {
         case ConnectType::socks5:
+            BOOST_ASSERT(util_Socks5ServerImpl_);
             return util_Socks5ServerImpl_->udpEnabled;
             break;
         case ConnectType::socks4:
+            BOOST_ASSERT(util_Socks4ServerImpl_);
             return util_Socks4ServerImpl_->udpEnabled;
             break;
         case ConnectType::httpConnect:
