@@ -322,9 +322,12 @@ void TcpRelaySession::do_upstream_read() {
                     // write it to server
                     do_downstream_write(bytes_transferred);
                 } else {
-                    BOOST_LOG_S5B_ID(relayId, trace)
-                        << "TcpRelaySession do_upstream_read call close(error) error:"
-                        << error.what();
+                    if (error != boost::asio::error::operation_aborted &&
+                        error != boost::asio::error::eof) {
+                        BOOST_LOG_S5B_ID(relayId, trace)
+                            << "TcpRelaySession do_upstream_read call close(error) error:"
+                            << error.what();
+                    }
                     close(error);
                 }
             });
@@ -343,9 +346,12 @@ void TcpRelaySession::do_downstream_write(const size_t &bytes_transferred) {
                     // read more again
                     do_upstream_read();
                 } else {
-                    BOOST_LOG_S5B_ID(relayId, trace)
-                        << "TcpRelaySession do_downstream_write call close(error) error:"
-                        << error.what();
+                    if (error != boost::asio::error::operation_aborted &&
+                        error != boost::asio::error::eof) {
+                        BOOST_LOG_S5B_ID(relayId, trace)
+                            << "TcpRelaySession do_downstream_write call close(error) error:"
+                            << error.what();
+                    }
                     close(error);
                 }
             });
@@ -386,9 +392,12 @@ void TcpRelaySession::do_downstream_read() {
                     // write it to server
                     do_upstream_write(bytes_transferred);
                 } else {
-                    BOOST_LOG_S5B_ID(relayId, trace)
-                        << "TcpRelaySession do_downstream_read call close(error) error:"
-                        << error.what();
+                    if (error != boost::asio::error::operation_aborted &&
+                        error != boost::asio::error::eof) {
+                        BOOST_LOG_S5B_ID(relayId, trace)
+                            << "TcpRelaySession do_downstream_read call close(error) error:"
+                            << error.what();
+                    }
                     close(error);
                 }
             });
@@ -407,16 +416,20 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
                     // read more again
                     do_downstream_read();
                 } else {
-                    BOOST_LOG_S5B_ID(relayId, trace)
-                        << "TcpRelaySession do_upstream_write call close(error) error:"
-                        << error.what();
+                    if (error != boost::asio::error::operation_aborted &&
+                        error != boost::asio::error::eof) {
+                        BOOST_LOG_S5B_ID(relayId, trace)
+                            << "TcpRelaySession do_upstream_write call close(error) error:"
+                            << error.what();
+                    }
                     close(error);
                 }
             });
 }
 
 void TcpRelaySession::close(boost::system::error_code error) {
-    if (error == boost::asio::error::eof) {
+    if (error == boost::asio::error::eof ||
+        error != boost::asio::error::operation_aborted) {
         // Rationale:
         // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
         error = {};
