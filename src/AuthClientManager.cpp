@@ -29,11 +29,26 @@ bool AuthClientManager::needAuth() {
     return !authInfo.empty();
 }
 
+bool AuthClientManager::haveAuthUser(const std::string_view &user) {
+    auto &users = authInfo.get<AuthUser::USER>();
+    return users.contains(std::string{user});
+}
+
+std::shared_ptr<AuthClientManager::AuthUser>
+AuthClientManager::checkAuthUserOnly(const std::string_view &user) {
+    auto &users = authInfo.get<AuthUser::USER>();
+    auto it = users.find(std::string{user});
+    if (it != users.end()) {
+        return *it;
+    } else {
+        return {};
+    }
+}
+
 std::shared_ptr<AuthClientManager::AuthUser>
 AuthClientManager::checkAuth(const std::string_view &user, const std::string_view &pwd) {
     auto &userPwd = authInfo.get<AuthUser::USER_PWD>();
     auto it = userPwd.find(std::make_tuple(std::string{user}, std::string{pwd}));
-    //userPwd.contains(std::make_tuple(std::string{user}, std::string{pwd}));
     if (it != userPwd.end()) {
         return *it;
     } else {

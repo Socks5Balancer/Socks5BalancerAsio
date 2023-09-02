@@ -149,6 +149,10 @@ public:
 
     bool needAuth();
 
+    bool haveAuthUser(const std::string_view &user);
+
+    std::shared_ptr<AuthClientManager::AuthUser> checkAuthUserOnly(const std::string_view &user);
+
     std::shared_ptr<AuthClientManager::AuthUser> checkAuth(const std::string_view &user, const std::string_view &pwd);
 
     std::shared_ptr<AuthClientManager::AuthUser> checkAuth_Base64AuthString(const std::string_view &base64AuthString);

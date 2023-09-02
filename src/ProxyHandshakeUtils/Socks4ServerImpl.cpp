@@ -127,6 +127,37 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
                 |
                 d[3]
         );
+        if (ptr->authClientManager->needAuth()) {
+            // need auth
+            if (nullByteIndex[0] <= 8) {
+                // the len(USERID)==0, USERID not exist
+                BOOST_LOG_S5B_ID(relayId, error)
+                    << "do_analysis_client_first_socks4_header need auth but (nullByteIndex[1] <= 8), "
+                    << " need auth but no USERID";
+                do_handshake_client_end_error(92);
+                return;
+            } else {
+                // get and check username
+                auto username = std::string{
+                        d + 8,
+                        d + nullByteIndex[0]
+                };
+                BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_socks4_header auth username:" << username;
+
+                auto au = ptr->authClientManager->checkAuthUserOnly(username);
+                if (au) {
+                    BOOST_LOG_S5B_ID(relayId, trace)
+                        << "do_auth_client_read auth ok :[" << username << "]";
+                    ptr->tcpRelaySession->authUser = au;
+                    // ok
+                } else {
+                    BOOST_LOG_S5B_ID(relayId, trace)
+                        << "do_auth_client_read auth error :[" << username << "]";
+                    do_handshake_client_end_error(92);
+                    return;
+                }
+            }
+        }
         BOOST_LOG_S5B_ID(relayId, trace)
             << "do_analysis_client_first_socks4_header ptr->port:[" << ptr->port << "]";
         switch (d[1]) {
