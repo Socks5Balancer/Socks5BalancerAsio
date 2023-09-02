@@ -24,14 +24,17 @@
 
 void TcpRelayStatisticsInfo::Info::removeExpiredSession() {
     std::lock_guard lg{sessionsMtx};
-    auto it = sessions.begin();
-    while (it != sessions.end()) {
-        if ((*it).ptr.expired()) {
-            it = sessions.erase(it);
-        } else {
-            ++it;
-        }
-    }
+    sessions.remove_if([](const auto &a) {
+        return a.ptr.expired();
+    });
+    //auto it = sessions.begin();
+    //while (it != sessions.end()) {
+    //    if ((*it).ptr.expired()) {
+    //        it = sessions.erase(it);
+    //    } else {
+    //        ++it;
+    //    }
+    //}
 }
 
 void TcpRelayStatisticsInfo::Info::closeAllSession() {

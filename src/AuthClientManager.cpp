@@ -33,6 +33,7 @@ std::shared_ptr<AuthClientManager::AuthUser>
 AuthClientManager::checkAuth(const std::string_view &user, const std::string_view &pwd) {
     auto &userPwd = authInfo.get<AuthUser::USER_PWD>();
     auto it = userPwd.find(std::make_tuple(std::string{user}, std::string{pwd}));
+    //userPwd.contains(std::make_tuple(std::string{user}, std::string{pwd}));
     if (it != userPwd.end()) {
         return *it;
     } else {

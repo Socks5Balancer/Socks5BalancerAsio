@@ -81,7 +81,7 @@ public:
             if ((upstreamIndex <=> o.upstreamIndex) != std::strong_ordering::equal) {
                 return upstreamIndex <=> o.upstreamIndex;
             } else if ((clientEndpointAddrPortString <=> o.clientEndpointAddrPortString) !=
-                       std::strong_ordering::equal) {
+                std::strong_ordering::equal) {
                 return clientEndpointAddrPortString <=> o.clientEndpointAddrPortString;
             } else if ((listenEndpointAddrString <=> o.listenEndpointAddrString) != std::strong_ordering::equal) {
                 return listenEndpointAddrString <=> o.listenEndpointAddrString;
@@ -98,6 +98,7 @@ public:
         size_t authUserId{0};
 
     protected:
+
         friend TcpRelayStatisticsInfo;
 
         void updateTargetInfo(const std::shared_ptr<TcpRelaySession> &s);
@@ -163,6 +164,7 @@ public:
         std::recursive_mutex calcByteMtx;
 
     protected:
+
         friend TcpRelayStatisticsInfo;
 
         void removeExpiredSession();
@@ -181,6 +183,7 @@ public:
     };
 
 private:
+
     std::recursive_mutex mtx;
 
     // upstreamIndex
@@ -193,9 +196,11 @@ private:
     std::map<size_t, std::shared_ptr<Info>> authUserIndex;
 
 public:
+
     std::atomic_size_t lastConnectServerIndex{0};
 
 public:
+
     // nowServer->index
     std::map<size_t, std::shared_ptr<Info>> getUpstreamIndex();
 
@@ -208,6 +213,7 @@ public:
     std::map<size_t, std::shared_ptr<Info>> getAuthUserIndex();
 
 public:
+
     void addSession(size_t index, const std::shared_ptr<TcpRelaySession> &s);
 
     void addSessionClient(const std::shared_ptr<TcpRelaySession> &s);

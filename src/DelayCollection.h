@@ -77,6 +77,7 @@ namespace DelayCollection {
         };
 
     private:
+
         std::recursive_mutex mtx;
         std::deque<DelayInfo> q;
 
@@ -88,7 +89,8 @@ namespace DelayCollection {
             if (q.size() > maxSize) {
                 // remove front
                 size_t needRemove = q.size() - maxSize;
-                if (needRemove == 1) [[likely]] {
+                if (needRemove == 1) [[likely]]
+                {
                     // only remove first, we use the impl of `deque` to speed up the remove speed
                     // often into this way, so we mark it use c++20 `[[likely]]`
                     q.pop_front();
@@ -105,6 +107,7 @@ namespace DelayCollection {
         }
 
     public:
+
         const DelayInfo &addDelayInfo(TimeMs delay) {
             std::lock_guard lg{mtx};
             auto &n = q.emplace_back(delay);
@@ -225,6 +228,7 @@ namespace DelayCollection {
         }
 
     public:
+
         void pushTcpPing(TimeMs t) {
             lastTcpPing = t;
             if (traditionTcpRelay) {
