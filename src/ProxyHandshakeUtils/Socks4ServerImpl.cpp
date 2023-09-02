@@ -37,7 +37,8 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
         auto data = ptr->downstream_buf_.data();
         size_t len = data.size();
         auto d = reinterpret_cast<const unsigned char *>(data.data());
-        bool pLenOk = len > (1 + 1 + 2 + 4 /*+ pUserIdLen*/ + 1);
+        bool pLenOk = len >= (1 + 1 + 2 + 4 /*+ pUserIdLen*/ + 1);
+        // pUserIdLen maybe 0 , if no UserId
         bool pEndWithNull = d[len] == '\x00';
         if (!pLenOk) {
             // never go there
@@ -62,6 +63,8 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
         //   | VN | CD | DSTPORT |      DSTIP        | USERID       |NULL| HOSTNAME     |NULL|
         //   +----+----+----+----+----+----+----+----+----+----+....+----+----+----+....+----+
         //     1    1      2              4             variable      1    variable       1
+        //
+        //   USERID maybe len=0 if no USERID.
         //
         std::vector<int> nullByteIndex;
         for (int i = 8; i < len; ++i) {
@@ -89,11 +92,14 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
                 return;
             }
             // get HOSTNAME
+            BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_socks4_header this is socks4a";
 
             ptr->host = std::string{
                     d + nullByteIndex[0] + 1,
                     d + nullByteIndex[1]
             };
+            BOOST_LOG_S5B_ID(relayId, trace)
+                << "do_analysis_client_first_socks4_header ptr->host:[" << ptr->host << "]";
         } else {
             // this is socks4
             if (nullByteIndex.size() != 1) {
@@ -103,6 +109,7 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
                 fail({}, "do_analysis_client_first_socks4_header (nullByteIndex.size() != 1) invalid socks4 package");
                 return;
             }
+            BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_socks4_header this is socks4";
             // get IP
             auto addr = reinterpret_cast<const unsigned char *>(d + 4);
             boost::asio::ip::address_v4::bytes_type ipV4Byte;
@@ -111,13 +118,17 @@ void Socks4ServerImpl::do_analysis_client_first_socks4_header() {
             // Finally, initialize.
             boost::asio::ip::address_v4 ipv4(ipV4Byte);
             ptr->host = ipv4.to_string();
+            BOOST_LOG_S5B_ID(relayId, trace)
+                << "do_analysis_client_first_socks4_header ptr->host:[" << ptr->host << "]";
         }
         // socks4 only support ipv4
         ptr->port = (
-                d[3] << 8
+                d[2] << 8
                 |
-                d[4]
+                d[3]
         );
+        BOOST_LOG_S5B_ID(relayId, trace)
+            << "do_analysis_client_first_socks4_header ptr->port:[" << ptr->port << "]";
         switch (d[1]) {
             case 0x01:
                 // CONNECT
@@ -264,7 +275,7 @@ void Socks4ServerImpl::do_handshake_client_end() {
                         return fail(ec, ss.str());
                     }
 
-                    ptr->do_whenDownEnd(true);
+                    ptr->do_whenDownEnd(false);
                 }
         );
 

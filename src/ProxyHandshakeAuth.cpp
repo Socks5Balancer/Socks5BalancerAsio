@@ -56,19 +56,25 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             BOOST_LOG_S5B_ID(relayId, trace) << "is socks5";
                             connectType = ConnectType::socks5;
                             // do socks5 handshake with client (downside)
-                            upsideConnectType = UpsideConnectType::socks4;
+                            upsideConnectType = UpsideConnectType::socks5;
                             util_Socks5ServerImpl_->do_analysis_client_first_socks5_header();
                         } else if (d[0] == 0x04 &&
                                    (d[1] == 0x02 || d[1] == 0x01)) {
                             auto data = downstream_buf_.data();
                             size_t len = data.size();
                             auto dd = reinterpret_cast<const unsigned char *>(data.data());
-                            bool pLenOk = len > (1 + 1 + 2 + 4 /*+ pUserIdLen*/ + 1);
+                            bool pLenOk = len >= (1 + 1 + 2 + 4 /*+ pUserIdLen*/ + 1);
                             bool pEndWithNull = dd[len] == '\x00';
                             if (!pLenOk || !pEndWithNull) {
                                 BOOST_LOG_S5B_ID(relayId, error)
                                     << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
                                     << " (!pLenOk || !pEndWithNull)";
+                                BOOST_LOG_S5B_ID(relayId, error)
+                                    << "ProxyHandshakeAuth::do_read_client_first_3_byte()"
+                                    << " pLenOk:" << pLenOk
+                                    << " pEndWithNull:" << pEndWithNull
+                                    << " len:" << len
+                                    << " lenNeed:" << (1 + 1 + 2 + 4 /*+ pUserIdLen*/ + 1);
                                 fail(error,
                                      std::string{"ProxyHandshakeAuth::do_read_client_first_3_byte()"} +
                                      std::string{" (!pLenOk || !pEndWithNull)"}
@@ -89,7 +95,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             // is http Connect
                             BOOST_LOG_S5B_ID(relayId, trace) << "is http Connect";
                             // analysis downside target server and create upside handshake
-                            upsideConnectType = UpsideConnectType::http;
+                            upsideConnectType = UpsideConnectType::socks5;
                             // do http handshake with client (downside)
                             connectType = ConnectType::httpConnect;
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
@@ -141,9 +147,9 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                     return;
                             }
                             // debug
-                            upsideConnectType = UpsideConnectType::http;
+                            upsideConnectType = UpsideConnectType::socks5;
                             // do http handshake with client (downside)
-                            connectType = ConnectType::httpConnect;
+                            //connectType = ConnectType::httpConnect;
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         }
 
