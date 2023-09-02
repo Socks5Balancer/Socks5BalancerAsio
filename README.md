@@ -30,7 +30,7 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 
 
 ## Features
-1. support http-proxy/socks5-proxy on same port (aka mixed-port mode), now you never need run another tools to covert socks5 proxy to http proxy
+1. support http-proxy/socks5-proxy/socks4(socks4a)-proxy on same port (aka mixed-port mode), now you never need run another tools to covert socks5 proxy to http proxy
 1. support listen on multi port
 1. Load Balance user connect to multi backend with multi rule
 1. Load all config from config file
@@ -83,6 +83,7 @@ it must encode with `UTF-8 no BOM`
   "disableConnectTest": false,              // disable the two connect test, default is false
   "disableConnectionTracker": false,        // disable connect analysis, default is false
   "traditionTcpRelay": false,               // disable mixed-port mode, default is false
+  "disableSocks4": true,                    // disable Socks4/Socks4a support, default is true
   "multiListen": [                          // the addition listen ports, will work same as main listen port, default is empty
     {
       "host": "127.0.0.1",
@@ -120,7 +121,9 @@ it must encode with `UTF-8 no BOM`
     }
   ],
   "AuthClientInfo": [                       // the User Auth username/password config, (if not empty, all the proxy access MUST need auth, (include http-proxy/sock5-proxy))
-    {                                       //    NOTE:  please see follow ``##Auth Support`` section to see how to **Enable Auth Support**, and other more information
+                                            //    NOTE:  please see follow ``##Auth Support`` section to see how to **Enable Auth Support**, and other more information
+                                            //    NOTE:  because of the socks4(a) protocol only defined username(USERID), so when use socks4(a), only the username will be valid 
+    {                                       
       "user": "111",                        // the User Auth username, (NOTE: don't use `:` or `"` in your username, otherwise, because the http-proxy defined rfc7617 , everything after first `:` will be marked as part of pwd. In other side, `"` will break json config. )
       "pwd": "abc"                          // the User Auth Password, (NOTE: don't use none ascii char in username/password, this project not optimization with Unicode, use Unicode may be case unpredictable problems .)
     },
@@ -217,10 +220,10 @@ WantedBy=multi-user.target
 
 ---
 
-## Auth Support [update 2023-08-28]
+## Auth Support
 
-now support Auth (UserName/Password) in http AND socks5 mode.  
-BUT need Enable option flag `-DNeed_ProxyHandshakeAuth=ON` when building, <del style="background-color: black;color: black;"> and will **lost** UDP support, **NOW**, **Temporary**. </del>
+now support Auth (UserName/Password) in http AND socks5 AND socks4(a) mode.  
+BUT need Enable option flag `-DNeed_ProxyHandshakeAuth=ON` when building
 
 use ```AuthClientInfo``` section in config file to config username/password.
 
@@ -229,21 +232,10 @@ use ```AuthClientInfo``` section in config file to config username/password.
 Enable Auth Support need add flag `-DNeed_ProxyHandshakeAuth=ON` when CMake config, then rebuild project.
 
 Enable Auth Support will replace `class FirstPackAnalyzer` with `class ProxyHandshakeAuth` AND use the `ProxyHandshakeUtils`.  
-when this mode, Socks5BalancerAsio will impl itself version Socks5-proxy client AND server, and Http-proxy client AND server .  
-(the Http-proxy client not impl, because now no plan to support http-proxy version backend server.).  
+when this mode, Socks5BalancerAsio will impl itself version Socks5-proxy client AND server, and Http-proxy client AND server . 
 
-<del style="background-color: black;color: black;"> Now, **Temporary** , the Socks5-proxy server Only impl CONNECT mode, the UDP mode not impl now,   
-so if Enable Auth Support , you will lose socks5 UDP function (if backend server support it).  </del>
-
-<del style="background-color: black;color: black;"> if your backend server support socks5 UDP (not all socks5-proxy impl that), and you really need it, please don't Enable Auth Support. </del>
-
-Now the UDP maybe work when your backend server support socks5 UDP, it is implemented but not be test (i don't have test evn now.).
-
-<del style="background-color: black;color: black;"> Now, **Temporary** , the connect test for `backend server auth` not impl now, it not affect client auth function,  
-but if a backend server have auth, the connect test component will not work , this problem will fix in later. </del>
-
-**the Auth Support not stable yet, it will become the main support version after full all feature implemented and stable.  
-the progress can see [here](https://github.com/Socks5Balancer/Socks5BalancerAsio/issues/4) .**
+the UDP only work when your backend server support socks5 UDP, 
+it is implemented but not be test (i don't have test evn now.).
 
 ---
 
@@ -503,7 +495,7 @@ so i write this, hope it can work more faster and more stable.
 
 ## TODO
 - [x] listen on multi port
-- [ ] socks4/socks4a proxy To socks5 proxy
+- [x] socks4/socks4a proxy To socks5 proxy
 - [x] http proxy To socks5 proxy
 - [x] http/socks5 on same port (mixed-port mode)
 - [ ] analysis socks5 protocol and communicate protocol type
