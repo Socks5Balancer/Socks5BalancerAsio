@@ -1,0 +1,47 @@
+{
+  "listenHost": "0.0.0.0",
+  "listenPort": 1080,
+  "retryTimes": 3,
+  "connectTimeout": 2000,
+  "testRemoteHost": "www.google.com",
+  "testRemotePort": 443,
+  "tcpCheckPeriod": 5000,
+  "tcpCheckStart": 1000,
+  "connectCheckPeriod": 300000,
+  "connectCheckStart": 1000,
+  "additionCheckPeriod": 10000,
+  "upstreamSelectRule": "one_by_one",
+  "sleepTime": 1800000,
+  "threadNum": 10,
+  "serverChangeTime": 5000,
+  "stateServerHost": "0.0.0.0",
+  "stateServerPort": 5010,
+  "disableConnectTest": false,
+  "disableConnectionTracker": false,
+  "traditionTcpRelay": false,
+  "disableSocks4": true,
+  "upstream": [
+    {
+      "name": "Server A",
+      "host": "1.2.3.4",
+      "port": 1080
+    },
+    {
+      "name": "Server B",
+      "host": "1.2.3.5",
+      "port": 1080,
+      "authUser": "username",
+      "authPwd": "password"
+    }
+  ],
+  "EmbedWebServerConfig": {
+    "enable": true,
+    "host": "0.0.0.0",
+    "port": 80,
+    "root_path": "./html/",
+    "index_file_of_root": "stateBootstrap.html",
+    "backendHost": "",
+    "backendPort": 0,
+    "allowFileExtList": "htm html js json jpg jpeg png bmp gif ico svg css"
+  }
+}
