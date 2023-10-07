@@ -14,7 +14,7 @@
   "sleepTime": 1800000,
   "threadNum": 10,
   "serverChangeTime": 5000,
-  "stateServerHost": "127.0.0.1",
+  "stateServerHost": "0.0.0.0",
   "stateServerPort": 5010,
   "disableConnectTest": false,
   "disableConnectionTracker": false,
