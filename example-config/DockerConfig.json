@@ -1,5 +1,5 @@
 {
-  "listenHost": "127.0.0.1",
+  "listenHost": "0.0.0.0",
   "listenPort": 1080,
   "retryTimes": 3,
   "connectTimeout": 2000,
