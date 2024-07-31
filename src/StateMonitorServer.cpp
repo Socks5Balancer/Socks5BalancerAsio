@@ -67,6 +67,15 @@ std::string HttpConnectSession::createJsonString() {
         }
         config.add_child("upstream", pUS);
 
+        boost::property_tree::ptree pML;
+        for (const auto &a: c.multiListen) {
+            boost::property_tree::ptree n;
+            n.put("host", a.host);
+            n.put("port", a.port);
+            pML.push_back(std::make_pair("", n));
+        }
+        config.add_child("multiListen", pML);
+
         const auto &ews = c.embedWebServerConfig;
         boost::property_tree::ptree pEWS;
         {
