@@ -116,8 +116,19 @@ void Socks5ServerImpl::do_analysis_client_first_socks5_header() {
                     return;
                 }
             } else {
-                BOOST_LOG_S5B_ID(relayId, error) << "do_analysis_client_first_socks5_header no support auth";
-                do_handshake_client_header_error();
+                BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_socks5_header no support auth";
+                if (ptr->authClientManager->needAuth()) {
+                    // need auth but client report it not support. tell error to client. 
+                    BOOST_LOG_S5B_ID(relayId, error) << "need auth but client report it not support. end connect.";
+                    do_handshake_client_header_error();
+                    return;
+                } else {
+					// don't need auth and client not support it, simple skip it
+                    // do socks5 handshake with client (downside)
+                    BOOST_LOG_S5B_ID(relayId, trace) << "we don't need auth , skip it. do socks5 handshake with client (downside).";
+                    do_handshake_client_write();
+                    return;
+                }
                 return;
             }
 
