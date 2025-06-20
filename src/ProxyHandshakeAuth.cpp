@@ -111,7 +111,11 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                             util_Socks4ServerImpl_->do_analysis_client_first_socks4_header();
                         } else if ((d[0] == 'C' || d[0] == 'c') &&
                                    (d[1] == 'O' || d[1] == 'o') &&
-                                   (d[2] == 'N' || d[2] == 'n')) {
+                                   (d[2] == 'N' || d[2] == 'n') &&
+                                   (d[3] == 'N' || d[3] == 'n') &&
+                                   (d[4] == 'E' || d[4] == 'e') &&
+                                   (d[5] == 'C' || d[5] == 'c') &&
+                                   (d[6] == 'T' || d[6] == 't')) {
                             // is http Connect
                             BOOST_LOG_S5B_ID(relayId, trace) << "is http Connect";
                             // analysis downside target server and create upside handshake
@@ -168,6 +172,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                 default:
                                     BOOST_LOG_S5B_ID(relayId, trace) << "is default...";
                                     connectType = ConnectType::unknown;
+                                    // TODO 
                                     fail({}, "ConnectType::unknown");
                                     return;
                             }
@@ -180,6 +185,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                     shared_from_this()
                             );
                             BOOST_ASSERT(util_HttpServerImpl_);
+                            // TODO
                             util_HttpServerImpl_->do_analysis_client_first_http_header();
                         }
 

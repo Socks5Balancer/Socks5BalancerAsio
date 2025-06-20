@@ -79,11 +79,20 @@ public:
         std::string protocol;
         std::string domain;  // only domain must be present
         std::string port;
+        uint16_t port_u16t;
         std::string resource;
         std::string query;   // everything after '?', possibly nothing
+        bool isOk;
+        bool failed;
+        std::smatch match;
+        std::string url;
+
+        ParsedURI clone() const;
+        void debug_print(const size_t relayId) const;
     };
 
-    ParsedURI parseURI(const std::string &url);
+    ParsedURI parseURI(const std::string &url, const size_t relayId);
+    ParsedURI parseURIBoost(const std::string &url, const size_t relayId);
 
     std::shared_ptr<AuthClientManager::AuthUser> checkHeaderAuthString(
             const std::string_view &base64Part,

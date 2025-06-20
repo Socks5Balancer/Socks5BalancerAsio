@@ -99,7 +99,7 @@ else ()
     set(Boost_USE_STATIC_RUNTIME OFF)
 endif ()
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.81.0 REQUIRED COMPONENTS system filesystem program_options log log_setup ${BOOST_THEAD_MODULE} REQUIRED)
+find_package(Boost 1.81.0 REQUIRED COMPONENTS system filesystem program_options log log_setup url ${BOOST_THEAD_MODULE} REQUIRED)
 
 
 message(STATUS "Boost_FOUND: ${Boost_FOUND}")
