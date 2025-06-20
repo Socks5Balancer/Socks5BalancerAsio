@@ -62,7 +62,7 @@ jobs:
             c_compiler: cl
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'true'
 
@@ -192,14 +192,14 @@ jobs:
 
           # - name: Upload All (Win)
           #   if: runner.os == 'Windows'
-          #   uses: actions/upload-artifact@v3
+          #   uses: actions/upload-artifact@v4
           #   with:
           #     name: Socks5BalancerAsioAll-${{ runner.os }}.zip
           #     path: ${{ steps.strings.outputs.build-output-dir }}
 
           # - name: Upload All (Linux)
           #   if: runner.os != 'Windows'
-          #   uses: actions/upload-artifact@v3
+          #   uses: actions/upload-artifact@v4
           #   with:
           #     name: Socks5BalancerAsioAll-${{ runner.os }}.zip
           #     path: ${{ steps.strings.outputs.build-output-dir }}
@@ -218,7 +218,7 @@ jobs:
 
       - name: Upload EXE (Win DynamicSSL)
         if: ${{ (runner.os == 'Windows') && (matrix.ssl_type == 'DynamicSSL') }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-${{ matrix.ssl_type }}-${{ matrix.build_mode }}-${{ runner.os }}
           path: |
@@ -229,7 +229,7 @@ jobs:
 
       - name: Upload EXE (Win StaticSSL)
         if: ${{ (runner.os == 'Windows') && (matrix.ssl_type == 'StaticSSL') }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-${{ matrix.ssl_type }}-${{ matrix.build_mode }}-${{ runner.os }}
           path: |
@@ -239,7 +239,7 @@ jobs:
 
       - name: Upload EXE (Linux)
         if: runner.os != 'Windows'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Socks5BalancerAsio-${{ steps.strings.outputs.git-rev }}-${{ matrix.ssl_type }}-${{ matrix.build_mode }}-${{ runner.os }}
           path: |
