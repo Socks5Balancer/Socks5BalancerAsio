@@ -172,6 +172,11 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                 default:
                                     BOOST_LOG_S5B_ID(relayId, trace) << "is default...";
                                     connectType = ConnectType::unknown;
+                                    //{
+                                    //    auto data = reinterpret_cast<const char *>(downstream_buf_.data().data());
+                                    //    const boost::string_view s(data, downstream_buf_.data().size());
+                                    //    BOOST_LOG_S5B_ID(relayId, trace) << "data:" << s;
+                                    //}
                                     // TODO 
                                     fail({}, "ConnectType::unknown");
                                     return;

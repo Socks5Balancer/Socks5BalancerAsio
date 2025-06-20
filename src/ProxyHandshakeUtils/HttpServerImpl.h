@@ -83,7 +83,7 @@ public:
         std::string resource;
         std::string query;   // everything after '?', possibly nothing
         bool isOk;
-        bool failed;
+        //bool failed;
         std::smatch match;
         std::string url;
 

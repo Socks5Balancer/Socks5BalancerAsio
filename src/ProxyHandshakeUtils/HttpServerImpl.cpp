@@ -69,7 +69,7 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURIBoost(const std::string &url, 
         boost::urls::result<boost::urls::url_view> parsed = boost::urls::parse_uri(url);
         if (!parsed.has_value()) {
             result.isOk = false;
-            result.failed = false;
+            //result.failed = false;
             return result;
         }
         const auto &u = parsed.value();
@@ -81,7 +81,7 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURIBoost(const std::string &url, 
         result.query = u.query();
         result.url = url;
         result.isOk = true;
-        result.failed = false;
+        //result.failed = false;
         // Convert protocol to lowercase
         boost::algorithm::to_lower(result.protocol);
         if (result.port.empty()) {
@@ -100,7 +100,7 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURIBoost(const std::string &url, 
     catch (const std::exception &e) {
         BOOST_LOG_S5B_ID(relayId, trace) << "parseURIBoost (const std::exception &e):" << e.what();
         result.isOk = false;
-        result.failed = false;
+        //result.failed = false;
         result.debug_print(relayId);
         return result;
     }
@@ -128,21 +128,21 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURI(const std::string &url, const
         result.resource = value_or(match[6], "/");
         result.query = match[8];
         result.isOk = true;
-        result.failed = false;
+        //result.failed = false;
         if (!boost::conversion::try_lexical_convert(result.port, result.port_u16t)) {
             result.port_u16t = 0;
             result.isOk = false;
-            result.failed = false;
+            //result.failed = false;
         }
         if (result.domain.empty()) {
-            fail({}, "result.domain.empty()");
+            //fail({}, "result.domain.empty()");
             result.isOk = false;
-            result.failed = true;
+            //result.failed = true;
         }
     } else {
-        fail({}, "regex_match fail");
+        //fail({}, "regex_match fail");
         result.isOk = false;
-        result.failed = true;
+        //result.failed = true;
     }
     result.debug_print(relayId);
     return result.clone();
@@ -272,9 +272,9 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
 
                     BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_http_header data:" << s;
                     if (!uri.isOk) {
-                        if (!uri.failed) {
-                            fail({}, "do_analysis_client_first_http_header parseURI failed.");
-                        }
+                        //if (!uri.failed) {
+                        //}
+                        fail({}, "do_analysis_client_first_http_header parseURI failed.");
                         return;
                     }
 
@@ -309,15 +309,25 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
                         return;
                     }
 
-                    auto host = h.at(boost::beast::http::field::host);
-                    BOOST_LOG_S5B_ID(relayId, trace) << "target:[" << host << "]. hex:[" << print_string_as_hex(host) << "].";
-                    auto uri = parseURI(host, relayId);
-
                     BOOST_LOG_S5B_ID(relayId, trace) << "do_analysis_client_first_http_header data:" << s;
-                    if (!uri.isOk) {
-                        if (!uri.failed) {
-                            fail({}, "do_analysis_client_first_http_header parseURI failed.");
-                        }
+                    auto target = headerParser.get().base().target();
+                    auto host = h.at(boost::beast::http::field::host);
+                    BOOST_LOG_S5B_ID(relayId, trace) << "host:[" << host << "]. hex:[" << print_string_as_hex(host) << "].";
+                    BOOST_LOG_S5B_ID(relayId, trace) << "target:[" << host << "]. hex:[" << print_string_as_hex(target) << "].";
+                    auto uriHost = parseURI(host, relayId);
+                    auto uriTarget = parseURI(target, relayId);
+
+                    ParsedURI uri;
+                    if (uriHost.isOk) {
+                        uri = uriHost;
+                        BOOST_LOG_S5B_ID(relayId, trace) << "use uriHost.";
+                    } else if (uriTarget.isOk) {
+                        uri = uriTarget;
+                        BOOST_LOG_S5B_ID(relayId, trace) << "use uriTarget.";
+                    } else {
+                        //if (!uri.failed && !uri.failed) {
+                        //}
+                        fail({}, "do_analysis_client_first_http_header parseURI failed.");
                         return;
                     }
 
@@ -329,9 +339,9 @@ void HttpServerImpl::do_analysis_client_first_http_header() {
 
                     ptr->proxyRelayMode = ProxyRelayMode::connect;
 
-					// redirect it as ordinary http request, don't modify the request
+                    // redirect it as ordinary http request, don't modify the request
                     //// remove connect request
-                    //ptr->downstream_buf_.consume(it + 4);
+                    ptr->downstream_buf_.consume(it + 4);
 
                     // ready to send Connection Established
                     do_ready_to_send_last_ok_package(ptr);
@@ -476,7 +486,7 @@ void HttpServerImpl::do_send_Connection_Failed() {
                     return fail(ec, ss.str());
                 }
 
-				// TODO ????? maybe leak memory here ? or duplicate free memory ?
+                // TODO ????? maybe leak memory here ? or duplicate free memory ?
                 //fail({}, "do_send_Connection_Failed 503 end.");
                 return;
             }
