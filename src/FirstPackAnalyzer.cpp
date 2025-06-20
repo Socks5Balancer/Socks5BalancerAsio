@@ -33,7 +33,7 @@ ParsedURI FirstPackAnalyzer::parseURI(const std::string &url) {
         return (value.empty() ? deflt : value);
     };
     // Note: only "http", "https", "ws", and "wss" protocols are supported
-    static const std::regex PARSE_URL{R"((([httpsw]{2,5})://)?([^/ :]+)(:(\d+))?(/([^ ?]+)?)?/?\??([^/ ]+\=[^/ ]+)?)",
+    static const std::regex PARSE_URL{R"((([httpsw]{2,5})://)?([^/ :]+)(:(\d+))?(/([^ ?]+)?)?/?\??([^/ =]+[^/ ]+)?)",
                                       std::regex_constants::ECMAScript | std::regex_constants::icase};
     std::smatch match;
     if (std::regex_match(url, match, PARSE_URL) && match.size() == 9) {
