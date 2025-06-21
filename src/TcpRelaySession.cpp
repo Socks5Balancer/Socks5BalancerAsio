@@ -429,9 +429,10 @@ void TcpRelaySession::do_upstream_write(const size_t &bytes_transferred) {
 
 void TcpRelaySession::close(boost::system::error_code error) {
     if (error == boost::asio::error::eof ||
-        error != boost::asio::error::operation_aborted) {
+        error == boost::asio::error::operation_aborted) {
         // Rationale:
         // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
+        // error:由于线程退出或应用程序请求，已中止 I/O 操作。
         error = {};
     }
     if (error) {

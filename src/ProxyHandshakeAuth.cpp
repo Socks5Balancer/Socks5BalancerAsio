@@ -170,7 +170,7 @@ void ProxyHandshakeAuth::do_read_client_first_3_byte() {
                                     connectType = ConnectType::httpOther;
                                     break;
                                 default:
-                                    BOOST_LOG_S5B_ID(relayId, trace) << "is default...";
+                                    BOOST_LOG_S5B_ID(relayId, trace) << "is default... maybe HTTPS proxy ?";
                                     connectType = ConnectType::unknown;
                                     //{
                                     //    auto data = reinterpret_cast<const char *>(downstream_buf_.data().data());
