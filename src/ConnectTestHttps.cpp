@@ -280,8 +280,8 @@ void ConnectTestHttpsSession::do_socks5_auth_write() {
             std::string{"\x01"} + socks5AuthPwd
     );
     data_send->at(1) = static_cast<uint8_t>(socks5AuthUser.length());
-    data_send->at(2 + socks5AuthUser.length()) = static_cast<uint8_t>(socks5AuthUser.length());
-    BOOST_ASSERT(data_send->length() == (socks5AuthUser.length() + socks5AuthUser.length() + 3));
+    data_send->at(2 + socks5AuthUser.length()) = static_cast<uint8_t>(socks5AuthPwd.length());
+    BOOST_ASSERT(data_send->length() == (socks5AuthUser.length() + socks5AuthPwd.length() + 3));
 
 
     // Set a timeout on the operation
