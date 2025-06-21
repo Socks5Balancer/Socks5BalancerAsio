@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  socks5balancer:
+    build: .
+    container_name: socks5balancer
+    ports:
+      - 1080:1080
+      - 8080:80
+      - 5010:5010
+    volumes:
+      - ./config.json:/app/config.json
+    restart: always
+

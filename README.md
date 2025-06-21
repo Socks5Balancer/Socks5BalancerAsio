@@ -1,4 +1,5 @@
 # Socks5BalancerAsio
+
 A Simple TCP Socket Balancer for balance Multi Socks5 Proxy Backend Servers Powered by Boost.Asio
 
 ---
@@ -18,11 +19,11 @@ Docker version available with instructions here: [fossforreal/Socks5BalancerAsio
 
 **This is a C++ implement (porting) of [Socks5Balancer](https://github.com/Lyoko-Jeremie/Socks5Balancer) , Powered by Boost.Asio .**
 
-Some code about how to use Boost.Asio & openssl come from [trojan](https://github.com/trojan-gfw/trojan) & [ArashPartow's C++ TCP Proxy server](https://github.com/ArashPartow/proxy) , Thank you~  
-The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.com/philave/boost_socks5) , Thank you~  
+Some code about how to use Boost.Asio & openssl come from [trojan](https://github.com/trojan-gfw/trojan) & [ArashPartow's C++ TCP Proxy server](https://github.com/ArashPartow/proxy) , Thank you~
+The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.com/philave/boost_socks5) , Thank you~
 
 ---
-## Monitor
+## Monitoring web interface
 
 ![Monitor Screen](https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/monitor-screen.png)
 
@@ -30,30 +31,57 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 
 
 ## Features
-1. support http-proxy/socks5-proxy/socks4(socks4a)-proxy on same port (aka mixed-port mode), now you never need run another tools to covert socks5 proxy to http proxy
-1. support listen on multi port
-1. Load Balance user connect to multi backend with multi rule
-1. Load all config from config file
-1. support unlimited backend number
-1. can monitor backend alive state
-1. can monitor backend is work well
-1. connection from front end will not connect to dead backend
-1. have 2 check way to check a backend is dead or alive
-1. if a backend revive from dead, it will be auto enable
-1. can config rule per client-ip / per listener
-1. with random delay on every test. so all the test will not burst out at a same time. this feature avoid make large load on remote server.
 
-## the Rule of Load Balance now support
-1. `loop` \: every connect will round robin on all live backend
-1. `random` \: every connect will random connect a live backend
-1. `one_by_one` \: every new connect will try to use last connect backend, if that backend dead, will try next live one
+1. Support http-proxy/socks5-proxy/socks4(socks4a)-proxy on the same port (aka mixed-port mode), now you don't need to run another tools to convert the socks5 proxy to an http proxy
+1. Support listening on multiple ports
+1. Load Balance user connections to multiple upstream following multiple load balancing rule
+1. Load all configuration from a single configuration file
+1. Support unlimited number of upstreams
+1. Monitor the upstreams alive state
+1. Monitor if the upstreams are working well
+1. Connection from the front end will not connect to a dead upstream
+1. Includes two way to check if a upstream is dead or alive
+1. Auto-recovery if a upstream become available
+1. Allow configuration of load balancing rule per client-ip / per listener
+1. Use random delay on every test. All the test will not burst out at a same time. this feature avoid make large load on remote server.
+
+## The currently supported Load Balancing rules
+
+1. `loop` \: every connect will round robin on all live upstream
+1. `random` \: every connect will random connect a live upstream
+1. `one_by_one` \: every new connect will try to use last connect upstream, if that upstream dead, will try next live one
 1. `change_by_time` \: similar `one_by_one` , but will force change server to next after a specific time (in config)
-1. `force_only_one` \: force only use one backend server, never auto change, it useful if you need test a backend, or the backend not stable, but you still want use it.
+1. `force_only_one` \: force only use one upstream server, never auto change, it useful if you need test a upstream, or the upstream not stable, but you still want use it.
 
-## config
-config is a json, the template config is `config.json`
+## Configuration
 
-it must encode with `UTF-8 no BOM`
+The configuration is set as a json file, the template config must be named `config.json` and be in the same folder as the executable.
+
+You can find several example of configuration in the `example-config` directory.
+
+Ensure the configuration file is encoded with `UTF-8 no BOM` (especially on Windows environment).
+
+### Minimal configuration
+
+The minimal configuration template :
+
+```json5
+{
+  "listenHost": "127.0.0.1",
+  "listenPort": 5000,
+  "upstreamSelectRule": "random",
+  "serverChangeTime": 5000,
+  "upstream": [
+    {
+      "host": "127.0.0.1",
+      "port": 3000
+    }
+  ]
+}
+
+```
+
+### Full configuration
 
 ```json5
 {
@@ -122,8 +150,8 @@ it must encode with `UTF-8 no BOM`
   ],
   "AuthClientInfo": [                       // the User Auth username/password config, (if not empty, all the proxy access MUST need auth, (include http-proxy/sock5-proxy))
                                             //    NOTE:  please see follow ``##Auth Support`` section to see how to **Enable Auth Support**, and other more information
-                                            //    NOTE:  because of the socks4(a) protocol only defined username(USERID), so when use socks4(a), only the username will be valid 
-    {                                       
+                                            //    NOTE:  because of the socks4(a) protocol only defined username(USERID), so when use socks4(a), only the username will be valid
+    {
       "user": "111",                        // the User Auth username, (NOTE: don't use `:` or `"` in your username, otherwise, because the http-proxy defined rfc7617 , everything after first `:` will be marked as part of pwd. In other side, `"` will break json config. )
       "pwd": "abc"                          // the User Auth Password, (NOTE: don't use none ascii char in username/password, this project not optimization with Unicode, use Unicode may be case unpredictable problems .)
     },
@@ -158,27 +186,7 @@ it must encode with `UTF-8 no BOM`
 }
 ```
 
-the minimal config template :
-
-```json
-{
-  "listenHost": "127.0.0.1",
-  "listenPort": 5000,
-  "upstreamSelectRule": "random",
-  "serverChangeTime": 5000,
-  "upstream": [
-    {
-      "host": "127.0.0.1",
-      "port": 3000
-    }
-  ]
-}
-
-```
-
-you can find other minimal config template on the `example-config` dir
-
-**Note:** if you want use this to balance any tcp protocol backend that not socks5 , 
+**Note:** if you want use this to balance any tcp protocol backend that not socks5 ,
 you can set ```
   "disableConnectTest": true,
   "disableConnectionTracker": true,
@@ -187,16 +195,20 @@ then it will run as a pure tcp relay or pure tcp balance or multi port bundle.
 but in that case, the `upstreamSelectRule` must be `random` or `loop`,
 any other rule will not work as expected because of the backend measure are disabled.
 
+## Running the Socks5 Load balancer from the binary
 
-## how to run it ?
+### Using Docker
+
+Checkout the instructions on this Docker repository [Socks5Balancer](https://hub.docker.com/r/aliengen/socks5balancer).
+
+### Using Systemd
 
 you can set the command params to special config file path
 
 follow is systemd config example
 
-
-
 set config to command params
+
 ```
 # nano /etc/systemd/system/Socks5BalancerAsio.service
 
@@ -217,12 +229,33 @@ ExecStart=/home/username/Socks5BalancerAsio/Socks5BalancerAsio -c /home/username
 WantedBy=multi-user.target
 ```
 
+## Running the Socks5 Load balancer from source
+
+1. Clone this repository
+2. Create your configuration file `config.json`
+3. Use one of the method below
+
+### Using Docker
+
+```bash
+docker build -t socks5balancerasio .
+docker run -v ./config.json:/app/config.json -p 1080:1080 -p 80:80 -p 5010:5010 socks5balancerasio
+```
+
+### Using Docker compose
+
+This will use the `docker-compose.yaml` file in the repository, you can change its configuration according to your needs.
+
+```bash
+docker compose up
+```
+
 
 ---
 
 ## Auth Support
 
-now support Auth (UserName/Password) in http AND socks5 AND socks4(a) mode.  
+now support Auth (UserName/Password) in http AND socks5 AND socks4(a) mode.
 BUT need Enable option flag `-DNeed_ProxyHandshakeAuth=ON` when building
 
 use ```AuthClientInfo``` section in config file to config username/password.
@@ -231,10 +264,10 @@ use ```AuthClientInfo``` section in config file to config username/password.
 
 Enable Auth Support need add flag `-DNeed_ProxyHandshakeAuth=ON` when CMake config, then rebuild project.
 
-Enable Auth Support will replace `class FirstPackAnalyzer` with `class ProxyHandshakeAuth` AND use the `ProxyHandshakeUtils`.  
-when this mode, Socks5BalancerAsio will impl itself version Socks5-proxy client AND server, and Http-proxy client AND server . 
+Enable Auth Support will replace `class FirstPackAnalyzer` with `class ProxyHandshakeAuth` AND use the `ProxyHandshakeUtils`.
+when this mode, Socks5BalancerAsio will impl itself version Socks5-proxy client AND server, and Http-proxy client AND server .
 
-the UDP only work when your backend server support socks5 UDP, 
+the UDP only work when your backend server support socks5 UDP,
 it is implemented but not be test (i don't have test evn now.).
 
 ---
@@ -260,7 +293,7 @@ if all backend are disabled, the front connect will be reject.
 ## which rule is best ?
 
  if you all server have good performance , use `change_by_time` .
- 
+
  if you have some best server than other , use `one_by_one` .
 
 if you want the IP not change, example playing some game, use `one_by_one`
@@ -274,13 +307,13 @@ if you use it to download something and dont care about latency and IP, like BT,
 
 a simple state monitor Json Api server can config by `stateServerHost` and `stateServerPort`
 
-if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config. 
-then, it will get server info json from main server , and control it with a `/op?xxx` path on same place. 
+if you want use the Monitor html, only need open the html in any browser and fill the backend input with the `stateServer` on your config.
+then, it will get server info json from main server , and control it with a `/op?xxx` path on same place.
 
-if you think the simple Monitor html looks so ugly, you can re-write it with any other tools, 
-only need to follow the data process way on the simple Monitor html. 
+if you think the simple Monitor html looks so ugly, you can re-write it with any other tools,
+only need to follow the data process way on the simple Monitor html.
 
-BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date. 
+BTW: the simple Monitor html in the `./html` folder write with html5 and css with javascript and use `Vue.js` , addition libs `lodash.js` and `moment.js` only give it some help function to process data or format date.
 
 _(`Vue.js` is a good replace for jQ at small project , i only use it's data and event binding on this place. it let me not to setup Angular on there .)_
 
@@ -288,10 +321,10 @@ _(`Vue.js` is a good replace for jQ at small project , i only use it's data and 
 ## Use Monitor Page On EmbedWebServer
 
 if you dont want to install a addition web server , and you use the web page on safe env, you can use the EmbedWebServer.
- 
-the EmbedWebServer only do two action:    
 
-1. provide `backend json` on path `/backend`. 
+the EmbedWebServer only do two action:
+
+1. provide `backend json` on path `/backend`.
 2. be a static file provider like nginx
 
 you can config it in the config file of `EmbedWebServerConfig` segment.
@@ -299,8 +332,8 @@ you can config it in the config file of `EmbedWebServerConfig` segment.
 
 ## Use Monitor Page On Nginx
 
-if you want,  
-you can setup main server on a server then serve the monitor html page on a nginx server like me.  
+if you want,
+you can setup main server on a server then serve the monitor html page on a nginx server like me.
 
 you can config nginx to serve a json string on path `./backend` like follow ,
  and then the monitor page will load it to config the backend (if the backend not special on url search params).
@@ -318,40 +351,42 @@ NOTE: the `host` is not require, it can lost or be a empty string like follow, b
         }
 ```
 
-when page start,  
-the monitor page will get the backend config from the the url search params,   
+when page start,
+the monitor page will get the backend config from the the url search params,
 otherwise, try to get the backend config from page server path `backend` .
 
 
 ---
 ## Struct Info
-now the main server write with pure c++ (c++20) , powered by Boost.Asio/Boost.Beast . 
-and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) . 
+now the main server write with pure c++ (c++20) , powered by Boost.Asio/Boost.Beast .
+and Monitor Powered by Boost.Beast, it run with RestApi serve by main server and a alone html web page ( you can find it on `./html` folder) .
 
 ---
 
-## how to build & dev
+## How to build & dev
 
 ### Dependencies
 
-**CMake** >= 3.16  
+**CMake** >= 3.16
 **Boost** >= 1.81
 > For older versions Boost v1.70+ (v1.73 is recommended as last working version)
 > Checkout at tag "v1.0" or commit "e6c491ce56f6de21423c5d780d1c8865714fabe3"
 
-**OpenSSL** >= 1.1.0 recommend 1.1.1h  
-**MSVC** or **GCC** , required C++20 support  
+**OpenSSL** >= 1.1.0 recommend 1.1.1h
+**MSVC** or **GCC** , required C++20 support
 
-#### Build on Windows
+We recommend using **Clion** as code editor.
+
+### Build on Windows
 
 install VS2022
 
 if you dont want build Boost and OpenSSL by yourself , download Prebuild version from follow :
 
-Boost Prebuild : 
+Boost Prebuild :
 - https://sourceforge.net/projects/boost/files/boost-binaries/
 
-OpenSSL Prebuild : 
+OpenSSL Prebuild :
 - https://wiki.openssl.org/index.php/Binaries
 - https://kb.firedaemon.com/support/solutions/articles/4000121705
 
@@ -362,7 +397,7 @@ cmake -DBOOST_INCLUDEDIR=<path_to>/boost_1_81_0 -DOPENSSL_ROOT_DIR=<path_to>\ope
 
 then build it
 
-#### Build on ArchLinux
+### Build on ArchLinux
 
 ```
 pacman -S base-devel --needed
@@ -398,47 +433,30 @@ make
 
 then all ok
 
-#### Build on Debian
+### Build on Debian 12
 
 ```bash
-# FOR LATEST BOOST (v1.74+):
+# Install BOOST v1.81.0
+apt update && apt upgrade
+apt install -y git cmake libssl-dev g++ wget bzip2
+
+# DOWNLOAD & BUILD BOOST v1.81.0 FROM SOURCE
+wget -nc https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.bz2
+tar --skip-old-files -jxf boost_1_81_0.tar.bz2
+cd boost_1_81_0
+./bootstrap.sh
+./b2 link=static
+PATH=$(pwd):$(pwd)/stage/lib:$PATH
+cd ..
+
+# Clone and compile Socks5BalancerAsio:
 apt update && apt upgrade
 apt install -y libboost-all-dev git cmake libssl-dev g++
 git clone https://github.com/fossforreal/Socks5BalancerAsio
 cd Socks5BalancerAsio
 cmake .
 make -j$(nproc)
-
 ```
-
-or
-
-```bash
-# FOR BOOST v1.71-1.73:
-apt update && apt upgrade
-apt install -y git cmake libssl-dev g++ wget bzip2
-
-# DOWNLOAD & BUILD BOOST v1.73 FROM SOURCE
-wget -nc https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.tar.bz2
-tar --skip-old-files -jxf boost_1_73_0.tar.bz2
-cd boost_1_73_0
-./bootstrap.sh
-./b2 link=static
-PATH=$(pwd):$(pwd)/stage/lib:$PATH
-cd ..
-
-# CHECK THIS REPO AT TAG v1.0
-git clone https://github.com/fossforreal/Socks5BalancerAsio
-cd Socks5BalancerAsio
-git checkout e6c491ce56f6de21423c5d780d1c8865714fabe3
-cmake .
-make -j$(nproc)
-```
-
-
-### Dev
-
-Recommend use **Clion**
 
 ---
 
@@ -489,9 +507,9 @@ the `<OpenSSL Link Mode>` and `<Type>` means :
 
 ## porting reason
 
-when i run the origin [Socks5Balancer](https://github.com/Lyoko-Jeremie/Socks5Balancer) on a qemu of archlinux vm with 2G disk / 500MB memory / 2 Core continue for 24x7 ,  
-i find that it may crash on some times by memory limit and will hang hole system when connect create rate > 70/s .  
-so i write this, hope it can work more faster and more stable.  
+when i run the origin [Socks5Balancer](https://github.com/Lyoko-Jeremie/Socks5Balancer) on a qemu of archlinux vm with 2G disk / 500MB memory / 2 Core continue for 24x7 ,
+i find that it may crash on some times by memory limit and will hang hole system when connect create rate > 70/s .
+so i write this, hope it can work more faster and more stable.
 
 ## TODO
 - [x] listen on multi port
@@ -500,7 +518,7 @@ so i write this, hope it can work more faster and more stable.
 - [x] http/socks5 on same port (mixed-port mode)
 - [ ] analysis socks5 protocol and communicate protocol type
 - [ ] monitor per connect info
-- [x] backend latency analysis 
+- [x] backend latency analysis
 - [x] port aggregation mode(multi-listen only mode)
 - [x] direct provide Monitor Page (embedding nginx)
 
@@ -527,33 +545,32 @@ so i write this, hope it can work more faster and more stable.
 
 
 ## The Background story
-for a long time ago, i want to find a simple tools to balance on many proxy. it need auto chose the best proxy and dont let dead one to slow the internet speed .  
-but when i search all over the internet , i cannot find a simple , alone , light , fast , stable , easy to use and free tools to complete this requirement.  
-so, i write it by myself, i named it as `socks5 balancer`.   
+for a long time ago, i want to find a simple tools to balance on many proxy. it need auto chose the best proxy and dont let dead one to slow the internet speed .
+but when i search all over the internet , i cannot find a simple , alone , light , fast , stable , easy to use and free tools to complete this requirement.
+so, i write it by myself, i named it as `socks5 balancer`.
 
-this tools build in top of Boost.Asio and C++, it's a single executable file, can work in both Windows and Linux, and can load balance for socks5 backend or pure tcp backend, provide a socks5/http/https multi in one port support, and it can detect the backend socks5 proxy health state similar like the HAProxy. also, it can work on multi-to-one mode, this mode run like a invert-load balance. and it can easy monitor and control through the http interface.  
+this tools build in top of Boost.Asio and C++, it's a single executable file, can work in both Windows and Linux, and can load balance for socks5 backend or pure tcp backend, provide a socks5/http/https multi in one port support, and it can detect the backend socks5 proxy health state similar like the HAProxy. also, it can work on multi-to-one mode, this mode run like a invert-load balance. and it can easy monitor and control through the http interface.
 
-this project still in develop, and i am using it every day every night to test the stability . now it continue run in my Home's network for a mouth ago without any error or crush.   
-i will add more feature on it and continue make it more stable. and i hope it can help some one like me.  
-
----
-the background story:  
-I am a develop in a special country, for well-known reasons, i need use proxy to access the international worldwide internet to contribution code for humanity.  
-but because of the poor,  i don't have many money to by a expensive stable proxy server, the only one way is that collect many low price or free proxy and try they one by one hope some of it can work.  
-so, i write this project as a Open Source Software, hope it can help other one who face the same dilemma as me.  
+this project still in develop, and i am using it every day every night to test the stability . now it continue run in my Home's network for a mouth ago without any error or crush.
+i will add more feature on it and continue make it more stable. and i hope it can help some one like me.
 
 ---
-follow is a prototype i wrote with Typescript in top of NodeJs :  
-https://github.com/Lyoko-Jeremie/Socks5Balancer  
-Because the performance of Node and JavaScript. it not stable, not fast, not lightly, so i rewrite it with C++/Boost.Asio.  
+the background story:
+I am a develop in a special country, for well-known reasons, i need use proxy to access the international worldwide internet to contribution code for humanity.
+but because of the poor,  i don't have many money to by a expensive stable proxy server, the only one way is that collect many low price or free proxy and try they one by one hope some of it can work.
+so, i write this project as a Open Source Software, hope it can help other one who face the same dilemma as me.
+
+---
+follow is a prototype i wrote with Typescript in top of NodeJs :
+https://github.com/Lyoko-Jeremie/Socks5Balancer
+Because the performance of Node and JavaScript. it not stable, not fast, not lightly, so i rewrite it with C++/Boost.Asio.
 
 ---
 BTW, you can see the `.idea` dir in my every project. so , you can know how i love jetbrains so far.
 
 ---
-The Clion / WebStorm / IDEA / RSharp Tools is the world-class best IDE(Integrated Development Environment) in my heart .  
-Thank To The Jetbrains send me a All Pack License to let me continue to use the Best Tools In The World.   
+The Clion / WebStorm / IDEA / RSharp Tools is the world-class best IDE(Integrated Development Environment) in my heart .
+Thank To The Jetbrains send me a All Pack License to let me continue to use the Best Tools In The World.
 [
 <img alt="Jetbrains Logo" src="https://github.com/Lyoko-Jeremie/Socks5BalancerAsio/wiki/jetbrains-variant-4.png" width="200">
-](https://www.jetbrains.com/?from=Socks5Balancer)  
-
+](https://www.jetbrains.com/?from=Socks5Balancer)
