@@ -33,7 +33,7 @@ The code style come from [philave's BOOST_SOCKS5 Proxy Server](https://github.co
 
 ## Features
 
-1. Support http-proxy/socks5-proxy/socks4(socks4a)-proxy on the same port (aka mixed-port mode), now you don't need to run another tools to convert the socks5 proxy to an http proxy
+1. Support http-proxy/socks5(socks5h)-proxy/socks4(socks4a)-proxy on the same port (aka mixed-port mode), now you don't need to run another tools to convert the socks5 proxy to an http proxy
 1. Support listening on multiple ports
 1. Load Balance user connections to multiple upstream following multiple load balancing rule
 1. Load all configuration from a single configuration file
