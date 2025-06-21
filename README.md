@@ -10,6 +10,7 @@ A Simple TCP Socket Balancer for balance Multi Socks5 Proxy Backend Servers Powe
 | Release (**Recommand**) | [Release Page](https://github.com/Socks5Balancer/Socks5BalancerAsio/releases) | Stable, need Use the Release Marked with `Latest` version. OR , use `Pre-release` version to try new feature. |
 | Custom build        | [Project](https://github.com/Socks5Balancer/Socks5BalancerAsio-mini-build) | Outdate but extreme stable, Time-tested and be Deployed in many server worldwide |
 | Docker (thanks fossforreal) | [fossforreal/docker](https://github.com/fossforreal/Socks5BalancerAsio-Docker) | Maybe Outdate, but you can simply build new version manually follow its `README` |
+| Docker compose (thanks mermetbt) | [aliengen/socks5balancer](https://hub.docker.com/r/aliengen/socks5balancer) |  | 
 
 ---
 
