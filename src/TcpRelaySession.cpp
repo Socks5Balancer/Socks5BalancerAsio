@@ -200,6 +200,10 @@ void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::result
                         // Setup async read from client (downstream)
                         do_downstream_read();
                     } else {
+                        // TODO: if we want to impl upstream select by target domain ,
+                        //      must need move the firstPackAnalyzer call to the `start()` before the `try_connect_upstream()` call
+                        //      and then , the `try_connect_upstream()` use the `ptr->targetEndpointAddrString` (aka `ptr->firstPackAnalyzer->host` ) to select upstream
+
                         auto whenComplete = [self = shared_from_this()]() {
                             // start relay
                             if (auto ptr = self) {
