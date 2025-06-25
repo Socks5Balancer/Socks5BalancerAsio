@@ -89,7 +89,7 @@ void TcpTestSession::allOk() {
         timePing = std::chrono::duration_cast<decltype(timePing)>(std::chrono::steady_clock::now() - startTime);
         callback->successfulCallback(timePing);
     }
-    release();
+    stop();
 }
 
 void TcpTestSession::fail(boost::system::error_code ec, const std::string &what) {
@@ -103,7 +103,7 @@ void TcpTestSession::fail(boost::system::error_code ec, const std::string &what)
     if (callback && callback->failedCallback) {
         callback->failedCallback(r);
     }
-    release();
+    stop();
 }
 
 void TcpTestSession::release() {

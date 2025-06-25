@@ -112,7 +112,7 @@ void ConnectTestHttpsSession::fail(boost::system::error_code ec, const std::stri
     if (callback && callback->failedCallback) {
         callback->failedCallback(r);
     }
-    release();
+    stop();
 }
 
 void ConnectTestHttpsSession::allOk() {
@@ -121,7 +121,7 @@ void ConnectTestHttpsSession::allOk() {
         timePing = std::chrono::duration_cast<decltype(timePing)>(std::chrono::steady_clock::now() - startTime);
         callback->successfulCallback(timePing, res_);
     }
-    release();
+    stop();
 }
 
 void ConnectTestHttpsSession::do_resolve() {
