@@ -177,8 +177,12 @@ public:
     void do_whenComplete() {
         BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenComplete()";
         BOOST_ASSERT(tcpRelaySession);
-        BOOST_ASSERT(whenComplete);
-        whenComplete();
+        // BOOST_ASSERT(whenComplete);
+        if (!whenComplete) {
+            BOOST_LOG_S5B_ID(relayId, warning) << "ProxyHandshakeAuth::do_whenComplete() (!whenComplete) duplicate release.";
+        } else {
+            whenComplete();
+        }
         tcpRelaySession.reset();
         whenComplete = nullptr;
         whenError = nullptr;
@@ -187,8 +191,12 @@ public:
     void do_whenError(boost::system::error_code error) {
         BOOST_LOG_S5B_ID(relayId, trace) << "ProxyHandshakeAuth::do_whenError()";
         BOOST_ASSERT(tcpRelaySession);
-        BOOST_ASSERT(whenError);
-        whenError(error);
+        // BOOST_ASSERT(whenError);
+        if (!whenError) {
+            BOOST_LOG_S5B_ID(relayId, warning) << "ProxyHandshakeAuth::do_whenError() (!whenError) duplicate release.";
+        } else {
+            whenError(error);
+        }
         tcpRelaySession.reset();
         whenComplete = nullptr;
         whenError = nullptr;

@@ -487,7 +487,7 @@ void HttpServerImpl::do_send_Connection_Failed() {
                 }
 
                 // TODO ????? maybe leak memory here ? or duplicate free memory ?
-                //fail({}, "do_send_Connection_Failed 503 end.");
+                fail({}, "do_send_Connection_Failed 503 end.");
                 return;
             }
         );
