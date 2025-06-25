@@ -46,7 +46,6 @@ HttpServerImpl::ParsedURI HttpServerImpl::ParsedURI::clone() const {
     result.port_u16t = port_u16t;
     result.resource = std::string(resource);
     result.query = std::string(query);
-    result.match = match;// std::smatch is copyable
     result.url = std::string(url);
     return result;
 }
@@ -69,7 +68,6 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURIBoost(const std::string &url, 
         boost::urls::result<boost::urls::url_view> parsed = boost::urls::parse_uri(url);
         if (!parsed.has_value()) {
             result.isOk = false;
-            //result.failed = false;
             return result;
         }
         const auto &u = parsed.value();
@@ -81,7 +79,6 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURIBoost(const std::string &url, 
         result.query = u.query();
         result.url = url;
         result.isOk = true;
-        //result.failed = false;
         // Convert protocol to lowercase
         boost::algorithm::to_lower(result.protocol);
         if (result.port.empty()) {
@@ -100,7 +97,6 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURIBoost(const std::string &url, 
     catch (const std::exception &e) {
         BOOST_LOG_S5B_ID(relayId, trace) << "parseURIBoost (const std::exception &e):" << e.what();
         result.isOk = false;
-        //result.failed = false;
         result.debug_print(relayId);
         return result;
     }
@@ -118,7 +114,6 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURI(const std::string &url, const
         std::regex_constants::ECMAScript | std::regex_constants::icase
     };
     std::smatch match;
-    result.match = match;
     result.url = url;
     if (std::regex_match(url, match, PARSE_URL) && match.size() == 9) {
         result.protocol = value_or(boost::algorithm::to_lower_copy(std::string(match[2])), "http");
@@ -128,24 +123,20 @@ HttpServerImpl::ParsedURI HttpServerImpl::parseURI(const std::string &url, const
         result.resource = value_or(match[6], "/");
         result.query = match[8];
         result.isOk = true;
-        //result.failed = false;
         if (!boost::conversion::try_lexical_convert(result.port, result.port_u16t)) {
             result.port_u16t = 0;
             result.isOk = false;
-            //result.failed = false;
         }
         if (result.domain.empty()) {
             //fail({}, "result.domain.empty()");
             result.isOk = false;
-            //result.failed = true;
         }
     } else {
         //fail({}, "regex_match fail");
         result.isOk = false;
-        //result.failed = true;
     }
     result.debug_print(relayId);
-    return result.clone();
+    return result;
 }
 
 std::shared_ptr<AuthClientManager::AuthUser> HttpServerImpl::checkHeaderAuthString(
