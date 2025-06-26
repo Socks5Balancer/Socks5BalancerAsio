@@ -34,11 +34,13 @@
 #include <string>
 #include <sstream>
 #include <list>
+#include <set>
 #include <vector>
 #include <functional>
 
 #include "AsyncDelay.h"
 
+class TcpTest;
 
 class TcpTestSession : public std::enable_shared_from_this<TcpTestSession> {
     boost::asio::any_io_executor executor;
@@ -49,6 +51,8 @@ class TcpTestSession : public std::enable_shared_from_this<TcpTestSession> {
     const std::string socks5Host;
     const std::string socks5Port;
 
+    std::weak_ptr<TcpTest> parent;
+
     std::chrono::milliseconds delayTime;
 
     bool _isComplete = false;
@@ -57,17 +61,19 @@ class TcpTestSession : public std::enable_shared_from_this<TcpTestSession> {
     std::chrono::time_point<std::chrono::steady_clock> startTime{std::chrono::steady_clock::now()};
 
 public:
+
     TcpTestSession(boost::asio::any_io_executor executor,
                    const std::string &socks5Host,
                    const std::string &socks5Port,
+                   const std::weak_ptr<TcpTest> &parent,
                    std::chrono::milliseconds delayTime = std::chrono::milliseconds{0}
-    ) :
-            executor(executor),
-            resolver_(executor),
-            stream_(executor),
-            socks5Host(socks5Host),
-            socks5Port(socks5Port),
-            delayTime(delayTime) {
+    ) : executor(executor),
+        resolver_(executor),
+        stream_(executor),
+        socks5Host(socks5Host),
+        socks5Port(socks5Port),
+        parent(parent),
+        delayTime(delayTime) {
 //        std::cout << "TcpTestSession :" << socks5Host << ":" << socks5Port << std::endl;
     }
 
@@ -92,43 +98,42 @@ public:
 
 private:
 
-    void
-    fail(boost::system::error_code ec, const std::string &what);
+    void fail(boost::system::error_code ec, const std::string &what);
 
-    void
-    allOk();
+    void allOk();
 
-    void
-    do_resolve();
+    void do_resolve();
 
-    void
-    do_tcp_connect(const boost::asio::ip::tcp::resolver::results_type &results);
+    void do_tcp_connect(const boost::asio::ip::tcp::resolver::results_type &results);
 
 
-    void
-    do_shutdown(bool isOn = false);
+    void do_shutdown(bool isOn = false);
 
 };
 
 class TcpTest : public std::enable_shared_from_this<TcpTest> {
     boost::asio::any_io_executor executor;
-    std::list<std::shared_ptr<TcpTestSession>> sessions;
+    std::set<std::shared_ptr<TcpTestSession>> sessions;
 
     std::shared_ptr<boost::asio::steady_timer> cleanTimer;
+
 public:
-    TcpTest(boost::asio::any_io_executor ex) :
-            executor(ex) {
+
+    TcpTest(boost::asio::any_io_executor ex) : executor(ex) {
     }
 
     std::shared_ptr<TcpTestSession> createTest(
-            const std::string socks5Host,
-            const std::string socks5Port,
-            std::chrono::milliseconds maxRandomDelay = std::chrono::milliseconds{0}
+        const std::string socks5Host,
+        const std::string socks5Port,
+        std::chrono::milliseconds maxRandomDelay = std::chrono::milliseconds{0}
     );
 
     void stop();
 
+    void releaseTcpTestSession(const std::shared_ptr<TcpTestSession> &ptr);
+
 private:
+
     void do_cleanTimer();
 };
 
