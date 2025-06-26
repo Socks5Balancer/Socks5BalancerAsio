@@ -146,7 +146,7 @@ void TcpTest::do_cleanTimer() {
             BOOST_LOG_S5B(error) << "TcpTest::do_cleanTimer() c error_code " << e;
             boost::system::error_code ec;
             this->cleanTimer->cancel(ec);
-            this->cleanTimer = nullptr;
+            this->cleanTimer.reset();
             return;
         }
         BOOST_LOG_S5B(trace) << "TcpTest::do_cleanTimer()";

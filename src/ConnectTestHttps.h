@@ -36,6 +36,7 @@
 #include <string>
 #include <sstream>
 #include <list>
+#include <set>
 #include <vector>
 #include <functional>
 #include <openssl/opensslv.h>
@@ -48,6 +49,8 @@
 #include <tchar.h>
 
 #endif // _WIN32
+
+class ConnectTestHttps;
 
 class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestHttpsSession> {
     boost::asio::any_io_executor executor;
@@ -68,6 +71,8 @@ class ConnectTestHttpsSession : public std::enable_shared_from_this<ConnectTestH
     const std::string socks5AuthUser;
     const std::string socks5AuthPwd;
     bool slowImpl;
+
+    std::weak_ptr<ConnectTestHttps> parent;
 
     std::chrono::milliseconds delayTime;
 
@@ -92,6 +97,7 @@ public:
             const std::string &socks5Port,
             const std::string &socks5AuthUser,
             const std::string &socks5AuthPwd,
+            const std::weak_ptr<ConnectTestHttps> &parent,
             bool slowImpl,
             std::chrono::milliseconds delayTime = std::chrono::milliseconds{0}
     );
@@ -154,7 +160,7 @@ class ConnectTestHttps : public std::enable_shared_from_this<ConnectTestHttps> {
     boost::asio::any_io_executor executor;
     std::shared_ptr<boost::asio::ssl::context> ssl_context;
     bool need_verify_ssl = true;
-    std::list<std::shared_ptr<ConnectTestHttpsSession>> sessions;
+    std::set<std::shared_ptr<ConnectTestHttpsSession>> sessions;
 
     std::shared_ptr<boost::asio::steady_timer> cleanTimer;
 public:
@@ -174,6 +180,8 @@ public:
     );
 
     void stop();
+
+    void releaseConnectTestHttpsSession(const std::shared_ptr<ConnectTestHttpsSession> &ptr);
 
 private:
     void do_cleanTimer();

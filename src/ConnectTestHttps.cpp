@@ -32,6 +32,7 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(
         const std::string &targetHost, uint16_t targetPort, const std::string &targetPath, int httpVersion,
         const std::string &socks5Host, const std::string &socks5Port,
         const std::string &socks5AuthUser, const std::string &socks5AuthPwd,
+        const std::weak_ptr<ConnectTestHttps> &parent,
         bool slowImpl, std::chrono::milliseconds delayTime) :
         executor(executor),
         resolver_(executor),
@@ -44,6 +45,7 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(
         socks5Port(socks5Port),
         socks5AuthUser(socks5AuthUser),
         socks5AuthPwd(socks5AuthPwd),
+        parent(parent),
         slowImpl(slowImpl),
         delayTime(delayTime) {
 //        std::cout << "ConnectTestHttpsSession :" << socks5Host << ":" << socks5Port << std::endl;
@@ -85,6 +87,13 @@ void ConnectTestHttpsSession::run(
 
 void ConnectTestHttpsSession::release() {
     callback.reset();
+    auto ptr = parent.lock();
+    if (ptr) {
+        ptr->releaseConnectTestHttpsSession(shared_from_this());
+        ptr.reset();
+    } else {
+        BOOST_LOG_S5B(warning) << "ConnectTestHttpsSession::release() parent is nullptr";
+    }
     _isComplete = true;
 }
 
@@ -723,12 +732,13 @@ ConnectTestHttps::createTest(
             socks5Port,
             socks5AuthUser,
             socks5AuthPwd,
+            shared_from_this(),
             slowImpl,
             std::chrono::milliseconds{
                     maxRandomDelay.count() > 0 ? getRandom<long long int>(0, maxRandomDelay.count()) : 0
             }
     );
-    sessions.push_back(s->shared_from_this());
+    sessions.insert(s->shared_from_this());
     // sessions.front().lock();
     return s;
 }
@@ -737,9 +747,13 @@ void ConnectTestHttps::do_cleanTimer() {
     auto c = [this, self = shared_from_this(), cleanTimer = this->cleanTimer]
             (const boost::system::error_code &e) {
         if (e) {
+            BOOST_LOG_S5B(error) << "ConnectTestHttps::do_cleanTimer() c error_code " << e;
+            boost::system::error_code ec;
+            this->cleanTimer->cancel(ec);
+            this->cleanTimer.reset();
             return;
         }
-//        std::cout << "do_cleanTimer()" << std::endl;
+        BOOST_LOG_S5B(trace) << "ConnectTestHttps::do_cleanTimer()";
 
         auto it = sessions.begin();
         while (it != sessions.end()) {
@@ -774,5 +788,13 @@ void ConnectTestHttps::stop() {
                 ++it;
             }
         }
+    }
+}
+
+void ConnectTestHttps::releaseConnectTestHttpsSession(const std::shared_ptr<ConnectTestHttpsSession> &ptr) {
+    if (sessions.contains(ptr)) {
+        sessions.erase(ptr);
+    } else {
+        BOOST_LOG_S5B(warning) << "ConnectTestHttps::releaseConnectTestHttpsSession() session not found in sessions list. double free ?";
     }
 }
