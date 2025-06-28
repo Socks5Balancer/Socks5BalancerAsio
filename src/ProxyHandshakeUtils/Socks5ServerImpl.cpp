@@ -827,7 +827,7 @@ void Socks5ServerImpl::fail(boost::system::error_code ec, const std::string &wha
         ss << what << ": [" << ec.message() << "] . ";
         r = ss.str();
     }
-    BOOST_LOG_S5B_ID(relayId, error) << r;
+    BOOST_LOG_S5B_ID(relayId, error) << "Socks5ServerImpl::fail " << r;
 
     do_whenError(ec);
 }

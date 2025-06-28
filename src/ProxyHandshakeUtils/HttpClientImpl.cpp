@@ -38,7 +38,7 @@ void HttpClientImpl::fail(boost::system::error_code ec, const std::string &what)
         ss << what << ": [" << ec.message() << "] . ";
         r = ss.str();
     }
-    BOOST_LOG_S5B_ID(relayId, error) << r;
+    BOOST_LOG_S5B_ID(relayId, error) << "HttpClientImpl::fail " << r;
 
     do_whenError(ec);
 }

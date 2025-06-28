@@ -53,7 +53,7 @@ ConnectTestHttpsSession::ConnectTestHttpsSession(
     // Set SNI Hostname (many hosts need this to handshake successfully)
     if (!SSL_set_tlsext_host_name(stream_.native_handle(), targetHost.c_str())) {
         boost::beast::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
-        BOOST_LOG_S5B(error) << ec.message();
+        BOOST_LOG_S5B(error) << "ConnectTestHttpsSession::ConnectTestHttpsSession() " << ec.message();
         return;
     }
 
@@ -117,7 +117,7 @@ void ConnectTestHttpsSession::fail(boost::system::error_code ec, const std::stri
            << "socks5Port:" << socks5Port << " ";
         r = ss.str();
     }
-    BOOST_LOG_S5B(error) << r;
+    BOOST_LOG_S5B(error) << "ConnectTestHttpsSession::fail " << r;
     if (callback && callback->failedCallback) {
         callback->failedCallback(r);
     }
