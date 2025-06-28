@@ -211,6 +211,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # ============================================================================================
 
+option(Limit_TimeHistory_Memory_Use "set TimeHistory max record number to 1 to mininal running memory. ")
+if (Limit_TimeHistory_Memory_Use)
+    add_definitions(-DLimit_TimeHistory_Memory_Use)
+    message(STATUS "Limit_TimeHistory_Memory_Use !!!")
+endif ()
+
+# ============================================================================================
+
 
 add_executable(${ProjectMainName}
         src/main.cpp

@@ -79,14 +79,19 @@ namespace DelayCollection {
     private:
 
         std::recursive_mutex mtx;
+        
+#ifdef Limit_TimeHistory_Memory_Use
+        std::list<DelayInfo> q;
+#else
         std::deque<DelayInfo> q;
+#endif // Limit_TimeHistory_Memory_Use
 
         size_t maxSize = 8192;
         // size_t maxSize = std::numeric_limits<decltype(maxSize)>::max() / 2;
 
         void trim() {
             std::lock_guard lg{mtx};
-            if (q.size() > maxSize) {
+            if (q.size() > maxSize && !q.empty()) {
                 // remove front
                 size_t needRemove = q.size() - maxSize;
                 if (needRemove == 1) [[likely]]
@@ -101,12 +106,18 @@ namespace DelayCollection {
                                            << " q.size:" << q.size();
                     // we need remove more than 1 , this only happened when maxSize changed
                     // we copy and re-create it, this will wast much time
-                    q = decltype(q){q.begin() + needRemove, q.end()};
+                    q = decltype(q){std::next(q.begin(), needRemove), q.end()};
                 }
             }
         }
 
     public:
+
+        TimeHistory() {
+#ifdef Limit_TimeHistory_Memory_Use
+            maxSize = 8;
+#endif // Limit_TimeHistory_Memory_Use
+        }
 
         const DelayInfo &addDelayInfo(TimeMs delay) {
             std::lock_guard lg{mtx};
