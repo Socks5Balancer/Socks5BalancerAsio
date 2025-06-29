@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef OWLACCESSTERMINAL_CODEVERSION_H
-#define OWLACCESSTERMINAL_CODEVERSION_H
+#ifndef SOCKS5BALANCERASIO_CODEVERSION_H
+#define SOCKS5BALANCERASIO_CODEVERSION_H
 
 #define CodeVersion_GIT_REV "@GIT_REV@"
 #define CodeVersion_GIT_REV_F "@GIT_REV_F@"
@@ -25,4 +25,4 @@
 #define CodeVersion_GIT_BRANCH "@GIT_BRANCH@"
 #define CodeVersion_BUILD_DATETIME "@BUILD_DATETIME@"
 
-#endif //OWLACCESSTERMINAL_CODEVERSION_H
+#endif //SOCKS5BALANCERASIO_CODEVERSION_H
