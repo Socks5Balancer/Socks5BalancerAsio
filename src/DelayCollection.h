@@ -23,6 +23,7 @@
 #pragma once
 #endif
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -32,7 +33,9 @@
 #include <mutex>
 #include <chrono>
 #include <limits>
+#include "boost/circular_buffer.hpp"
 
+#include "./CMakeParamsConfig/CMakeParams.h"
 #include "./log/Log.h"
 
 namespace DelayCollection {
@@ -69,44 +72,46 @@ namespace DelayCollection {
 
             DelayInfo &operator=(const DelayInfo &o) = default;
 
+            DelayInfo &operator=(DelayInfo &&o) = default;
+
             DelayInfo(const DelayInfo &o) = default;
 
             DelayInfo(DelayInfo &o) = default;
 
             DelayInfo(DelayInfo &&o) = default;
+
+            ~DelayInfo() = default;
         };
 
     private:
 
         std::recursive_mutex mtx;
         
-#ifdef Limit_TimeHistory_Memory_Use
-        std::list<DelayInfo> q;
-#else
-        std::deque<DelayInfo> q;
-#endif // Limit_TimeHistory_Memory_Use
+        std::unique_ptr<boost::circular_buffer<DelayInfo>> q;
 
         size_t maxSize = 8192;
         // size_t maxSize = std::numeric_limits<decltype(maxSize)>::max() / 2;
 
         void trim() {
             std::lock_guard lg{mtx};
-            if (q.size() > maxSize && !q.empty()) {
+            if (q->size() > maxSize && !q->empty()) {
                 // remove front
-                size_t needRemove = q.size() - maxSize;
+                size_t needRemove = q->size() - maxSize;
                 if (needRemove == 1) [[likely]]
                 {
                     // only remove first, we use the impl of `deque` to speed up the remove speed
                     // often into this way, so we mark it use c++20 `[[likely]]`
-                    q.pop_front();
+                    q->pop_front();
                 } else {
                     BOOST_LOG_S5B(warning) << "TimeHistory::trim() re-create,"
                                            << " needRemove:" << needRemove
                                            << " maxSize:" << maxSize
-                                           << " q.size:" << q.size();
+                                           << " q.size:" << q->size();
                     // we need remove more than 1 , this only happened when maxSize changed
                     // we copy and re-create it, this will wast much time
-                    q = decltype(q){std::next(q.begin(), needRemove), q.end()};
+                    auto m = std::make_unique<boost::circular_buffer<DelayInfo>>(maxSize);
+                    std::copy(std::next(q->begin(), needRemove), q->end(), m->begin());
+                    q = std::move(m);
                 }
             }
         }
@@ -114,26 +119,28 @@ namespace DelayCollection {
     public:
 
         TimeHistory() {
+            std::lock_guard lg{mtx};
 #ifdef Limit_TimeHistory_Memory_Use
-            maxSize = 8;
+            maxSize = CMParams_Limit_TimeHistory_Number;
 #endif // Limit_TimeHistory_Memory_Use
+            q = std::make_unique<boost::circular_buffer<DelayInfo>>(maxSize);
         }
 
-        const DelayInfo &addDelayInfo(TimeMs delay) {
+        void addDelayInfo(TimeMs delay) {
             std::lock_guard lg{mtx};
-            auto &n = q.emplace_back(delay);
+            q->push_back(DelayInfo{delay});
             trim();
-            return n;
         }
 
         [[nodiscard]] std::deque<DelayInfo> history() {
             std::lock_guard lg{mtx};
             // deep copy
-            return std::move(std::deque<DelayInfo>{q.begin(), q.end()});
+            return std::move(std::deque<DelayInfo>{q->begin(), q->end()});
         }
 
         void setMaxSize(size_t m) {
             std::lock_guard lg{mtx};
+            m = std::max<size_t>(m, 1);
             maxSize = m;
             BOOST_LOG_S5B(warning) << "TimeHistory::setMaxSize " << m;
             trim();
@@ -145,14 +152,18 @@ namespace DelayCollection {
 
         void removeBefore(TimePointClock time) {
             std::lock_guard lg{mtx};
-            std::erase_if(q, [&time](const DelayInfo &di) {
-                return di.timeClock < time;
-            });
+            while (!q->empty()) {
+                if (q->front().timeClock < time) {
+                    q->pop_front();
+                } else {
+                    break;
+                }
+            }
         }
 
         void clean() {
             std::lock_guard lg{mtx};
-            q.clear();
+            q->clear();
         }
     };
 

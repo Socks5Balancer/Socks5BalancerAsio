@@ -211,10 +211,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # ============================================================================================
 
-option(Limit_TimeHistory_Memory_Use "set TimeHistory max record number to 1 to mininal running memory. ")
+option(Limit_TimeHistory_Memory_Use "Limit_TimeHistory_Memory_Use" OFF)
 if (Limit_TimeHistory_Memory_Use)
     add_definitions(-DLimit_TimeHistory_Memory_Use)
     message(STATUS "Limit_TimeHistory_Memory_Use !!!")
+    set(Limit_TimeHistory_Number 8 CACHE STRING "TimeHistory max record number limit size per-upstream. A Number >= 1")
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeParamsConfig/CMakeParams.h.in
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeParamsConfig/CMakeParams.h)
 endif ()
 
 # ============================================================================================
