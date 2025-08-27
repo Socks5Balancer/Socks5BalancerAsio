@@ -158,10 +158,17 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
                         try_connect_upstream();
                     }
                 } else {
+                    if (results.empty()) {
+                        BOOST_LOG_S5B_ID(relayId, error) << "do_resolve error: resolve get empty results";
+                        nowServer->isOffline = true;
+                        // try next
+                        try_connect_upstream();
+                        return;
+					}
 
                     BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession do_resolve()"
-                                                     << " " << results->endpoint().address() << ":"
-                                                     << results->endpoint().port();
+                                                     << " " << results.begin()->endpoint().address() << ":"
+                                                     << results.begin()->endpoint().port();
 
                     do_connect_upstream(results);
                 }
@@ -169,11 +176,11 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
 
 }
 
-void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::results_type &results) {
+void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::results_type results) {
 
     // Attempt connection to remote server (upstream side)
     upstream_socket_.async_connect(
-            results->endpoint(),
+            results.begin()->endpoint(),
             [this, self = shared_from_this()](const boost::system::error_code &error) {
                 if (!error) {
 

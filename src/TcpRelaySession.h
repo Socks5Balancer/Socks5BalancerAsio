@@ -180,7 +180,7 @@ private:
 
     void do_resolve(const std::string &upstream_host, unsigned short upstream_port);
 
-    void do_connect_upstream(boost::asio::ip::tcp::resolver::results_type &results);
+    void do_connect_upstream(boost::asio::ip::tcp::resolver::results_type results);
 
 
 

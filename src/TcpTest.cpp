@@ -39,10 +39,16 @@ void TcpTestSession::do_resolve() {
                 return fail(ec, ss.str().c_str());
             }
 
-//                    std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port
-//                              << " get results: "
-//                              << results->endpoint().address() << ":" << results->endpoint().port()
-//                              << std::endl;
+            if (results.empty()) {
+                std::stringstream ss;
+                ss << "do_resolve on :" << socks5Host << ":" << socks5Port << " get empty results";
+				return fail(boost::asio::error::host_not_found, ss.str().c_str());
+            }
+
+            std::cout << "do_resolve on :" << socks5Host << ":" << socks5Port
+                << " get results: "
+                << results.begin()->endpoint().address() << ":" << results.begin()->endpoint().port()
+                << std::endl;
             do_tcp_connect(results);
         });
 }
@@ -62,8 +68,8 @@ void TcpTestSession::do_tcp_connect(
                 if (ec) {
                     std::stringstream ss;
                     ss << "TcpTestSession::do_tcp_connect";
-                    //ss << "TcpTestSession::do_tcp_connect on :"
-                    //    << results->endpoint().address() << ":" << results->endpoint().port();
+                    ss << "TcpTestSession::do_tcp_connect on :"
+                        << results.begin()->endpoint().address() << ":" << results.begin()->endpoint().port();
                     return fail(ec, ss.str().c_str());
                 }
 
