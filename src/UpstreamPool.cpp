@@ -241,21 +241,21 @@ auto UpstreamPool::getServerGlobal(const size_t &relayId) -> UpstreamServerRef {
 
 void UpstreamPool::endAdditionTimer() {
     if (additionTimer) {
-        boost::system::error_code ec;
-        additionTimer->cancel(ec);
+        //boost::system::error_code ec;
+        additionTimer->cancel();
         additionTimer.reset();
     }
 }
 
 void UpstreamPool::endCheckTimer() {
     if (tcpCheckerTimer) {
-        boost::system::error_code ec;
-        tcpCheckerTimer->cancel(ec);
+        //boost::system::error_code ec;
+        tcpCheckerTimer->cancel();
         tcpCheckerTimer.reset();
     }
     if (connectCheckerTimer) {
-        boost::system::error_code ec;
-        connectCheckerTimer->cancel(ec);
+        //boost::system::error_code ec;
+        connectCheckerTimer->cancel();
         connectCheckerTimer.reset();
     }
 }
@@ -328,8 +328,8 @@ void UpstreamPool::stop() {
     endAdditionTimer();
     endCheckTimer();
     if (auto ptr = forceCheckerTimer.lock()) {
-        boost::system::error_code ec;
-        ptr->cancel(ec);
+        //boost::system::error_code ec;
+        ptr->cancel();
         ptr.reset();
     }
 }

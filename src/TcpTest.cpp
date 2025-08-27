@@ -144,8 +144,8 @@ void TcpTest::do_cleanTimer() {
     (const boost::system::error_code &e) {
         if (e) {
             BOOST_LOG_S5B(error) << "TcpTest::do_cleanTimer() c error_code " << e;
-            boost::system::error_code ec;
-            this->cleanTimer->cancel(ec);
+            //boost::system::error_code ec;
+            this->cleanTimer->cancel();
             this->cleanTimer.reset();
             return;
         }
@@ -188,8 +188,8 @@ std::shared_ptr<TcpTestSession> TcpTest::createTest(std::string socks5Host, std:
 
 void TcpTest::stop() {
     if (cleanTimer) {
-        boost::system::error_code ec;
-        cleanTimer->cancel(ec);
+        //boost::system::error_code ec;
+        cleanTimer->cancel();
         cleanTimer.reset();
     }
     for (auto &a: sessions) {

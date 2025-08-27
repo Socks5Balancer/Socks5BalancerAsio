@@ -748,8 +748,8 @@ void ConnectTestHttps::do_cleanTimer() {
             (const boost::system::error_code &e) {
         if (e) {
             BOOST_LOG_S5B(error) << "ConnectTestHttps::do_cleanTimer() c error_code " << e;
-            boost::system::error_code ec;
-            this->cleanTimer->cancel(ec);
+            //boost::system::error_code ec;
+            this->cleanTimer->cancel();
             this->cleanTimer.reset();
             return;
         }
@@ -772,8 +772,8 @@ void ConnectTestHttps::do_cleanTimer() {
 
 void ConnectTestHttps::stop() {
     if (cleanTimer) {
-        boost::system::error_code ec;
-        cleanTimer->cancel(ec);
+        //boost::system::error_code ec;
+        cleanTimer->cancel();
         cleanTimer.reset();
     }
     for (auto &a: sessions) {
