@@ -159,9 +159,9 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
                     }
                 } else {
 
-                    BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession do_resolve()";
-                                                     //<< " " << results->endpoint().address() << ":"
-                                                     //<< results->endpoint().port();
+                    BOOST_LOG_S5B_ID(relayId, trace) << "TcpRelaySession do_resolve()"
+                                                     << " " << results->endpoint().address() << ":"
+                                                     << results->endpoint().port();
 
                     do_connect_upstream(results);
                 }
@@ -169,7 +169,7 @@ void TcpRelaySession::do_resolve(const std::string &upstream_host, unsigned shor
 
 }
 
-void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::results_type results) {
+void TcpRelaySession::do_connect_upstream(boost::asio::ip::tcp::resolver::results_type &results) {
 
     // Attempt connection to remote server (upstream side)
     upstream_socket_.async_connect(
