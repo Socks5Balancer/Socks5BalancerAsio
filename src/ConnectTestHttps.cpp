@@ -174,9 +174,11 @@ void ConnectTestHttpsSession::do_tcp_connect(
                             boost::beast::error_code ec,
                             const boost::asio::ip::tcp::resolver::results_type::endpoint_type &) {
                         if (ec) {
+                            // TODO : mark . the `results->` not work on high version boost ?
                             std::stringstream ss;
-                            ss << "ConnectTestHttpsSession::do_tcp_connect on :"
-                               << results->endpoint().address() << ":" << results->endpoint().port();
+                            ss << "ConnectTestHttpsSession::do_tcp_connect";
+                            //ss << "ConnectTestHttpsSession::do_tcp_connect on :"
+                            //   << results->endpoint().address() << ":" << results->endpoint().port();
                             return fail(ec, ss.str().c_str());
                         }
 
