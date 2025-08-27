@@ -19,6 +19,7 @@
 #include "ConfigLoader.h"
 
 #include <sstream>
+#include <boost/format.hpp>
 
 #include "./log/Log.h"
 #include "./base64.h"
